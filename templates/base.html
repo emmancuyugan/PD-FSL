@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>{% block title %}Senyasalin - Filipino Sign Language AI{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="AI-powered Filipino Sign Language learning platform with real-time gesture recognition and interactive feedback" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --sunshine: #FFD93D;
+      --sky-blue: #4CC9F0;
+      --grass-green: #06D6A0;
+      --coral: #FF6B9D;
+      --lavender: #A78BFA;
+      --orange: #FF8C42;
+      --deep-blue: #4361EE;
+      --white: #FFFFFF;
+      --off-white: #FFF8F0;
+      --shadow: rgba(0, 0, 0, 0.15);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-weight: 600;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header Styles */
+    .navbar {
+      background: var(--white);
+      box-shadow: 0 4px 20px var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      animation: slideDown 0.6s ease-out;
+    }
+
+    @keyframes slideDown {
+      from { transform: translateY(-100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    .nav-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      gap: 20px;
+    }
+
+    .brand {
+      flex-shrink: 0;
+    }
+
+    .brand-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.3s ease;
+    }
+
+    .brand-link:hover {
+      transform: translateY(-2px);
+    }
+
+    .brand-logo {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      overflow: hidden;
+      transition: transform 0.3s ease;
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+
+    .brand-logo:hover {
+      transform: scale(1.1) rotate(5deg);
+    }
+
+    .brand-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .brand-title {
+      font-size: 24px;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--deep-blue), var(--lavender), var(--coral));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      transition: all 0.3s ease;
+    }
+
+    .tagline {
+      font-size: 11px;
+      color: #666;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    nav {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    nav a {
+      padding: 10px 20px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 14px;
+      color: #333;
+      border-radius: 12px;
+      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      position: relative;
+      overflow: hidden;
+    }
+
+    nav a::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.5s ease;
+    }
+
+    nav a:hover::before {
+      left: 100%;
+    }
+
+    nav a:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+
+    nav a:nth-child(1):hover, nav a:nth-child(1).active {
+      background: linear-gradient(135deg, var(--deep-blue), var(--sky-blue));
+      color: var(--white);
+    }
+
+    nav a:nth-child(2):hover, nav a:nth-child(2).active {
+      background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
+      color: var(--white);
+    }
+
+    nav a:nth-child(3):hover, nav a:nth-child(3).active {
+      background: linear-gradient(135deg, var(--coral), var(--orange));
+      color: var(--white);
+    }
+
+    nav a:nth-child(4):hover, nav a:nth-child(4).active {
+      background: linear-gradient(135deg, var(--lavender), var(--coral));
+      color: var(--white);
+    }
+
+    nav a:nth-child(5):hover, nav a:nth-child(5).active {
+      background: linear-gradient(135deg, var(--orange), var(--sunshine));
+      color: var(--white);
+    }
+
+    nav a:nth-child(6):hover, nav a:nth-child(6).active {
+      background: linear-gradient(135deg, var(--lavender), var(--deep-blue));
+      color: var(--white);
+    }
+
+    nav a:nth-child(7):hover, nav a:nth-child(7).active {
+      background: linear-gradient(135deg, var(--coral), var(--lavender));
+      color: var(--white);
+    }
+
+    nav a.active {
+      box-shadow: 0 4px 16px var(--shadow);
+    }
+
+    /* Main content area */
+    main {
+      flex: 1;
+    }
+
+    /* Footer Styles */
+    .footer {
+      background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
+      color: var(--white);
+      padding: 24px 0;
+      margin-top: 60px;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .footer-bottom {
+      text-align: center;
+      color: rgba(255, 255, 255, 0.95);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+      .nav-inner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+
+      nav {
+        width: 100%;
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .brand-title {
+        font-size: 20px;
+      }
+
+      .tagline {
+        font-size: 10px;
+      }
+
+      nav a {
+        padding: 8px 14px;
+        font-size: 13px;
+      }
+
+      .footer {
+        padding: 18px 0;
+      }
+    }
+
+    /* Smooth scroll */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* Utilities */
+    .flex {
+      display: flex;
+    }
+
+    /* =============================
+       Performance + Touch Optimizations
+       (Keeps same look/layout, removes expensive effects on touch & during camera)
+       ============================= */
+
+    @media (hover: none), (pointer: coarse) {
+      nav a::before { display: none !important; }
+      nav a:hover { transform: none !important; box-shadow: none !important; }
+      nav a:hover::before { left: -100% !important; }
+
+      .big-button:hover,
+      .start-button:hover,
+      .assist-btn:hover,
+      .ghost-btn:hover,
+      .reset-btn:hover,
+      .control-btn:hover,
+      .btn:hover,
+      button:hover {
+        transform: none !important;
+        box-shadow: inherit !important;
+        filter: none !important;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+    }
+
+    body.camera-running .bg-shapes { display: none !important; }
+    body.camera-running * { animation: none !important; transition: none !important; }
+
+    body.camera-running .difficulty-selector,
+    body.camera-running .settings-panel,
+    body.camera-running .result-overlay,
+    body.camera-running .timer-overlay,
+    body.camera-running .ghost-controls {
+      backdrop-filter: none !important;
+    }
+  </style>
+</head>
+
+<body>
+  <header class="navbar">
+    <div class="container nav-inner">
+      <div class="brand">
+        <a href="{{ url_for('home') }}" class="brand-link">
+          <div class="brand-logo">
+            <img src="{{ url_for('static', filename='img/logo5.png') }}" alt="Senyasalin Logo">
+          </div>
+          <div>
+            <div class="brand-title">Senyasalin</div>
+            <div class="tagline">An Offline Filipino Sign Language Recognition System</div>
+          </div>
+        </a>
+      </div>
+
+      <nav class="flex">
+        <a href="{{ url_for('home') }}" class="{% if request.endpoint == 'home' %}active{% endif %}">HOME</a>
+
+        {% if session.get('user_id') %}
+          <a href="{{ url_for('tutor') }}" class="{% if request.endpoint == 'tutor' %}active{% endif %}">LEARN</a>
+          <a href="{{ url_for('select') }}" class="{% if request.endpoint == 'select' %}active{% endif %}">SELECT</a>
+          <a href="{{ url_for('activity') }}" class="{% if request.endpoint == 'activity' %}active{% endif %}">ACTIVITY</a>
+          <a href="{{ url_for('auto_recognition') }}" class="{% if request.endpoint == 'auto_recognition' %}active{% endif %}">AUTO</a>
+          <a href="{{ url_for('results') }}" class="{% if request.endpoint == 'results' %}active{% endif %}">RESULTS</a>
+        {% endif %}
+
+        <a href="{{ url_for('about') }}" class="{% if request.endpoint == 'about' %}active{% endif %}">ABOUT</a>
+
+        {% if session.get('user_id') %}
+          <a href="{{ url_for('logout') }}">LOGOUT{% if session.get('username') %} ({{ session.get('username') }}){% endif %}</a>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="{% if request.endpoint == 'login' %}active{% endif %}">LOGIN</a>
+          <a href="{{ url_for('signup') }}" class="{% if request.endpoint == 'signup' %}active{% endif %}">SIGN UP</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom">
+        © <span id="year"></span> Senyasalin
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    // Smooth scroll helper
+    function scrollToId(id){
+      const el=document.getElementById(id);
+      if(el) el.scrollIntoView({behavior:"smooth"});
+    }
+
+    // Scroll-triggered animations
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if(entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, observerOptions);
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const animateElements = document.querySelectorAll('.card, .section h2, .hero-grid > *');
+      animateElements.forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(30px)';
+        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(el);
+      });
+    });
+  </script>
+</body>
+</html>

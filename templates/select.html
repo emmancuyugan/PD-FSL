@@ -1,0 +1,1758 @@
+{% extends "base.html" %}
+{% block title %}Select & Practice – FSL Learning{% endblock %}
+
+{% block content %}
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :root {
+    --sunshine: #FFD93D;
+    --sky-blue: #4CC9F0;
+    --grass-green: #06D6A0;
+    --coral: #FF6B9D;
+    --lavender: #A78BFA;
+    --orange: #FF8C42;
+    --deep-blue: #4361EE;
+    --white: #FFFFFF;
+    --off-white: #FFF8F0;
+    --shadow: rgba(0, 0, 0, 0.15);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-weight: 600;
+    background: linear-gradient(135deg, #E0F4FF 0%, #FFE5EC 50%, #FFF4E0 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  .bg-shapes {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+  }
+
+  .shape {
+    position: absolute;
+    opacity: 0.15;
+    animation: float 20s infinite ease-in-out;
+  }
+
+  .shape:nth-child(1) { 
+    width: 120px; 
+    height: 120px; 
+    background: var(--sunshine); 
+    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+    top: 10%; 
+    left: 5%; 
+    animation-delay: 0s;
+  }
+
+  .shape:nth-child(2) { 
+    width: 90px; 
+    height: 90px; 
+    background: var(--coral); 
+    border-radius: 50%;
+    top: 60%; 
+    left: 80%; 
+    animation-delay: 3s;
+  }
+
+  .shape:nth-child(3) { 
+    width: 150px; 
+    height: 150px; 
+    background: var(--grass-green); 
+    border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
+    bottom: 10%; 
+    right: 10%; 
+    animation-delay: 6s;
+  }
+
+  .shape:nth-child(4) { 
+    width: 100px; 
+    height: 100px; 
+    background: var(--lavender); 
+    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+    top: 30%; 
+    right: 20%; 
+    animation-delay: 9s;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(20px, -20px) rotate(5deg); }
+    50% { transform: translate(-15px, 15px) rotate(-5deg); }
+    75% { transform: translate(10px, -10px) rotate(3deg); }
+  }
+
+  .app-container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    gap: 20px;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--white);
+    padding: 15px 25px;
+    border-radius: 30px;
+    box-shadow: 0 8px 24px var(--shadow);
+    animation: slideDown 0.6s ease-out;
+  }
+
+  @keyframes slideDown {
+    from { transform: translateY(-100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .logo {
+    font-size: 32px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--deep-blue), var(--lavender), var(--coral));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -1px;
+  }
+
+  .header-subtitle {
+    font-size: 14px;
+    color: #666;
+    margin-top: 4px;
+    font-weight: 600;
+  }
+
+  .header-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .rec-badge {
+    padding: 12px 24px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 20px;
+    display: none;
+    box-shadow: 0 4px 16px rgba(255, 107, 157, 0.5);
+    animation: blink 1.5s infinite;
+    background: var(--coral);
+    color: var(--white);
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  .rec-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    background: var(--white);
+    border-radius: 50%;
+    margin-right: 8px;
+    animation: pulse-dot 1.5s infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+  }
+
+  .status-badge {
+    padding: 12px 28px;
+    background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
+    color: var(--white);
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 20px;
+    box-shadow: 0 4px 12px rgba(6, 214, 160, 0.3);
+  }
+
+  .reset-btn {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--orange), var(--sunshine));
+    color: var(--white);
+    border: none;
+    border-radius: 20px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 16px rgba(255, 140, 66, 0.3);
+  }
+
+  .reset-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(255, 140, 66, 0.4);
+  }
+
+  .reset-btn:active {
+    transform: translateY(-1px);
+  }
+
+  .main-content {
+    display: flex;
+    gap: 20px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .video-section {
+    flex: 2;
+    position: relative;
+    background: var(--white);
+    border-radius: 30px;
+    box-shadow: 0 8px 32px var(--shadow);
+    overflow: hidden;
+    animation: scaleIn 0.6s ease-out 0.2s backwards;
+  }
+
+  @keyframes scaleIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .skeleton-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-radius: 30px;
+    overflow: hidden;
+  }
+
+  .skeleton-label {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(59, 130, 246, 0.9);
+    color: var(--white);
+    padding: 10px 20px;
+    border-radius: 15px;
+    font-size: 16px;
+    font-weight: 700;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+  }
+
+  #skeletonCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .pip-camera {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 300px;
+    height: 225px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    border: 4px solid var(--white);
+    z-index: 15;
+    background: #000;
+  }
+
+  .pip-label {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(76, 201, 240, 0.9);
+    color: var(--white);
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    z-index: 16;
+    box-shadow: 0 2px 8px rgba(76, 201, 240, 0.5);
+  }
+
+  #mainCamera {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: none;
+  }
+
+  #overlayCanvas {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 17;
+  transform: none;
+  transform-origin: center;
+}
+
+  .prep-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 64px;
+    font-weight: 700;
+    color: var(--sunshine);
+    display: none;
+    z-index: 20;
+    text-shadow: 3px 3px 8px #000;
+    animation: popIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  @keyframes popIn {
+    from { transform: translate(-50%, -50%) scale(0); }
+    to { transform: translate(-50%, -50%) scale(1); }
+  }
+
+  .ghost-badge {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: var(--lavender);
+    color: var(--white);
+    padding: 12px 20px;
+    border-radius: 20px;
+    font-size: 18px;
+    font-weight: 700;
+    display: none;
+    z-index: 18;
+    box-shadow: 0 4px 16px rgba(167, 139, 250, 0.5);
+  }
+
+  .ghost-controls {
+    position: absolute;
+    bottom: 60px;
+    right: 20px;
+    display: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    z-index: 18;
+    max-width: 300px;
+  }
+
+  .ghost-btn {
+    background: rgba(255, 255, 255, 0.95);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px var(--shadow);
+    transition: all 0.2s ease;
+  }
+
+  .ghost-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow);
+  }
+
+  .timer-bar-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 0 0 30px 30px;
+    overflow: hidden;
+    z-index: 19;
+  }
+
+  .timer-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--grass-green), var(--sky-blue));
+    transition: width 0.1s linear;
+  }
+
+  .sidebar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    animation: slideLeft 0.6s ease-out 0.4s backwards;
+  }
+
+  @keyframes slideLeft {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  .card {
+    background: var(--white);
+    border-radius: 25px;
+    padding: 25px;
+    box-shadow: 0 8px 24px var(--shadow);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--deep-blue);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .selection-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .input-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: #666;
+    margin-bottom: 8px;
+  }
+
+  .input-group select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--grass-green);
+    border-radius: 15px;
+    font-size: 16px;
+    font-weight: 600;
+    background: var(--white);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .input-group select:focus {
+    outline: none;
+    border-color: var(--deep-blue);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+  }
+
+  .toggle-panel {
+    background: var(--off-white);
+    border-radius: 15px;
+    padding: 16px;
+    border: 3px dashed #DDD;
+  }
+
+  .toggle-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #666;
+    margin-bottom: 12px;
+  }
+
+  .toggle-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .toggle-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .toggle-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--grass-green);
+  }
+
+  .toggle-item span {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .timer-display {
+    text-align: center;
+    font-weight: 700;
+    color: var(--white);
+    padding: 16px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    font-size: 28px;
+    background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
+    box-shadow: 0 4px 16px rgba(67, 97, 238, 0.3);
+    display: none;
+  }
+
+  .gesture-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 16px;
+    background: var(--off-white);
+    border-radius: 15px;
+    border: 2px solid #DDD;
+  }
+
+  .gesture-info {
+    flex: 1;
+  }
+
+  .gesture-info-label {
+    font-size: 12px;
+    color: #666;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .gesture-name {
+    font-size: 32px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .result-text {
+    font-size: 32px;
+    font-weight: 700;
+    color: #888;
+  }
+
+  .result-text.correct {
+    color: var(--grass-green);
+  }
+
+  .result-text.incorrect {
+    color: var(--coral);
+  }
+
+  .progress-section {
+    margin-bottom: 20px;
+  }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .phase-text {
+    font-size: 16px;
+    color: #666;
+    font-weight: 600;
+  }
+
+  .frame-count {
+    font-size: 16px;
+    color: #999;
+  }
+
+  .progress-bar-container {
+    height: 16px;
+    background: var(--off-white);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid #DDD;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--grass-green), var(--sky-blue));
+    transition: width 0.3s ease;
+  }
+
+  .assist-section {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: var(--off-white);
+    border-radius: 15px;
+    border: 3px dashed #DDD;
+    display: none;
+  }
+
+  .assist-buttons {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .assist-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+
+  .show-how-btn {
+    background: linear-gradient(135deg, var(--lavender), var(--deep-blue));
+    color: var(--white);
+  }
+
+  .try-again-btn {
+    background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
+    color: var(--white);
+  }
+
+  .assist-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow);
+  }
+
+  .assist-btn:active {
+    transform: translateY(0);
+  }
+
+  .assist-hint {
+    font-size: 14px;
+    color: #666;
+    text-align: center;
+  }
+
+  .start-button {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
+    color: var(--white);
+    border: none;
+    border-radius: 15px;
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 16px rgba(6, 214, 160, 0.3);
+    margin-bottom: 20px;
+  }
+
+  .start-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(6, 214, 160, 0.4);
+  }
+
+  .start-button:active {
+    transform: translateY(-1px);
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .stat-card {
+    text-align: center;
+    padding: 20px;
+    background: var(--off-white);
+    border-radius: 15px;
+    border: 2px solid #DDD;
+    transition: all 0.3s ease;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px var(--shadow);
+  }
+
+  .stat-value {
+    font-size: 48px;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .stat-value.correct {
+    color: var(--grass-green);
+  }
+
+  .stat-value.incorrect {
+    color: var(--coral);
+  }
+
+  .stat-label {
+    font-size: 16px;
+    color: #666;
+    font-weight: 600;
+  }
+
+  .info-text {
+    text-align: center;
+    font-size: 14px;
+    color: #999;
+    line-height: 1.6;
+  }
+
+  .confetti {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    background: var(--sunshine);
+    position: absolute;
+    animation: confetti-fall 3s linear forwards;
+    z-index: 1000;
+    pointer-events: none;
+  }
+
+  @keyframes confetti-fall {
+    to {
+      transform: translateY(100vh) rotate(360deg);
+      opacity: 0;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    .app-container {
+      padding: 15px;
+      gap: 15px;
+    }
+
+    .logo {
+      font-size: 24px;
+    }
+
+    .status-badge {
+      font-size: 16px;
+      padding: 10px 20px;
+    }
+
+    .pip-camera {
+      width: 200px;
+      height: 150px;
+    }
+
+    .gesture-name {
+      font-size: 24px;
+    }
+
+    .stat-value {
+      font-size: 36px;
+    }
+  }
+</style>
+
+<div class="bg-shapes">
+  <div class="shape"></div>
+  <div class="shape"></div>
+  <div class="shape"></div>
+  <div class="shape"></div>
+</div>
+
+<div class="app-container">
+  <div class="header">
+    <div>
+      <div class="logo">[Hand] Select & Practice</div>
+      <div class="header-subtitle">Choose a gesture and practice with AI!</div>
+    </div>
+    <div class="header-controls">
+      <div class="rec-badge" id="recBadge">
+        <span class="rec-dot"></span>REC
+      </div>
+      <button id="resetBtn" class="reset-btn">↺ Reset</button>
+      <div class="status-badge" id="stateBadge">State: READY</div>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="video-section">
+      <div class="skeleton-container">
+        <span class="skeleton-label">[AI] Skeleton AI</span>
+        <canvas id="skeletonCanvas"></canvas>
+
+        <!-- Picture-in-Picture Camera (Top Right) -->
+        <div class="pip-camera">
+          <span class="pip-label">[Cam] Your Camera</span>
+          <video id="mainCamera" autoplay playsinline muted></video>
+          <canvas id="overlayCanvas"></canvas>
+        </div>
+
+        <div class="prep-overlay" id="prepOverlay">Get Ready…</div>
+
+        <div class="ghost-badge" id="ghostBadge">[Guide] Ghost Helper ON</div>
+
+        <div class="ghost-controls" id="ghostControls">
+          <button class="ghost-btn" id="btnSizeDown">Size −</button>
+          <button class="ghost-btn" id="btnSizeUp">Size +</button>
+          <button class="ghost-btn" id="btnNudgeUp">Align ↑</button>
+          <button class="ghost-btn" id="btnNudgeDown">Align ↓</button>
+        </div>
+
+        <div class="timer-bar-container">
+          <div class="timer-bar" id="timerBar"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <!-- Selection Card -->
+      <div class="card">
+        <div class="card-title">[Target] Selection</div>
+        
+        <div class="selection-grid">
+          <div class="input-group">
+            <label>Category</label>
+            <select id="categorySelect">
+              <option value="numbers">Numbers</option>
+              <option value="colors">Colors</option>
+              <option value="family">Family</option>
+              <option value="relationship">Relationship</option>
+              <option value="survival">Survival</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>Gesture</label>
+            <select id="gestureSelect"></select>
+          </div>
+        </div>
+
+        <div class="toggle-panel">
+          <div class="toggle-title">⚙ Display Options</div>
+          <div class="toggle-grid">
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleVisuals" checked>
+              <span>[Eye] Landmarks</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleTimer" checked>
+              <span>[Timer] Timer</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleResults" checked>
+              <span>[Note] Results</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleSpeed">
+              <span>⚡ Fast Mode</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Card -->
+      <div class="card">
+        <div class="card-title">[Stats] Status & Results</div>
+
+        <div class="timer-display" id="timerOverlay">5</div>
+
+        <div class="gesture-status">
+          <div class="gesture-info">
+            <div class="gesture-info-label">Your Challenge:</div>
+            <div class="gesture-name" id="targetLabel">None</div>
+          </div>
+          <div class="result-text" id="resultText">—</div>
+        </div>
+
+        <div class="progress-section">
+          <div class="progress-header">
+            <span class="phase-text" id="capturePhase">Idle</span>
+            <span class="frame-count"><span id="frameCount">0</span>/48 frames</span>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progressBar"></div>
+          </div>
+        </div>
+
+        <div class="assist-section" id="assistRow">
+          <div class="assist-buttons">
+            <button class="assist-btn show-how-btn" id="btnShowHow">[Guide] Show me how</button>
+            <button class="assist-btn try-again-btn" id="btnTryAgain">↻ Try again</button>
+          </div>
+          <div class="assist-hint" id="assistHint"></div>
+        </div>
+
+        <div id="startOverlay">
+          <button class="start-button" id="startBtn">▶️ Start Practice!</button>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-value correct" id="correctCount">0</span>
+            <span class="stat-label">Correct</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value incorrect" id="incorrectCount">0</span>
+            <span class="stat-label">Incorrect</span>
+          </div>
+        </div>
+
+        <p class="info-text">Flow: Pick gesture → Start → Get Ready (1s) → Perform (~5s) → Predict</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='mediapipe/camera_utils/camera_utils.js') }}"></script>
+<script src="{{ url_for('static', filename='mediapipe/drawing_utils/drawing_utils.js') }}"></script>
+<script src="{{ url_for('static', filename='mediapipe/holistic/holistic.js') }}"></script>
+
+<script>
+window.addEventListener("load", () => {
+  const ENABLE_CONFETTI = false; // keep look, disable expensive confetti
+  const NUMBER_SIGNS = ["One","Two","Three","Four","Five"];
+  const COLOR_SIGNS  = ["Black","Blue","Green","Orange","Pink","Red","White","Yellow"];
+  const FAMILY_SIGNS = ["Daughter","Father","Grandfather","Grandmother","Mother","Son"];
+  const RELATIONSHIP_SIGNS = ["Boy","Girl","Man","Woman"];
+  const SURVIVAL_SIGNS = ["Correct","Don't Understand","No","Understand","Wrong","Yes"];
+
+  const categorySelect = document.getElementById("categorySelect");
+  const gestureSelect  = document.getElementById("gestureSelect");
+
+  function loadGestures() {
+    gestureSelect.innerHTML = "";
+    let signs = [];
+    if (categorySelect.value === "numbers") signs = NUMBER_SIGNS;
+    if (categorySelect.value === "colors")  signs = COLOR_SIGNS;
+    if (categorySelect.value === "family")  signs = FAMILY_SIGNS;
+    if (categorySelect.value === "relationship")  signs = RELATIONSHIP_SIGNS;
+    if (categorySelect.value === "survival")  signs = SURVIVAL_SIGNS;
+    signs.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s;
+      opt.textContent = s;
+      gestureSelect.appendChild(opt);
+    });
+  }
+  categorySelect.onchange = loadGestures;
+  loadGestures();
+
+  function celebrate(){
+    if(!ENABLE_CONFETTI) return;
+    for(let i=0;i<30;i++){
+      setTimeout(()=>{
+        const confetti=document.createElement('div');
+        confetti.className='confetti';
+        confetti.style.left=Math.random()*100+'%';
+        confetti.style.background=['#FFD93D','#FF6B9D','#06D6A0','#4CC9F0','#A78BFA'][Math.floor(Math.random()*5)];
+        confetti.style.animationDelay=Math.random()*0.5+'s';
+        document.body.appendChild(confetti);
+        setTimeout(()=>confetti.remove(),3000);
+      },i*50);
+    }
+  }
+
+  const videoEl = document.getElementById("mainCamera");
+  // ------------------------------------------------------
+  // Camera correction (applies to BOTH preview + inference)
+  // If your camera sensor feed comes in upside down, keep ROTATE_180 = true.
+  // If your feed is mirrored and you want it NOT mirrored, keep MIRROR = false.
+  // ------------------------------------------------------
+  const ROTATE_180 = true;
+  const MIRROR = false;
+
+  const inputCanvas = document.createElement('canvas');
+  inputCanvas.width = 640;
+  inputCanvas.height = 480;
+  const inputCtx = inputCanvas.getContext('2d', { willReadFrequently: false });
+
+  function drawCorrectedFrame() {
+    const w = inputCanvas.width;
+    const h = inputCanvas.height;
+
+    inputCtx.save();
+    inputCtx.setTransform(1, 0, 0, 1, 0, 0);
+    inputCtx.clearRect(0, 0, w, h);
+
+    inputCtx.translate(w / 2, h / 2);
+    if (ROTATE_180) inputCtx.rotate(Math.PI);
+    if (MIRROR) inputCtx.scale(-1, 1);
+
+    inputCtx.drawImage(videoEl, -w / 2, -h / 2, w, h);
+    inputCtx.restore();
+  }
+
+  const canvasEl = document.getElementById("overlayCanvas");
+  const skeletonCanvas = document.getElementById("skeletonCanvas");
+  const ctx = canvasEl.getContext("2d");
+  const skeletonCtx = skeletonCanvas.getContext("2d");
+
+  const startBtn = document.getElementById("startBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const stateBadge = document.getElementById("stateBadge");
+  const targetLabel = document.getElementById("targetLabel");
+  const resultText = document.getElementById("resultText");
+  const correctCountEl = document.getElementById("correctCount");
+  const incorrectCountEl = document.getElementById("incorrectCount");
+  const capturePhase = document.getElementById("capturePhase");
+  const frameCountEl = document.getElementById("frameCount");
+  const progressBar = document.getElementById("progressBar");
+  const prepOverlay = document.getElementById("prepOverlay");
+  const recBadge = document.getElementById("recBadge");
+  const timerBar = document.getElementById("timerBar");
+
+  const toggleVisuals = document.getElementById('toggleVisuals');
+  const toggleTimer   = document.getElementById('toggleTimer');
+  const toggleResults = document.getElementById('toggleResults');
+  const toggleSpeed   = document.getElementById('toggleSpeed');
+
+  let showVisuals = true;
+  let showTimer   = true;
+  let showResults = true;
+
+  toggleVisuals.onchange = () => { showVisuals = toggleVisuals.checked; };
+  toggleTimer.onchange   = () => {
+    showTimer = toggleTimer.checked;
+    timerBar.style.display = showTimer ? 'block' : 'none';
+  };
+  toggleResults.onchange = () => {
+    showResults = toggleResults.checked;
+    resultText.style.display = showResults ? 'block' : 'none';
+  };
+
+  const STATE_READY=0, STATE_PREP=1, STATE_CAPTURE=2;
+  let state=STATE_READY;
+  function setState(s){ state=s; stateBadge.textContent="State: "+["READY","PREP","CAPTURE"][s]; }
+
+  let targetGesture=null, correctCount=0, incorrectCount=0;
+  const SEQ_LEN = 48, CAPTURE_MAX = 120;
+  const BASE_CAPTURE_MS = 5000;
+  let CAPTURE_MS = BASE_CAPTURE_MS;
+  let buf=[], running=false, frameSkip=1, frameCounter=0, autoJudge=false, captureStartMs=0;
+
+  function updateGestureDisplay(gesture) {
+    targetLabel.textContent = gesture ? gesture : 'None';
+  }
+
+  function flattenHand(lms){ if(!lms) return new Float32Array(63); const a=[]; for(let i=0;i<21;i++){ const p=lms[i]; a.push(p.x,p.y,p.z);} return new Float32Array(a); }
+  function lm(list,idx){ if(!list||idx>=list.length) return {x:NaN,y:NaN,z:NaN}; return list[idx]; }
+  function dist2D(a,b){ const dx=a.x-b.x, dy=a.y-b.y; return Math.hypot(dx,dy)||1e-6; }
+
+  function normalizeGlobal(hand63,anchors){
+    if(!hand63||hand63.length!==63||!anchors.L_SH||!anchors.R_SH) return new Float32Array(63);
+    const out=new Float32Array(63);
+    const Cx=(anchors.L_SH.x+anchors.R_SH.x)/2;
+    const Cy=(anchors.L_SH.y+anchors.R_SH.y)/2;
+    const Cz=(anchors.L_SH.z+anchors.R_SH.z)/2;
+    const scale=Math.max(1e-6,dist2D(anchors.L_SH,anchors.R_SH));
+    for(let i=0;i<63;i+=3){
+      out[i]=(hand63[i]-Cx)/scale;
+      out[i+1]=(hand63[i+1]-Cy)/scale;
+      out[i+2]=(hand63[i+2]-Cz)/scale;
+    }
+    for(let i=0;i<63;i++) out[i]=Math.max(-5,Math.min(5,out[i]));
+    return out;
+  }
+
+  function derivedAltitudeFeatures(L,R,anchors){
+    const out=[];
+    const brow_y=0.5*(anchors.brow_r.y+anchors.brow_l.y);
+    const SEL=[0,4,8,12,16,20];
+    for(const H of [L,R]){
+      for(const j of SEL){
+        const by=j*3+1, bz=j*3+2;
+        const py=H[by], pz=H[bz];
+        out.push(py-anchors.chin.y, py-anchors.lip_u.y, py-brow_y, py-anchors.forehead.y, pz-anchors.nose.z);
+      }
+    }
+    return new Float32Array(out);
+  }
+
+  function normLabel(s){
+    if(!s) return "";
+    const x = String(s).toLowerCase().replace(/[^a-z0-9]+/g,'');
+    const map = {
+      "1":"one","2":"two","3":"three","4":"four","5":"five",
+      "grandmother":"grandmother","grandma":"grandmother","lola":"grandmother",
+      "grandfather":"grandfather","grandpa":"grandfather","lolo":"grandfather",
+      "mom":"mother","mother":"mother","nanay":"mother",
+      "dad":"father","father":"father","tatay":"father",
+      "boy":"boy","girl":"girl","man":"man","woman":"woman",
+      "son":"son","daughter":"daughter",
+      "black":"black","blue":"blue","green":"green","orange":"orange","pink":"pink","red":"red","white":"white","yellow":"yellow",
+      "correct":"correct","dontunderstand":"dontunderstand","no":"no","understand":"understand","wrong":"wrong","yes":"yes"
+    };
+    return map[x] || x;
+  }
+  
+  function inferCategory(label){
+    const l = normLabel(label);
+    if (["one","two","three","four","five"].includes(l)) return "numbers";
+    if (["daughter","father","grandfather","grandmother","mother","son"].includes(l)) return "family";
+    if (["boy","girl","man","woman"].includes(l)) return "relationship";
+    if (["correct","dontunderstand","no","understand","wrong","yes"].includes(l)) return "survival";
+    return "colors";
+  }
+
+  function packFeature(res){
+    const pose=res.poseLandmarks||[], face=res.faceLandmarks||[];
+    const anchors={};
+    anchors.L_SH=lm(pose,11); anchors.R_SH=lm(pose,12);
+    anchors.nose=lm(face,1); anchors.forehead=lm(face,10);
+    anchors.lip_u=lm(face,13); anchors.brow_r=lm(face,65); anchors.brow_l=lm(face,295);
+    anchors.chin=lm(face,152);
+    const Lh=res.rightHandLandmarks?flattenHand(res.rightHandLandmarks):null;
+    const Rh=res.leftHandLandmarks?flattenHand(res.leftHandLandmarks):null;
+    const lf=Lh?1:0, rf=Rh?1:0;
+    if(!Lh && !Rh) return null;
+    const L=normalizeGlobal(Lh,anchors), R=normalizeGlobal(Rh,anchors);
+    const alt=derivedAltitudeFeatures(L,R,anchors);
+    return new Float32Array([...L,...R,...alt,lf,rf]);
+  }
+
+  function temporalFix(frames,seqLen){
+    if(frames.length<=seqLen){
+      const pad=Array.from({length:seqLen-frames.length},()=>frames[frames.length-1]);
+      return frames.concat(pad);
+    }
+    const scores=new Array(frames.length).fill(0);
+    for(let i=1;i<frames.length;i++){
+      const f0=frames[i-1], f1=frames[i]; if(!f0||!f1) continue;
+      let motion=0; for(let j=0;j<f0.length-2;j++) motion+=Math.abs(f1[j]-f0[j]);
+      motion/=(f0.length-2);
+      const presence=f1[f1.length-2]+f1[f1.length-1];
+      scores[i]=0.7*motion+0.3*presence;
+    }
+    const W=Math.min(40,frames.length);
+    let bestStart=0, bestSum=-1e9, runSum=0;
+    for(let i=0;i<W;i++) runSum+=scores[i]; bestSum=runSum;
+    for(let i=1;i<=scores.length-W;i++){
+      runSum+=scores[i+W-1]-scores[i-1];
+      if(runSum>bestSum){bestSum=runSum; bestStart=i;}
+    }
+    const selected=frames.slice(bestStart,bestStart+W);
+    const step=selected.length/seqLen;
+    const aligned=[];
+    for(let i=0;i<seqLen;i++){
+      const idx=Math.min(Math.floor(i*step),selected.length-1);
+      aligned.push(selected[idx]);
+    }
+    return aligned;
+  }
+
+  function updateBuffer(f){
+    if(buf.length<CAPTURE_MAX) buf.push(f);
+    else { buf.shift(); buf.push(f); }
+    frameCountEl.textContent=Math.min(buf.length,SEQ_LEN);
+    progressBar.style.width=Math.min(100,Math.round((buf.length/CAPTURE_MAX)*100))+"%";
+    if(state===STATE_CAPTURE && captureStartMs){
+      const t=Math.max(0,Math.min(1,(Date.now()-captureStartMs)/CAPTURE_MS));
+      if (showTimer) timerBar.style.width=(t*100).toFixed(1)+'%';
+    } else {
+      timerBar.style.width='0%';
+    }
+    if(buf.length>=CAPTURE_MAX && !autoJudge){
+      autoJudge=true; setTimeout(()=>stopAndPredict(),200);
+    }
+  }
+
+  const PREDICT_URL = location.origin + '/predict';
+  async function callPredict(sequence) {
+    const payload = { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ sequence }) };
+    const res = await fetch(PREDICT_URL, payload);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  }
+
+  function extractPredictedLabel(j){
+    let predicted = j?.prediction || j?.label || j?.pred?.label || j?.pred?.class;
+    if (!predicted && Array.isArray(j?.topk) && j.topk.length) {
+      predicted = j.topk[0].label || j.topk[0].class || j.topk[0].name;
+    }
+    if (typeof predicted === "string" && predicted.includes("_")) {
+      predicted = predicted.split("_").pop();
+    }
+    return normLabel(predicted);
+  }
+
+  async function predictOnce(silent=false){
+    if (buf.length < 20) {
+      if (!silent) alert('Not enough data.');
+      return { predicted: null, raw: null };
+    }
+    const fixed = temporalFix(buf, SEQ_LEN);
+    const seq = fixed.flatMap(f => Array.from(f));
+
+    try {
+      const j = await callPredict(seq);
+      const predicted = extractPredictedLabel(j);
+
+      if (!silent) {
+        const target = normLabel(targetGesture || '');
+        if (predicted && target && predicted === target) {
+          correctCount++;
+          resultText.textContent = '✓ Correct!';
+          resultText.className = 'result-text correct';
+          correctCountEl.textContent = String(correctCount);
+          document.getElementById("assistRow").style.display = 'none';
+          celebrate();
+        } else {
+          incorrectCount++;
+          resultText.textContent = '✗ Incorrect';
+          resultText.className = 'result-text incorrect';
+          incorrectCountEl.textContent = String(incorrectCount);
+          const assistRow = document.getElementById("assistRow");
+          const assistHint = document.getElementById("assistHint");
+          assistRow.style.display = 'block';
+          assistHint.textContent = 'Watch the skeleton guide, then try again!';
+        }
+      }
+      return { predicted, raw: j };
+    } catch (e) {
+      console.error(e);
+      if (!silent) {
+        resultText.textContent = '⚠️ Error';
+        resultText.className = 'result-text';
+        const assistRow = document.getElementById("assistRow");
+        const assistHint = document.getElementById("assistHint");
+        assistRow.style.display = 'block';
+        assistHint.textContent = 'Check that the backend is running.';
+      }
+      return { predicted: null, raw: null };
+    }
+  }
+
+  async function stopAndPredict() {
+    if (state !== STATE_CAPTURE && state !== STATE_PREP) return;
+    running = false;
+    recBadge.style.display = "none";
+    await predictOnce(false);
+    setState(STATE_READY);
+    capturePhase.textContent = "Idle";
+    startBtn.style.display = "inline-block";
+    timerBar.style.width = "0%";
+    stopNumericTimer();
+  }
+
+  const HAND_CONN = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20]];
+  const POSE_CONNECTIONS = [
+    [11, 12], [11, 13], [13, 15], [15, 17], [15, 19], [15, 21], [17, 19],
+    [12, 14], [14, 16], [16, 18], [16, 20], [16, 22], [18, 20],
+    [11, 23], [12, 24], [23, 24],
+    [23, 25], [24, 26], [25, 27], [26, 28], [27, 29], [28, 30], [29, 31], [30, 32]
+  ];
+  
+  let ghostEnabled=false, ghostFrames=null, ghostIdx=0, ghostReady=false;
+  let previewMode=false;
+  let scaleMultiplier = 1.0;
+  let yOffset = 0;
+  let ghostPlaybackSpeed = 0.3;
+
+  const ghostBadge = document.getElementById("ghostBadge");
+  const ghostControls = document.getElementById("ghostControls");
+  const btnSizeDown = document.getElementById("btnSizeDown");
+  const btnSizeUp = document.getElementById("btnSizeUp");
+  const btnNudgeUp = document.getElementById("btnNudgeUp");
+  const btnNudgeDown = document.getElementById("btnNudgeDown");
+
+  function showGhostUI(show){
+    ghostBadge.style.display = show ? 'inline-block' : 'none';
+    ghostControls.style.display = show ? 'flex' : 'none';
+  }
+
+  btnSizeUp.onclick    = () => { scaleMultiplier = Math.min(1.6, scaleMultiplier + 0.04); };
+  btnSizeDown.onclick  = () => { scaleMultiplier = Math.max(0.7, scaleMultiplier - 0.04); };
+  btnNudgeUp.onclick   = () => { yOffset -= 0.01; };
+  btnNudgeDown.onclick = () => { yOffset += 0.01; };
+
+  window.addEventListener('keydown', (e) => {
+    if(!ghostEnabled) return;
+    if(e.key === '=' || e.key === '+') { scaleMultiplier = Math.min(1.6, scaleMultiplier + 0.04); }
+    if(e.key === '-') { scaleMultiplier = Math.max(0.7, scaleMultiplier - 0.04); }
+    if(e.key === 'ArrowUp') { yOffset -= 0.01; }
+    if(e.key === 'ArrowDown') { yOffset += 0.01; }
+  });
+
+  function anchorsValid(a){
+    if(!a || !a.L_SH || !a.R_SH) return false;
+    return Number.isFinite(a.L_SH.x) && Number.isFinite(a.R_SH.x) &&
+           Number.isFinite(a.L_SH.y) && Number.isFinite(a.R_SH.y) &&
+           dist2D(a.L_SH, a.R_SH) > 0.02;
+  }
+
+  async function startPreviewIfNeeded(){
+    if(state!==STATE_CAPTURE && !previewMode){
+      previewMode=true;
+      capturePhase.textContent='Preview mode…';
+      setState(STATE_READY);
+      timerBar.style.width='0%';
+      await camera.start();
+    }
+  }
+  
+  async function stopPreviewIfAny(){
+    if(previewMode){
+      previewMode=false;
+      capturePhase.textContent='Idle';
+      try{ await camera.stop(); }catch(_){}
+    }
+  }
+
+  async function findDemoUrl(cat, key){
+    const STATIC_BASE = (window.location.origin + '/static/video').replace(/\/+$/, '');
+    const names=[];
+    for(let i=1;i<=10;i++) names.push(key + '_' + String(i).padStart(2,'0') + '.mp4');
+    names.push(key + '.mp4');
+    for(const n of names){
+      const url = STATIC_BASE + '/' + cat + '/' + n;
+      try{
+        const r=await fetch(url,{method:'HEAD',cache:'no-store'});
+        if(r.ok) return url;
+      }catch(_){}
+    }
+    return null;
+  }
+
+  function drawGhostSkeleton(frame){
+    if(!frame || !ghostReady) return;
+    
+    skeletonCtx.save();
+    skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
+    
+    if(frame.pose && frame.pose.length > 0){
+      skeletonCtx.strokeStyle = 'rgba(167, 139, 250, 0.9)';
+      skeletonCtx.lineWidth = 4;
+      skeletonCtx.shadowBlur = 12;
+      skeletonCtx.shadowColor = 'rgba(167, 139, 250, 0.6)';
+      
+      POSE_CONNECTIONS.forEach(([start, end]) => {
+        const startPoint = frame.pose[start];
+        const endPoint = frame.pose[end];
+        if(startPoint && endPoint){
+          skeletonCtx.beginPath();
+          skeletonCtx.moveTo(startPoint.x * skeletonCanvas.width, startPoint.y * skeletonCanvas.height);
+          skeletonCtx.lineTo(endPoint.x * skeletonCanvas.width, endPoint.y * skeletonCanvas.height);
+          skeletonCtx.stroke();
+        }
+      });
+      
+      frame.pose.forEach((landmark) => {
+        skeletonCtx.fillStyle = 'rgba(167, 139, 250, 1)';
+        skeletonCtx.beginPath();
+        skeletonCtx.arc(landmark.x * skeletonCanvas.width, landmark.y * skeletonCanvas.height, 6, 0, 2 * Math.PI);
+        skeletonCtx.fill();
+      });
+    }
+    
+    if(frame.face && frame.face.length > 0){
+      frame.face.forEach((landmark, idx) => {
+        if(idx % 10 === 0){
+          skeletonCtx.fillStyle = 'rgba(255, 140, 66, 0.8)';
+          skeletonCtx.beginPath();
+          skeletonCtx.arc(landmark.x * skeletonCanvas.width, landmark.y * skeletonCanvas.height, 3, 0, 2 * Math.PI);
+          skeletonCtx.fill();
+        }
+      });
+    }
+    
+    const drawHand = (landmarks, color) => {
+      if(!landmarks || landmarks.length === 0) return;
+      
+      skeletonCtx.strokeStyle = color;
+      skeletonCtx.lineWidth = 4;
+      skeletonCtx.shadowBlur = 10;
+      skeletonCtx.shadowColor = color;
+      
+      HAND_CONN.forEach(([start, end]) => {
+        const startPoint = landmarks[start];
+        const endPoint = landmarks[end];
+        if(startPoint && endPoint){
+          skeletonCtx.beginPath();
+          skeletonCtx.moveTo(startPoint.x * skeletonCanvas.width, startPoint.y * skeletonCanvas.height);
+          skeletonCtx.lineTo(endPoint.x * skeletonCanvas.width, endPoint.y * skeletonCanvas.height);
+          skeletonCtx.stroke();
+        }
+      });
+      
+      landmarks.forEach((landmark) => {
+        skeletonCtx.fillStyle = color;
+        skeletonCtx.beginPath();
+        skeletonCtx.arc(landmark.x * skeletonCanvas.width, landmark.y * skeletonCanvas.height, 5, 0, 2 * Math.PI);
+        skeletonCtx.fill();
+      });
+    };
+    
+    if(frame.rightHand && frame.rightHand.length > 0){
+      drawHand(frame.rightHand, 'rgba(76, 201, 240, 0.95)');
+    }
+    if(frame.leftHand && frame.leftHand.length > 0){
+      drawHand(frame.leftHand, 'rgba(6, 214, 160, 0.95)');
+    }
+    
+    skeletonCtx.restore();
+  }
+
+  async function loadGhostFor(label){
+    const cat=inferCategory(label);
+    const key=normLabel(label);
+    const assistHint = document.getElementById("assistHint");
+    assistHint.textContent='Loading skeleton guide…';
+    showGhostUI(false);
+    const url=await findDemoUrl(cat,key);
+    if(!url){ assistHint.textContent='No demo found for '+cat+'/'+key; ghostReady=false; return false; }
+    const v=document.createElement('video');
+    v.src=url; v.muted=true; v.playsInline=true; v.crossOrigin='anonymous';
+    await new Promise((resolve,reject)=>{ v.onloadedmetadata=resolve; v.onerror=()=>reject(new Error('Video error')); });
+    const ghostHolistic = new Holistic({locateFile: (f) => `/static/mediapipe/holistic/${f}`});
+    ghostHolistic.setOptions({selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
+    ghostFrames=[];
+    ghostHolistic.onResults(res=>{
+      ghostFrames.push({
+        pose: res.poseLandmarks || [],
+        face: res.faceLandmarks || [],
+        rightHand: res.rightHandLandmarks || [],
+        leftHand: res.leftHandLandmarks || []
+      });
+    });
+    const total=Math.min(30, Math.max(15, Math.floor(v.duration*10)));
+    for(let i=0;i<total;i++){
+      v.currentTime = (v.duration * i)/total;
+      await new Promise(function(r){ v.onseeked=r; });
+      await ghostHolistic.send({image:v});
+    }
+    ghostReady = ghostFrames.length>0;
+    assistHint.textContent = ghostReady ? 'Skeleton guide loaded! Watch the big screen.' : 'No skeleton found in demo.';
+    return ghostReady;
+  }
+
+  let ghostTimer=null;
+  const GHOST_DURATION_MS=12000;
+  let ghostAnimationId = null;
+  
+  document.getElementById("btnShowHow").onclick = async () => {
+    if(!targetGesture) {
+      alert('Please select a gesture first.');
+      return;
+    }
+    
+    if(ghostAnimationId) {
+      cancelAnimationFrame(ghostAnimationId);
+      ghostAnimationId = null;
+    }
+    
+    ghostEnabled=true; ghostFrames=null; ghostReady=false; ghostIdx=0;
+    const ok = await loadGhostFor(targetGesture);
+    if (ok){
+      showGhostUI(true);
+      const animateGhost = () => {
+        if(ghostEnabled && ghostReady && ghostFrames && ghostFrames.length){
+          const total=ghostFrames.length;
+          ghostIdx+=ghostPlaybackSpeed; 
+          if(ghostIdx>=total) ghostIdx=0;
+          const frameIdx = Math.floor(ghostIdx) % total;
+          drawGhostSkeleton(ghostFrames[frameIdx]);
+          ghostAnimationId = requestAnimationFrame(animateGhost);
+        } else {
+          ghostAnimationId = null;
+        }
+      };
+      animateGhost();
+      
+      if (ghostTimer) clearTimeout(ghostTimer);
+      ghostTimer=setTimeout(() => {
+        ghostEnabled=false; 
+        ghostReady=false;
+        showGhostUI(false); 
+        document.getElementById("assistHint").textContent='';
+        if(ghostAnimationId) {
+          cancelAnimationFrame(ghostAnimationId);
+          ghostAnimationId = null;
+        }
+        skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
+      }, GHOST_DURATION_MS);
+    }else{
+      ghostEnabled=false; showGhostUI(false);
+    }
+  };
+
+  document.getElementById("btnTryAgain").onclick = async () => {
+    ghostEnabled=false; 
+    ghostReady=false;
+    showGhostUI(false); 
+    document.getElementById("assistHint").textContent='';
+    if(ghostAnimationId) {
+      cancelAnimationFrame(ghostAnimationId);
+      ghostAnimationId = null;
+    }
+    skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
+    await stopPreviewIfAny();
+    resultText.textContent='—';
+    startBtn.click();
+  };
+
+  const holistic = new Holistic({locateFile: (f) => `/static/mediapipe/holistic/${f}`});
+  holistic.setOptions({selfieMode:false,modelComplexity:2,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.55,minTrackingConfidence:0.55});
+
+  holistic.onResults(function(res){
+    ctx.save();
+    ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+    ctx.drawImage(res.image, 0, 0, canvasEl.width, canvasEl.height);
+
+    const pose = res.poseLandmarks || [];
+    const face = res.faceLandmarks || [];
+    const anchors = {};
+    anchors.L_SH = lm(pose, 11);
+    anchors.R_SH = lm(pose, 12);
+    anchors.nose = lm(face, 1);
+    anchors.forehead = lm(face, 10);
+    anchors.lip_u = lm(face, 13);
+    anchors.brow_r = lm(face, 65);
+    anchors.brow_l = lm(face, 295);
+    anchors.chin = lm(face, 152);
+
+    if (showVisuals) {
+      const RH = res.rightHandLandmarks;
+      const LH = res.leftHandLandmarks;
+
+      const drawBox = (landmarks, color) => {
+        if (!landmarks || !landmarks.length) return;
+        let minX = 1, minY = 1, maxX = 0, maxY = 0;
+        landmarks.forEach(p => {
+          minX = Math.min(minX, p.x);
+          maxX = Math.max(maxX, p.x);
+          minY = Math.min(minY, p.y);
+          maxY = Math.max(maxY, p.y);
+        });
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(
+          minX * canvasEl.width,
+          minY * canvasEl.height,
+          (maxX - minX) * canvasEl.width,
+          (maxY - minY) * canvasEl.height
+        );
+        ctx.fillStyle = color;
+        landmarks.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.x * canvasEl.width, p.y * canvasEl.height, 4, 0, 2 * Math.PI);
+          ctx.fill();
+        });
+      };
+
+      if (RH) drawBox(RH, 'rgba(6,214,160,0.9)');
+      if (LH) drawBox(LH, 'rgba(255,107,157,0.9)');
+    }
+
+    if (!ghostEnabled) {
+      skeletonCtx.save();
+      skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
+      
+      if (pose && pose.length > 0) {
+        skeletonCtx.strokeStyle = 'rgba(59, 130, 246, 0.8)';
+        skeletonCtx.lineWidth = 3;
+        skeletonCtx.shadowBlur = 8;
+        skeletonCtx.shadowColor = 'rgba(59, 130, 246, 0.4)';
+        
+        POSE_CONNECTIONS.forEach(([start, end]) => {
+          const startPoint = pose[start];
+          const endPoint = pose[end];
+          if (startPoint && endPoint) {
+            skeletonCtx.beginPath();
+            skeletonCtx.moveTo(startPoint.x * skeletonCanvas.width, startPoint.y * skeletonCanvas.height);
+            skeletonCtx.lineTo(endPoint.x * skeletonCanvas.width, endPoint.y * skeletonCanvas.height);
+            skeletonCtx.stroke();
+          }
+        });
+        
+        pose.forEach((landmark) => {
+          skeletonCtx.fillStyle = 'rgba(59, 130, 246, 0.9)';
+          skeletonCtx.beginPath();
+          skeletonCtx.arc(landmark.x * skeletonCanvas.width, landmark.y * skeletonCanvas.height, 5, 0, 2 * Math.PI);
+          skeletonCtx.fill();
+        });
+      }
+      
+      if (face && face.length > 0) {
+        face.forEach((landmark, idx) => {
+          if (idx % 10 === 0) {
+            skeletonCtx.fillStyle = 'rgba(249, 115, 22, 0.7)';
+            skeletonCtx.beginPath();
+            skeletonCtx.arc(landmark.x * skeletonCanvas.width, landmark.y * skeletonCanvas.height, 2, 0, 2 * Math.PI);
+            skeletonCtx.fill();
+          }
+        });
+      }
+      
+      const drawHand = (landmarks, color) => {
+        if (!landmarks || landmarks.length === 0) return;
+        
+        skeletonCtx.strokeStyle = color;
+        skeletonCtx.lineWidth = 3;
+        skeletonCtx.shadowBlur = 6;
+        skeletonCtx.shadowColor = color;
+        
+        HAND_CONN.forEach(([start, end]) => {
+          const startPoint = landmarks[start];
+          const endPoint = landmarks[end];
+          if (startPoint && endPoint) {
+            skeletonCtx.beginPath();
+            skeletonCtx.moveTo(startPoint.x * skeletonCanvas.width, startPoint.y * skeletonCanvas.height);
+            skeletonCtx.lineTo(endPoint.x * skeletonCanvas.width, endPoint.y * skeletonCanvas.height);
+            skeletonCtx.stroke();
+          }
+        });
+        
+        landmarks.forEach((landmark) => {
+          skeletonCtx.fillStyle = color;
+          skeletonCtx.beginPath();
+          skeletonCtx.arc(landmark.x * skeletonCanvas.width, landmark.y * skeletonCanvas.height, 4, 0, 2 * Math.PI);
+          skeletonCtx.fill();
+        });
+      };
+      
+      if (res.rightHandLandmarks) drawHand(res.rightHandLandmarks, 'rgba(76, 201, 240, 0.9)');
+      if (res.leftHandLandmarks) drawHand(res.leftHandLandmarks, 'rgba(6, 214, 160, 0.9)');
+      
+      skeletonCtx.restore();
+    }
+
+    ctx.restore();
+
+    if (running && state === STATE_CAPTURE) {
+      frameCounter++;
+      if (frameCounter % frameSkip === 0) {
+        const feat = packFeature(res);
+        if (feat) updateBuffer(feat);
+      }
+
+      const elapsed = Date.now() - captureStartMs;
+      if (elapsed >= CAPTURE_MS && autoJudge === false) {
+        autoJudge = true;
+        setTimeout(() => stopAndPredict(), 80);
+      }
+    }
+  });
+
+  const camera=new Camera(videoEl,{ onFrame:async function(){ drawCorrectedFrame();
+      await holistic.send({ image: inputCanvas }); }, width:640, height:480 });
+
+  const originalStart = () => {
+    const fastMode = toggleSpeed.checked;
+    CAPTURE_MS = fastMode ? 3000 : BASE_CAPTURE_MS;
+
+    const chosen = gestureSelect.value;
+    if (!chosen) {
+      alert("Please select a gesture first.");
+      return;
+    }
+    targetGesture = chosen;
+    updateGestureDisplay(targetGesture);
+
+    buf = [];
+    frameCounter = 0;
+    autoJudge = false;
+    setState(STATE_PREP);
+
+    prepOverlay.style.display = "block";
+    recBadge.style.display = "none";
+    startBtn.style.display = "none";
+    resultText.textContent = "—";
+    capturePhase.textContent = "Get Ready…";
+    running = true;
+    camera.start();
+    timerBar.style.width = "0%";
+    document.getElementById("assistRow").style.display = "none";
+
+    setTimeout(function () {
+      setState(STATE_CAPTURE);
+      prepOverlay.style.display = "none";
+      recBadge.style.display = "inline-block";
+      capturePhase.textContent = "Perform Now (~5 s)…";
+      captureStartMs = Date.now();
+      startNumericTimer(toggleSpeed.checked);
+    }, 1000);
+  };
+
+  startBtn.onclick = async () => {
+    document.body.classList.add('camera-running'); await stopPreviewIfAny(); originalStart(); };
+
+  const originalReset = () => {
+    correctCount=0; incorrectCount=0;
+    correctCountEl.textContent='0'; incorrectCountEl.textContent='0';
+    targetGesture=null; updateGestureDisplay(null); resultText.textContent='—';
+    document.getElementById("assistRow").style.display='none';
+    document.getElementById("assistHint").textContent='';
+    ghostEnabled=false; ghostFrames=null; ghostIdx=0; ghostReady=false; showGhostUI(false);
+    if(ghostAnimationId) {
+      cancelAnimationFrame(ghostAnimationId);
+      ghostAnimationId = null;
+    }
+    skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
+    if (ghostTimer) clearTimeout(ghostTimer);
+    buf=[]; frameCounter=0; frameCountEl.textContent='0'; progressBar.style.width='0%'; timerBar.style.width='0%';
+    capturePhase.textContent='Idle'; setState(STATE_READY);
+    stopNumericTimer();
+    startBtn.style.display='inline-block';
+    scaleMultiplier=1.0; yOffset=0; ghostPlaybackSpeed=0.3;
+  };
+  resetBtn.onclick = async () => {
+    document.body.classList.remove('camera-running'); await stopPreviewIfAny(); originalReset(); };
+
+  let tickInterval = null;
+  const timerOverlay = document.getElementById("timerOverlay");
+
+  function startNumericTimer(fastMode) {
+    if (!showTimer) return;
+    clearInterval(tickInterval);
+
+    let countdown = fastMode ? 3 : 5;
+    timerOverlay.textContent = countdown;
+    timerOverlay.style.display = "block";
+    timerOverlay.style.background = "linear-gradient(135deg, var(--deep-blue), var(--lavender))";
+
+    tickInterval = setInterval(() => {
+      countdown--;
+      if (countdown <= 0) {
+        timerOverlay.textContent = "0";
+        timerOverlay.style.background = "linear-gradient(135deg, var(--coral), var(--orange))";
+        clearInterval(tickInterval);
+        setTimeout(() => (timerOverlay.style.display = "none"), 600);
+        return;
+      }
+      timerOverlay.textContent = countdown;
+      if (countdown <= 1) timerOverlay.style.background = "linear-gradient(135deg, var(--coral), var(--orange))";
+      else if (countdown <= 2) timerOverlay.style.background = "linear-gradient(135deg, var(--orange), var(--sunshine))";
+      else timerOverlay.style.background = "linear-gradient(135deg, var(--deep-blue), var(--lavender))";
+    }, 1000);
+  }
+
+  function stopNumericTimer() {
+    clearInterval(tickInterval);
+    timerOverlay.style.display = "none";
+  }
+
+  function resize(){
+    canvasEl.width = videoEl.clientWidth;
+    canvasEl.height = videoEl.clientHeight;
+    
+    const skeletonContainer = skeletonCanvas.parentElement;
+    skeletonCanvas.width = skeletonContainer.clientWidth;
+    skeletonCanvas.height = skeletonContainer.clientHeight;
+  }
+  
+  new ResizeObserver(resize).observe(videoEl);
+  new ResizeObserver(resize).observe(skeletonCanvas.parentElement);
+  
+  resize();
+  window.addEventListener('resize', resize);
+});
+</script>
+
+{% endblock %}
+</document_content>

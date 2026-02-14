@@ -1,0 +1,463 @@
+{% extends "base.html" %}
+{% block title %}Home – FSL Learning{% endblock %}
+{% block content %}
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :root {
+    --sunshine: #FFD93D;
+    --sky-blue: #4CC9F0;
+    --grass-green: #06D6A0;
+    --coral: #FF6B9D;
+    --lavender: #A78BFA;
+    --orange: #FF8C42;
+    --deep-blue: #4361EE;
+    --white: #FFFFFF;
+    --off-white: #FFF8F0;
+    --shadow: rgba(0, 0, 0, 0.15);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-weight: 600;
+    background: linear-gradient(135deg, #E0F4FF 0%, #FFE5EC 50%, #FFF4E0 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  .bg-shapes {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+  }
+
+  .shape {
+    position: absolute;
+    opacity: 0.15;
+    animation: float 20s infinite ease-in-out;
+  }
+
+  .shape:nth-child(1) { 
+    width: 120px; 
+    height: 120px; 
+    background: var(--sunshine); 
+    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+    top: 10%; 
+    left: 5%; 
+    animation-delay: 0s;
+  }
+
+  .shape:nth-child(2) { 
+    width: 90px; 
+    height: 90px; 
+    background: var(--coral); 
+    border-radius: 50%;
+    top: 60%; 
+    left: 80%; 
+    animation-delay: 3s;
+  }
+
+  .shape:nth-child(3) { 
+    width: 150px; 
+    height: 150px; 
+    background: var(--grass-green); 
+    border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
+    bottom: 10%; 
+    right: 10%; 
+    animation-delay: 6s;
+  }
+
+  .shape:nth-child(4) { 
+    width: 100px; 
+    height: 100px; 
+    background: var(--lavender); 
+    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+    top: 30%; 
+    right: 20%; 
+    animation-delay: 9s;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(20px, -20px) rotate(5deg); }
+    50% { transform: translate(-15px, 15px) rotate(-5deg); }
+    75% { transform: translate(10px, -10px) rotate(3deg); }
+  }
+
+  .hero-section {
+    position: relative;
+    z-index: 1;
+    padding: 80px 20px;
+    text-align: center;
+    animation: fadeIn 0.8s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .hero-container {
+    max-width: 900px;
+    margin: 0 auto;
+    animation: slideUp 0.8s ease-out;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .hero-title {
+    font-size: 72px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--deep-blue), var(--lavender), var(--coral));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 24px;
+    letter-spacing: -2px;
+    line-height: 1.1;
+  }
+
+  .hero-description {
+    font-size: 20px;
+    color: #333;
+    line-height: 1.8;
+    margin-bottom: 40px;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero-description strong {
+    color: var(--deep-blue);
+    font-weight: 800;
+  }
+
+  .feature-badges {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 48px;
+    flex-wrap: wrap;
+  }
+
+  .feature-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 24px;
+    background: var(--white);
+    border-radius: 20px;
+    box-shadow: 0 4px 12px var(--shadow);
+    transition: all 0.3s ease;
+  }
+
+  .feature-badge:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px var(--shadow);
+  }
+
+  .badge-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+  }
+
+  .badge-dot.green { background: var(--grass-green); }
+  .badge-dot.blue { background: var(--deep-blue); }
+  .badge-dot.coral { background: var(--coral); }
+
+  .badge-text {
+    font-size: 16px;
+    font-weight: 700;
+    color: #333;
+  }
+
+  .hero-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .hero-btn {
+    padding: 20px 48px;
+    font-size: 20px;
+    font-weight: 700;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    box-shadow: 0 6px 20px var(--shadow);
+  }
+
+  .hero-btn:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 10px 30px var(--shadow);
+  }
+
+  .hero-btn:active {
+    transform: translateY(-2px) scale(1.02);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
+    color: var(--white);
+  }
+
+  .btn-secondary {
+    background: var(--white);
+    color: var(--deep-blue);
+    border: 3px solid var(--deep-blue);
+  }
+
+  .features-section {
+    position: relative;
+    z-index: 1;
+    padding: 80px 20px;
+  }
+
+  .features-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .section-header {
+    text-align: center;
+    margin-bottom: 60px;
+  }
+
+  .section-title {
+    font-size: 56px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--coral), var(--orange));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 20px;
+  }
+
+  .section-subtitle {
+    font-size: 20px;
+    color: #333;
+    max-width: 700px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 40px;
+  }
+
+  .feature-card {
+    background: var(--white);
+    border-radius: 25px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 8px 24px var(--shadow);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    animation: popUp 0.6s ease-out backwards;
+  }
+
+  .feature-card:nth-child(1) { animation-delay: 0.1s; }
+  .feature-card:nth-child(2) { animation-delay: 0.2s; }
+  .feature-card:nth-child(3) { animation-delay: 0.3s; }
+
+  @keyframes popUp {
+    from { transform: translateY(50px) scale(0.9); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+  }
+
+  .feature-card:hover {
+    transform: translateY(-12px) scale(1.02);
+    box-shadow: 0 16px 40px var(--shadow);
+  }
+
+  .feature-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin: 0 auto 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    box-shadow: 0 8px 24px var(--shadow);
+    transition: all 0.3s ease;
+  }
+
+  .feature-card:hover .feature-icon {
+    transform: scale(1.1) rotate(5deg);
+  }
+
+  .icon-blue {
+    background: linear-gradient(135deg, var(--deep-blue), var(--sky-blue));
+  }
+
+  .icon-green {
+    background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
+  }
+
+  .icon-coral {
+    background: linear-gradient(135deg, var(--coral), var(--orange));
+  }
+
+  .feature-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #333;
+    margin-bottom: 16px;
+  }
+
+  .feature-description {
+    font-size: 16px;
+    color: #666;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 768px) {
+    .hero-title {
+      font-size: 40px;
+    }
+
+    .hero-description {
+      font-size: 16px;
+    }
+
+    .section-title {
+      font-size: 36px;
+    }
+
+    .section-subtitle {
+      font-size: 16px;
+    }
+
+    .hero-buttons {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .hero-btn {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .features-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="bg-shapes">
+  <div class="shape"></div>
+  <div class="shape"></div>
+  <div class="shape"></div>
+  <div class="shape"></div>
+</div>
+
+<!-- Hero Section -->
+<section class="hero-section">
+  <div class="hero-container">
+    <h1 class="hero-title">Real-time FSL Recognition with Interactive Feedback!</h1>
+    
+    <p class="hero-description">
+      Learn Filipino Sign Language through an LSTM-based system 
+      that recognizes your gestures and gives real-time feedback. 
+      Watch <strong>demonstration videos</strong>, receive <strong>corrective guidance</strong>, 
+      and <strong>improve your sign language</strong> 
+      with every practice — all in one interactive learning platform!
+    </p>
+
+    <!-- Feature Badges -->
+    <div class="feature-badges">
+      <div class="feature-badge">
+        <div class="badge-dot green"></div>
+        <span class="badge-text">Real-time Recognition</span>
+      </div>
+      <div class="feature-badge">
+        <div class="badge-dot blue"></div>
+        <span class="badge-text">Instant Feedback</span>
+      </div>
+      <div class="feature-badge">
+        <div class="badge-dot coral"></div>
+        <span class="badge-text">Performance Tracking</span>
+      </div>
+    </div>
+
+    <!-- Hero Buttons -->
+    <div class="hero-buttons">
+      {% if session.get('authenticated') %}
+        <a class="hero-btn btn-primary" href="{{ url_for('tutor') }}">Start Learning</a>
+      {% else %}
+        <a class="hero-btn btn-primary" href="{{ url_for('login') }}">Start Learning</a>
+      {% endif %}
+      <a class="hero-btn btn-secondary" href="{{ url_for('about') }}">Learn More</a>
+    </div>
+  </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section">
+  <div class="features-container">
+    <div class="section-header">
+      <h2 class="section-title">Why Choose Our Platform?</h2>
+      <p class="section-subtitle">
+        Advanced technology meets accessibility to create the most effective FSL learning experience!
+      </p>
+    </div>
+
+    <div class="features-grid">
+      <!-- Feature 1: AI-Powered Recognition -->
+      <div class="feature-card">
+        <div class="feature-icon icon-blue"></div>
+        <h3 class="feature-title">AI-Powered Recognition</h3>
+        <p class="feature-description">
+          Advanced LSTM neural networks provide accurate and real-time gesture recognition.
+        </p>
+      </div>
+
+      <!-- Feature 2: Interactive Learning -->
+      <div class="feature-card">
+        <div class="feature-icon icon-green"></div>
+        <h3 class="feature-title">Interactive Learning</h3>
+        <p class="feature-description">
+          Dual-mode system with tutor mode for guided learning and activity mode for practical application and testing.
+        </p>
+      </div>
+
+      <!-- Feature 3: Performance Feedback -->
+      <div class="feature-card">
+        <div class="feature-icon icon-coral"></div>
+        <h3 class="feature-title">Performance Feedback</h3>
+        <p class="feature-description">
+          Real-time evaluation and corrective insights help you improve your sign language accuracy and enhance your learning progress.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,624 @@
+{% extends "base.html" %}
+{% block title %}Learn FSL - Interactive Learning Platform{% endblock %}
+{% block content %}
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :root {
+    --sunshine: #FFD93D;
+    --sky-blue: #4CC9F0;
+    --grass-green: #06D6A0;
+    --coral: #FF6B9D;
+    --lavender: #A78BFA;
+    --orange: #FF8C42;
+    --deep-blue: #4361EE;
+    --white: #FFFFFF;
+    --off-white: #FFF8F0;
+    --shadow: rgba(0, 0, 0, 0.15);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-weight: 600;
+    background: linear-gradient(135deg, #E0F4FF 0%, #FFE5EC 50%, #FFF4E0 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  .bg-shapes {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+  }
+
+  .shape {
+    position: absolute;
+    opacity: 0.15;
+    animation: float 20s infinite ease-in-out;
+  }
+
+  .shape:nth-child(1) { 
+    width: 120px; 
+    height: 120px; 
+    background: var(--sunshine); 
+    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+    top: 10%; 
+    left: 5%; 
+    animation-delay: 0s;
+  }
+
+  .shape:nth-child(2) { 
+    width: 90px; 
+    height: 90px; 
+    background: var(--coral); 
+    border-radius: 50%;
+    top: 60%; 
+    left: 80%; 
+    animation-delay: 3s;
+  }
+
+  .shape:nth-child(3) { 
+    width: 150px; 
+    height: 150px; 
+    background: var(--grass-green); 
+    border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
+    bottom: 10%; 
+    right: 10%; 
+    animation-delay: 6s;
+  }
+
+  .shape:nth-child(4) { 
+    width: 100px; 
+    height: 100px; 
+    background: var(--lavender); 
+    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+    top: 30%; 
+    right: 20%; 
+    animation-delay: 9s;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(20px, -20px) rotate(5deg); }
+    50% { transform: translate(-15px, 15px) rotate(-5deg); }
+    75% { transform: translate(10px, -10px) rotate(3deg); }
+  }
+
+  .page-container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    min-height: 100vh;
+    padding: 40px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+    gap: 20px;
+    animation: slideDown 0.6s ease-out;
+  }
+
+  @keyframes slideDown {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .header-info h1 {
+    font-size: 48px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+
+  .header-info p {
+    font-size: 16px;
+    color: #666;
+    line-height: 1.6;
+  }
+
+  .new-challenge-btn {
+    padding: 16px 32px;
+    background: linear-gradient(135deg, var(--orange), var(--sunshine));
+    color: var(--white);
+    border: none;
+    border-radius: 20px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(255, 140, 66, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .new-challenge-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(255, 140, 66, 0.4);
+  }
+
+  .target-card {
+    background: linear-gradient(135deg, var(--orange), var(--sunshine));
+    color: var(--white);
+    padding: 40px;
+    border-radius: 25px;
+    text-align: center;
+    margin-bottom: 40px;
+    box-shadow: 0 8px 24px var(--shadow);
+    animation: scaleIn 0.6s ease-out 0.2s backwards;
+  }
+
+  @keyframes scaleIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .target-label {
+    font-size: 16px;
+    opacity: 0.9;
+    margin-bottom: 12px;
+    font-weight: 700;
+  }
+
+  .target-phrase {
+    font-size: 48px;
+    font-weight: 900;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .camera-section {
+    background: var(--white);
+    border-radius: 25px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 24px var(--shadow);
+    animation: scaleIn 0.6s ease-out 0.4s backwards;
+  }
+
+  .camera-label {
+    font-size: 18px;
+    color: #666;
+    margin-bottom: 16px;
+    font-weight: 700;
+  }
+
+  #cam {
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+    border-radius: 20px;
+    background: #000;
+    box-shadow: 0 4px 16px var(--shadow);
+  }
+
+  .controls-section {
+    margin-bottom: 30px;
+    animation: fadeIn 0.6s ease-out 0.6s backwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .button-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .control-btn {
+    flex: 1;
+    padding: 16px;
+    border: none;
+    border-radius: 15px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px var(--shadow);
+  }
+
+  .control-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px var(--shadow);
+  }
+
+  .start-cam-btn {
+    background: linear-gradient(135deg, var(--deep-blue), var(--sky-blue));
+    color: var(--white);
+  }
+
+  .start-rec-btn {
+    background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
+    color: var(--white);
+  }
+
+  .stop-btn {
+    background: linear-gradient(135deg, var(--coral), var(--orange));
+    color: var(--white);
+    width: 100%;
+  }
+
+  .demo-section {
+    background: var(--off-white);
+    border-radius: 20px;
+    padding: 24px;
+    border: 3px dashed #DDD;
+    animation: fadeIn 0.6s ease-out 0.8s backwards;
+  }
+
+  .demo-summary {
+    color: #666;
+    cursor: pointer;
+    padding: 8px;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .demo-content {
+    margin-top: 20px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .demo-select, .demo-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 12px 16px;
+    border: 2px solid var(--grass-green);
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .demo-btn {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--lavender), var(--deep-blue));
+    color: var(--white);
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(167, 139, 250, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .demo-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(167, 139, 250, 0.4);
+  }
+
+  .feedback-section {
+    background: var(--white);
+    border-radius: 25px;
+    padding: 40px;
+    box-shadow: 0 8px 24px var(--shadow);
+    animation: fadeIn 0.6s ease-out 1s backwards;
+  }
+
+  .feedback-title {
+    font-size: 32px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--deep-blue), var(--sky-blue));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 24px;
+  }
+
+  .feedback-box {
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 24px;
+    font-size: 18px;
+    font-weight: 700;
+    display: none;
+  }
+
+  .feedback-box.success {
+    background: linear-gradient(135deg, rgba(6, 214, 160, 0.2), rgba(76, 201, 240, 0.2));
+    color: var(--grass-green);
+    border: 3px solid var(--grass-green);
+  }
+
+  .feedback-box.danger {
+    background: linear-gradient(135deg, rgba(255, 107, 157, 0.2), rgba(255, 140, 66, 0.2));
+    color: var(--coral);
+    border: 3px solid var(--coral);
+  }
+
+  .reteach-section {
+    display: none;
+  }
+
+  .reteach-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--deep-blue);
+    margin-bottom: 20px;
+  }
+
+  .video-container {
+    background: #000;
+    border-radius: 20px;
+    padding: 16px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 16px var(--shadow);
+  }
+
+  #reteachVideo {
+    width: 100%;
+    border-radius: 15px;
+  }
+
+  .steps-container {
+    background: var(--off-white);
+    padding: 24px;
+    border-radius: 20px;
+    border: 3px dashed #DDD;
+  }
+
+  .steps-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--deep-blue);
+    margin-bottom: 16px;
+  }
+
+  #reteachSteps {
+    margin: 0;
+    padding-left: 24px;
+  }
+
+  #reteachSteps li {
+    font-size: 16px;
+    color: #666;
+    line-height: 1.8;
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 768px) {
+    .header-info h1 {
+      font-size: 32px;
+    }
+
+    .target-phrase {
+      font-size: 32px;
+    }
+
+    #cam {
+      height: 300px;
+    }
+
+    .button-row {
+      flex-direction: column;
+    }
+
+    .demo-content {
+      flex-direction: column;
+    }
+  }
+</style>
+
+<div class="bg-shapes">
+  <div class="shape"></div>
+  <div class="shape"></div>
+  <div class="shape"></div>
+  <div class="shape"></div>
+</div>
+
+<div class="page-container">
+  <!-- Header Section -->
+  <div class="header-section">
+    <div class="header-info">
+      <h1>🎯 Practice & Evaluate</h1>
+      <p>Practice signing the phrase shown below using your camera, then get AI-powered feedback and guidance!</p>
+    </div>
+    <button id="nextChallenge" class="new-challenge-btn">🎲 New Challenge</button>
+  </div>
+
+  <!-- Target Phrase Card -->
+  <div class="target-card">
+    <div class="target-label">Target Phrase:</div>
+    <div class="target-phrase" id="targetPhrase">Loading...</div>
+  </div>
+
+  <!-- Camera Section -->
+  <div class="camera-section">
+    <div class="camera-label">📹 Live Camera</div>
+    <video id="cam" autoplay muted playsinline></video>
+  </div>
+
+  <!-- Control Buttons -->
+  <div class="controls-section">
+    <div class="button-row">
+      <button id="startCam" class="control-btn start-cam-btn">📷 Start Camera</button>
+      <button id="startRec" class="control-btn start-rec-btn">⏺️ Start Recording</button>
+    </div>
+    <button id="stopRec" class="control-btn stop-btn">⏹️ Stop & Evaluate</button>
+  </div>
+
+  <!-- Demo Mode Section -->
+  <details class="demo-section">
+    <summary class="demo-summary">🤔 No camera? Try manual input (Demo Mode)</summary>
+    <div class="demo-content">
+      <select id="attemptPick" class="demo-select"></select>
+      <input id="attemptManual" class="demo-input" placeholder="Type your attempt..." />
+      <button id="assessManual" class="demo-btn">✨ Assess</button>
+    </div>
+  </details>
+</div>
+
+<!-- Feedback Section -->
+<div class="page-container">
+  <div class="feedback-section" id="feedbackSec">
+    <h2 class="feedback-title">📊 Performance Feedback</h2>
+
+    <div id="feedbackBox" class="feedback-box"></div>
+
+    <div id="reteach" class="reteach-section">
+      <h3 class="reteach-title">🎓 Learn the Correct Sign</h3>
+
+      <div class="video-container">
+        <video id="reteachVideo" controls></video>
+      </div>
+
+      <div class="steps-container">
+        <h4 class="steps-title">📝 Correct Steps:</h4>
+        <ol id="reteachSteps"></ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const PHRASES = [];
+  const phraseButtons = document.getElementById("phraseButtons");
+  const teachVideo = document.getElementById("teachVideo");
+  const teachSteps = document.getElementById("teachSteps");
+
+  const targetEl = document.getElementById("targetPhrase");
+  const cam = document.getElementById("cam");
+  const startCamBtn = document.getElementById("startCam");
+  const startRecBtn = document.getElementById("startRec");
+  const stopRecBtn = document.getElementById("stopRec");
+
+  const attemptPick = document.getElementById("attemptPick");
+  const attemptManual = document.getElementById("attemptManual");
+  const assessManualBtn = document.getElementById("assessManual");
+
+  const feedbackBox = document.getElementById("feedbackBox");
+  const reteach = document.getElementById("reteach");
+  const reteachVideo = document.getElementById("reteachVideo");
+  const reteachSteps = document.getElementById("reteachSteps");
+
+  let mediaStream = null;
+  let frames = [];
+  let target = "";
+
+  // Load random challenge
+  loadRandom();
+  async function loadRandom(){
+    try {
+      const response = await fetch("/api/random");
+      const data = await response.json();
+      target = data.phrase;
+      if (targetEl) {
+        targetEl.textContent = data.phrase;
+      }
+    } catch (e) {
+      console.error("Failed to load random phrase:", e);
+      if (targetEl) {
+        targetEl.textContent = "how are you";
+      }
+      target = "how are you";
+    }
+  }
+
+  // New challenge button
+  if (document.getElementById("nextChallenge")) {
+    document.getElementById("nextChallenge").onclick = loadRandom;
+  }
+
+  // Camera functions
+  startCamBtn.onclick = async ()=>{
+    document.body.classList.add('camera-running');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert("Camera access is not supported in this browser or context. Please ensure the site is served over HTTPS or use the demo mode below.");
+      return;
+    }
+    try {
+      mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      cam.srcObject = mediaStream;
+    } catch(e) {
+      alert("Could not access camera: " + e.message + ". Try using the demo mode instead.");
+    }
+  };
+
+  // Recording functions
+  startRecBtn.onclick = ()=>{
+    frames = [];
+    if(!mediaStream) return;
+    const track = mediaStream.getVideoTracks()[0];
+    const capture = new ImageCapture(track);
+    let count = 0;
+
+    const grabFrame = async ()=>{
+      try {
+        const bmp = await capture.grabFrame();
+        const canvas = document.createElement("canvas");
+        canvas.width = 320; canvas.height = 180;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(bmp, 0, 0, 320, 180);
+        frames.push(canvas.toDataURL("image/jpeg", 0.6));
+        count++;
+        if(count < 8) setTimeout(grabFrame, 200);
+      } catch(e) { console.warn(e); }
+    };
+    grabFrame();
+  };
+
+  // Stop and evaluate
+  stopRecBtn.onclick = async ()=>{
+    const body = { target, frames };
+    const res = await fetch("/api/assess", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    }).then(r=>r.json());
+    showFeedback(res);
+  };
+
+  // Manual assessment
+  assessManualBtn.onclick = async ()=>{
+    const attempt = attemptManual.value.trim() || attemptPick.value;
+    const res = await fetch("/api/assess", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target, attempt_text: attempt })
+    }).then(r=>r.json());
+    showFeedback(res);
+  };
+
+  // Show feedback
+  function showFeedback(res){
+    feedbackBox.style.display = "block";
+    if(res.correct){
+      feedbackBox.className = "feedback-box success";
+      feedbackBox.innerHTML = "✅ Correct! Great job!";
+      reteach.style.display = "none";
+    } else {
+      feedbackBox.className = "feedback-box danger";
+      feedbackBox.innerHTML = `❌ Incorrect. Target: ${res.target}<br>${(res.hints||[]).join(" ")}`;
+      reteach.style.display = "block";
+      reteachVideo.src = (res.teach && res.teach.video) || "";
+      reteachSteps.innerHTML = "";
+      (res.teach && res.teach.steps || []).forEach(s=>{
+        const li = document.createElement("li");
+        li.textContent = s;
+        reteachSteps.appendChild(li);
+      });
+    }
+  }
+  window.addEventListener('beforeunload', ()=>{document.body.classList.remove('camera-running'); if(mediaStream){mediaStream.getTracks().forEach(t=>t.stop());}});
+</script>
+
+{% endblock %}

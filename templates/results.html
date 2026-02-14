@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+{% block title %}Results – FSL Learning{% endblock %}
+{% block content %}
+
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  :root{--sunshine:#FFD93D;--sky-blue:#4CC9F0;--grass-green:#06D6A0;--coral:#FF6B9D;--lavender:#A78BFA;--orange:#FF8C42;--deep-blue:#4361EE;--white:#FFFFFF;--off-white:#FFF8F0;--shadow:rgba(0,0,0,0.15);}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-weight:600;background:linear-gradient(135deg,#E0F4FF 0%,#FFE5EC 50%,#FFF4E0 100%);background-attachment:fixed;min-height:100vh;position:relative;}
+  .bg-shapes{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+  .shape{position:absolute;opacity:.15;animation:float 20s infinite ease-in-out}
+  .shape:nth-child(1){width:120px;height:120px;background:var(--sunshine);border-radius:30% 70% 70% 30%/30% 30% 70% 70%;top:10%;left:5%;animation-delay:0s}
+  .shape:nth-child(2){width:90px;height:90px;background:var(--coral);border-radius:50%;top:60%;left:80%;animation-delay:3s}
+  .shape:nth-child(3){width:150px;height:150px;background:var(--grass-green);border-radius:63% 37% 54% 46%/55% 48% 52% 45%;bottom:10%;right:10%;animation-delay:6s}
+  .shape:nth-child(4){width:100px;height:100px;background:var(--lavender);border-radius:30% 70% 70% 30%/30% 30% 70% 70%;top:30%;right:20%;animation-delay:9s}
+  @keyframes float{0%,100%{transform:translate(0,0) rotate(0deg)}25%{transform:translate(20px,-20px) rotate(5deg)}50%{transform:translate(-15px,15px) rotate(-5deg)}75%{transform:translate(10px,-10px) rotate(3deg)}}
+
+  .app-container{position:relative;z-index:1;width:100%;min-height:calc(100vh - 80px);display:flex;flex-direction:column;padding:20px;gap:20px}
+  .header{display:flex;justify-content:space-between;align-items:center;background:var(--white);padding:15px 25px;border-radius:30px;box-shadow:0 8px 24px var(--shadow);animation:slideDown .6s ease-out}
+  @keyframes slideDown{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}
+  .logo-wrap{display:flex;flex-direction:column;gap:2px}
+  .logo{font-size:28px;font-weight:700;background:linear-gradient(135deg,var(--deep-blue),var(--lavender),var(--coral));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-1px}
+  .sub{font-size:14px;color:#777;font-weight:700}
+  .status-badge{padding:12px 22px;background:linear-gradient(135deg,var(--grass-green),var(--sky-blue));color:var(--white);border-radius:20px;font-weight:800;font-size:16px;box-shadow:0 4px 12px rgba(6,214,160,.25)}
+
+  .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:20px;flex:1;min-height:0}
+  @media(max-width:1024px){.grid{grid-template-columns:1fr}}
+
+  .card{background:var(--white);border-radius:25px;padding:22px;box-shadow:0 8px 24px var(--shadow)}
+  .card-title{font-size:16px;font-weight:800;color:#666;margin-bottom:12px}
+
+  .stats-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+  @media(max-width:1024px){.stats-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .stat{background:rgba(250,250,255,.8);border:2px solid rgba(255,255,255,.7);border-radius:18px;padding:14px}
+  .stat .k{font-size:12px;color:#888;font-weight:800}
+  .stat .v{font-size:28px;font-weight:900;background:linear-gradient(135deg,var(--deep-blue),var(--lavender));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;margin-top:6px}
+
+  .table-wrap{background:var(--off-white);border-radius:18px;padding:12px;border:3px dashed #DDD;overflow:auto;max-height:520px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:10px 8px;text-align:left;border-bottom:1px solid rgba(0,0,0,.06)}
+  th{position:sticky;top:0;background:rgba(255,255,255,.9);backdrop-filter:blur(8px);font-weight:900;color:#666;z-index:2}
+  .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;font-weight:900;font-size:12px}
+  .pill.ok{background:rgba(6,214,160,.15);color:#057a61}
+  .pill.bad{background:rgba(255,107,157,.15);color:#b0234c}
+  .mini{font-size:12px;color:#777;font-weight:700}
+
+  .section-gap{display:flex;flex-direction:column;gap:20px;min-height:0}
+
+  .empty{padding:16px;border-radius:16px;background:rgba(255,255,255,.75);border:2px dashed #DDD;color:#777;font-weight:800}
+
+  .btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+  .btn{appearance:none;border:none;cursor:pointer;padding:12px 16px;border-radius:16px;font-weight:900;color:var(--white);box-shadow:0 6px 20px var(--shadow)}
+  .btn.primary{background:linear-gradient(135deg,var(--deep-blue),var(--lavender))}
+  .btn.secondary{background:linear-gradient(135deg,var(--orange),var(--sunshine))}
+</style>
+
+<div class="bg-shapes">
+  <div class="shape"></div><div class="shape"></div><div class="shape"></div><div class="shape"></div>
+</div>
+
+<div class="app-container">
+  <div class="header">
+    <div class="logo-wrap">
+      <div class="logo">[FSL] Results</div>
+      <div class="sub">Progress & history for {{ session.get('username','student') }}</div>
+    </div>
+    <div class="status-badge" id="todayBadge">Loading…</div>
+  </div>
+
+  <div class="grid">
+    <div class="section-gap">
+      <div class="card">
+        <div class="card-title">Quick stats</div>
+        <div class="stats-row">
+          <div class="stat"><div class="k">Total attempts</div><div class="v" id="statTotal">0</div></div>
+          <div class="stat"><div class="k">Correct</div><div class="v" id="statCorrect">0</div></div>
+          <div class="stat"><div class="k">Incorrect</div><div class="v" id="statIncorrect">0</div></div>
+          <div class="stat"><div class="k">Streak (days)</div><div class="v" id="statStreak">0</div></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" id="exportBtn" type="button">⬇️ Export (JSON)</button>
+          <!-- If you want a clear button later, add a server endpoint and re-enable it. -->
+        </div>
+        <div class="mini" style="margin-top:10px;">Records are stored in your local PostgreSQL database. No internet needed.</div>
+      </div>
+
+      <div class="card" style="min-height:0;">
+        <div class="card-title">Latest attempts</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:130px;">Time</th>
+                <th>Result</th>
+                <th style="width:140px;">Confidence</th>
+                <th style="width:140px;">Source</th>
+              </tr>
+            </thead>
+            <tbody id="logBody">
+              <tr><td colspan="4"><div class="empty">No records yet. Try signing in Select or Activity!</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-gap">
+      <div class="card">
+        <div class="card-title">Today summary</div>
+        <div class="mini" id="todaySummary">—</div>
+        <div style="height:12px"></div>
+        <div class="stats-row" style="grid-template-columns:repeat(2,minmax(0,1fr));">
+          <div class="stat"><div class="k">Most common</div><div class="v" id="statCommon" style="font-size:22px;">—</div></div>
+          <div class="stat"><div class="k">Best confidence</div><div class="v" id="statBest">—</div></div>
+        </div>
+      </div>
+
+      <div class="card" style="min-height:0;">
+        <div class="card-title">Daily activity (last 14 days)</div>
+        <div class="table-wrap" style="max-height:520px;">
+          <table>
+            <thead><tr><th style="width:140px;">Date</th><th>Attempts</th><th>Correct</th><th>Incorrect</th></tr></thead>
+            <tbody id="dailyBody">
+              <tr><td colspan="4"><div class="empty">No daily data yet.</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const raw = {{ (db_results_json or '[]')|safe }};
+
+  const fmtTime = (iso) => {
+    if(!iso) return '—';
+    try{
+      const d = new Date(iso);
+      return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    }catch(e){return '—';}
+  };
+  const fmtDate = (iso) => {
+    if(!iso) return '—';
+    try{
+      const d = new Date(iso);
+      return d.toLocaleDateString(undefined, {year:'numeric', month:'short', day:'2-digit'});
+    }catch(e){return '—';}
+  };
+  const dateKey = (iso) => {
+    if(!iso) return null;
+    const d = new Date(iso);
+    if(isNaN(d)) return null;
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  };
+  const isCorrect = (label) => {
+    if(!label) return false;
+    return String(label) !== 'Incorrect';
+  };
+
+  // Build log table
+  const logBody = document.getElementById('logBody');
+  const dailyBody = document.getElementById('dailyBody');
+
+  const statTotal = document.getElementById('statTotal');
+  const statCorrect = document.getElementById('statCorrect');
+  const statIncorrect = document.getElementById('statIncorrect');
+  const statStreak = document.getElementById('statStreak');
+  const statCommon = document.getElementById('statCommon');
+  const statBest = document.getElementById('statBest');
+  const todayBadge = document.getElementById('todayBadge');
+  const todaySummary = document.getElementById('todaySummary');
+
+  const exportBtn = document.getElementById('exportBtn');
+  // Optional: clear button can be added later with a server endpoint.
+
+  const rows = Array.isArray(raw) ? raw : [];
+
+  const total = rows.length;
+  const correct = rows.filter(r => isCorrect(r.label)).length;
+  const incorrect = total - correct;
+
+  statTotal.textContent = total;
+  statCorrect.textContent = correct;
+  statIncorrect.textContent = incorrect;
+
+  // Latest log
+  if(total){
+    logBody.innerHTML = '';
+    rows.slice(0,200).forEach(r => {
+      const tr = document.createElement('tr');
+      const ok = isCorrect(r.label);
+      const pill = ok
+        ? `<span class="pill ok">✓ ${escapeHtml(r.label||'—')}</span>`
+        : `<span class="pill.bad pill bad">✗ Incorrect</span>`;
+      tr.innerHTML = `
+        <td>${fmtTime(r.created_at)}</td>
+        <td>${pill}</td>
+        <td>${(typeof r.confidence==='number') ? (r.confidence*100).toFixed(1)+'%' : '—'}</td>
+        <td>${escapeHtml(r.source||'—')}</td>
+      `;
+      logBody.appendChild(tr);
+    });
+  }
+
+  // Daily aggregation (14 days)
+  const byDay = new Map();
+  const byDayCorrect = new Map();
+  const byDayIncorrect = new Map();
+  const todayK = (() => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  })();
+
+  const labelCountsToday = new Map();
+  let bestConfToday = null;
+
+  rows.forEach(r => {
+    const k = dateKey(r.created_at);
+    if(!k) return;
+    byDay.set(k, (byDay.get(k)||0)+1);
+
+    if(isCorrect(r.label)){
+      byDayCorrect.set(k, (byDayCorrect.get(k)||0)+1);
+    }else{
+      byDayIncorrect.set(k, (byDayIncorrect.get(k)||0)+1);
+    }
+
+    if(k===todayK){
+      const lab = String(r.label||'—');
+      labelCountsToday.set(lab, (labelCountsToday.get(lab)||0)+1);
+      if(typeof r.confidence==='number'){
+        bestConfToday = (bestConfToday===null) ? r.confidence : Math.max(bestConfToday, r.confidence);
+      }
+    }
+  });
+
+  // Render last 14 days table (including days with 0)
+  const days = [];
+  for(let i=13;i>=0;i--){
+    const d = new Date();
+    d.setDate(d.getDate()-i);
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    const k = `${y}-${m}-${day}`;
+    days.push({k, label: d.toLocaleDateString(undefined,{month:'short',day:'2-digit'})});
+  }
+
+  dailyBody.innerHTML = '';
+  days.forEach(({k,label}) => {
+    const a = byDay.get(k)||0;
+    const c = byDayCorrect.get(k)||0;
+    const ic = byDayIncorrect.get(k)||0;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${label}</td><td>${a}</td><td>${c}</td><td>${ic}</td>`;
+    dailyBody.appendChild(tr);
+  });
+
+  // Streak: count consecutive days back from today with any attempts
+  let streak=0;
+  for(let i=0;i<365;i++){
+    const d = new Date();
+    d.setDate(d.getDate()-i);
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    const k = `${y}-${m}-${day}`;
+    if((byDay.get(k)||0) > 0) streak++;
+    else break;
+  }
+  statStreak.textContent = streak;
+
+  // Today summary
+  const todayAttempts = byDay.get(todayK)||0;
+  const todayCorrect = byDayCorrect.get(todayK)||0;
+  const todayIncorrect = byDayIncorrect.get(todayK)||0;
+  todayBadge.textContent = todayAttempts ? `Today: ${todayCorrect}✓ / ${todayIncorrect}✗` : 'No attempts today';
+
+  const mostCommon = (() => {
+    let best=null, bestN=0;
+    for(const [lab,n] of labelCountsToday.entries()){
+      if(n>bestN){bestN=n;best=lab;}
+    }
+    return best;
+  })();
+
+  statCommon.textContent = mostCommon ? mostCommon : '—';
+  statBest.textContent = (bestConfToday===null) ? '—' : (bestConfToday*100).toFixed(1)+'%';
+  todaySummary.textContent = todayAttempts
+    ? `You made ${todayAttempts} attempts today. Keep going!`
+    : `No entries today yet. Do a few reps in Select or Activity.`;
+
+  exportBtn.onclick = () => {
+    const blob = new Blob([JSON.stringify(rows,null,2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'fsl_results_export.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  function escapeHtml(str){
+    return String(str)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;');
+  }
+})();
+</script>
+
+{% endblock %}

@@ -1,0 +1,1158 @@
+{
+    "report_meta": {
+        "scan_target": "files",
+        "scanned": [
+            "requirements.txt"
+        ],
+        "scanned_full_path": [
+            "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+        ],
+        "target_languages": [
+            "python"
+        ],
+        "policy_file": null,
+        "policy_file_source": "local",
+        "audit_and_monitor": false,
+        "api_key": false,
+        "account": "",
+        "local_database_path": null,
+        "safety_version": "3.6.2",
+        "timestamp": "2025-11-03 01:43:26",
+        "packages_found": 3,
+        "vulnerabilities_found": 0,
+        "vulnerabilities_ignored": 22,
+        "remediations_recommended": 0,
+        "telemetry": {
+            "safety_options": {
+                "files": {
+                    "--file": 1
+                },
+                "output": {
+                    "--output": 1
+                },
+                "save_json": {
+                    "--save-json": 1
+                }
+            },
+            "safety_version": "3.6.2",
+            "safety_source": "cli",
+            "os_type": "Windows",
+            "os_release": "11",
+            "os_description": "Windows-11-10.0.26200-SP0",
+            "python_version": "3.12.10",
+            "safety_command": "check"
+        },
+        "git": {
+            "error": "not-git-repo"
+        },
+        "project": null,
+        "json_version": "1.1",
+        "remediations_attempted": 0,
+        "remediations_completed": 0,
+        "remediation_mode": "NON_INTERACTIVE"
+    },
+    "scanned_packages": {
+        "flask": {
+            "name": "flask",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "flask",
+                    "extras": [],
+                    "marker": null,
+                    "name": "flask",
+                    "specifier": ">=0",
+                    "url": null,
+                    "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+                }
+            ]
+        },
+        "torch": {
+            "name": "torch",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "torch",
+                    "extras": [],
+                    "marker": null,
+                    "name": "torch",
+                    "specifier": ">=0",
+                    "url": null,
+                    "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+                }
+            ]
+        },
+        "numpy": {
+            "name": "numpy",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "numpy",
+                    "extras": [],
+                    "marker": null,
+                    "name": "numpy",
+                    "specifier": ">=0",
+                    "url": null,
+                    "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+                }
+            ]
+        }
+    },
+    "affected_packages": {
+        "numpy": {
+            "name": "numpy",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "numpy",
+                    "extras": [],
+                    "marker": null,
+                    "name": "numpy",
+                    "specifier": ">=0",
+                    "url": null,
+                    "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+                }
+            ],
+            "found": null,
+            "insecure_versions": [
+                "0.9.6",
+                "0.9.8",
+                "1.0",
+                "1.0.3",
+                "1.0.4",
+                "1.0b1",
+                "1.0b4",
+                "1.0b5",
+                "1.0rc1",
+                "1.0rc2",
+                "1.0rc3",
+                "1.10.0",
+                "1.10.1",
+                "1.10.2",
+                "1.10.3",
+                "1.10.4",
+                "1.1.1",
+                "1.11.0",
+                "1.11.1",
+                "1.11.2",
+                "1.11.3",
+                "1.12.0",
+                "1.12.1",
+                "1.13.0",
+                "1.13.1",
+                "1.13.3",
+                "1.14.0",
+                "1.14.1",
+                "1.14.2",
+                "1.14.3",
+                "1.14.4",
+                "1.14.5",
+                "1.14.6",
+                "1.15.0",
+                "1.15.1",
+                "1.15.2",
+                "1.15.3",
+                "1.15.4",
+                "1.16.0",
+                "1.16.1",
+                "1.16.2",
+                "1.16.3",
+                "1.16.4",
+                "1.16.5",
+                "1.16.6",
+                "1.17.0",
+                "1.17.1",
+                "1.17.2",
+                "1.17.3",
+                "1.17.4",
+                "1.17.5",
+                "1.18.0",
+                "1.18.1",
+                "1.18.2",
+                "1.18.3",
+                "1.18.4",
+                "1.18.5",
+                "1.19.0",
+                "1.19.1",
+                "1.19.2",
+                "1.19.3",
+                "1.19.4",
+                "1.19.5",
+                "1.2.0",
+                "1.20.0",
+                "1.20.1",
+                "1.20.2",
+                "1.20.3",
+                "1.2.1",
+                "1.21.0",
+                "1.21.1",
+                "1.21.2",
+                "1.21.3",
+                "1.21.4",
+                "1.21.5",
+                "1.21.6",
+                "1.22.0",
+                "1.22.1",
+                "1.3.0",
+                "1.4.0",
+                "1.4.1",
+                "1.5.0",
+                "1.5.1",
+                "1.6.0",
+                "1.6.1",
+                "1.6.2",
+                "1.7.0",
+                "1.7.1",
+                "1.7.2",
+                "1.8.0",
+                "1.8.1",
+                "1.8.2",
+                "1.9.0",
+                "1.9.1",
+                "1.9.2",
+                "1.9.3"
+            ],
+            "secure_versions": [
+                "2.3.4",
+                "2.3.3",
+                "2.3.2",
+                "2.3.1",
+                "2.3.0",
+                "2.2.6",
+                "2.2.5",
+                "2.2.4",
+                "2.2.3",
+                "2.2.2",
+                "2.2.1",
+                "2.2.0",
+                "2.1.3",
+                "2.1.2",
+                "2.1.1",
+                "2.1.0",
+                "2.0.2",
+                "2.0.1",
+                "2.0.0",
+                "1.26.4",
+                "1.26.3",
+                "1.26.2",
+                "1.26.1",
+                "1.26.0",
+                "1.25.2",
+                "1.25.1",
+                "1.25.0",
+                "1.24.4",
+                "1.24.3",
+                "1.24.2",
+                "1.24.1",
+                "1.24.0",
+                "1.23.5",
+                "1.23.4",
+                "1.23.3",
+                "1.23.2",
+                "1.23.1",
+                "1.23.0",
+                "1.22.4",
+                "1.22.3",
+                "1.22.2"
+            ],
+            "latest_version_without_known_vulnerabilities": "2.3.4",
+            "latest_version": "2.3.4",
+            "more_info_url": "https://data.safetycli.com/p/pypi/numpy/97c/"
+        },
+        "torch": {
+            "name": "torch",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "torch",
+                    "extras": [],
+                    "marker": null,
+                    "name": "torch",
+                    "specifier": ">=0",
+                    "url": null,
+                    "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+                }
+            ],
+            "found": null,
+            "insecure_versions": [
+                "1.0.0",
+                "1.0.1",
+                "1.1.0",
+                "1.10.0",
+                "1.10.1",
+                "1.10.2",
+                "1.11.0",
+                "1.12.0",
+                "1.12.1",
+                "1.13.0",
+                "1.13.1",
+                "1.2.0",
+                "1.3.0",
+                "1.3.1",
+                "1.4.0",
+                "1.5.0",
+                "1.5.1",
+                "1.6.0",
+                "1.7.0",
+                "1.7.1",
+                "1.8.0",
+                "1.8.1",
+                "1.9.0",
+                "1.9.1",
+                "2.0.0",
+                "2.0.1",
+                "2.1.0",
+                "2.1.1",
+                "2.1.2",
+                "2.2.0",
+                "2.2.1",
+                "2.2.2",
+                "2.3.0",
+                "2.3.1",
+                "2.4.0",
+                "2.4.1",
+                "2.5.0",
+                "2.5.1",
+                "2.6.0",
+                "2.7.0",
+                "2.7.1"
+            ],
+            "secure_versions": [
+                "2.9.0",
+                "2.8.0"
+            ],
+            "latest_version_without_known_vulnerabilities": "2.9.0",
+            "latest_version": "2.9.0",
+            "more_info_url": "https://data.safetycli.com/p/pypi/torch/97c/"
+        },
+        "flask": {
+            "name": "flask",
+            "version": null,
+            "requirements": [
+                {
+                    "raw": "flask",
+                    "extras": [],
+                    "marker": null,
+                    "name": "flask",
+                    "specifier": ">=0",
+                    "url": null,
+                    "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+                }
+            ],
+            "found": null,
+            "insecure_versions": [
+                "0.1",
+                "0.10",
+                "0.10.1",
+                "0.11",
+                "0.11.1",
+                "0.12",
+                "0.12.1",
+                "0.12.2",
+                "0.12.3",
+                "0.12.4",
+                "0.12.5",
+                "0.2",
+                "0.3",
+                "0.3.1",
+                "0.4",
+                "0.5",
+                "0.5.1",
+                "0.5.2",
+                "0.6",
+                "0.6.1",
+                "0.7",
+                "0.7.1",
+                "0.7.2",
+                "0.8",
+                "0.8.1",
+                "0.9",
+                "1.0",
+                "1.0.1",
+                "1.0.2",
+                "1.0.3",
+                "1.0.4",
+                "1.1.0",
+                "1.1.1",
+                "1.1.2",
+                "1.1.3",
+                "1.1.4",
+                "2.0.0",
+                "2.0.0rc1",
+                "2.0.0rc2",
+                "2.0.1",
+                "2.0.2",
+                "2.0.3",
+                "2.1.0",
+                "2.1.1",
+                "2.1.2",
+                "2.1.3",
+                "2.2.0",
+                "2.2.1",
+                "2.2.2",
+                "2.2.3",
+                "2.2.4",
+                "2.3.0",
+                "2.3.1",
+                "3.1.0"
+            ],
+            "secure_versions": [
+                "3.1.2",
+                "3.1.1",
+                "3.0.3",
+                "3.0.2",
+                "3.0.1",
+                "3.0.0",
+                "2.3.3",
+                "2.3.2",
+                "2.2.5"
+            ],
+            "latest_version_without_known_vulnerabilities": "3.1.2",
+            "latest_version": "3.1.2",
+            "more_info_url": "https://data.safetycli.com/p/pypi/flask/97c/"
+        }
+    },
+    "announcements": [
+        {
+            "type": "warning",
+            "message": "Warning: flask, torch and numpy are unpinned. Safety by default does not report on potential vulnerabilities in unpinned packages. It is recommended to pin your dependencies unless this is a library meant for distribution. To learn more about reporting these, specifier range handling, and options for scanning unpinned packages visit https://docs.pyup.io/docs/safety-range-specs"
+        }
+    ],
+    "vulnerabilities": [],
+    "ignored_vulnerabilities": [
+        {
+            "vulnerability_id": "44720",
+            "package_name": "numpy",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<1.13.2"
+            ],
+            "all_vulnerable_specs": [
+                "<1.13.2"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "numpy",
+                "extras": [],
+                "marker": null,
+                "name": "numpy",
+                "specifier": ">=0",
+                "url": null,
+                "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+            },
+            "advisory": "Numpy 1.13.2 includes a fix for CVE-2017-12852: The numpy.pad function in Numpy 1.13.1 and older versions is missing input validation. An empty list or ndarray will stick into an infinite loop, which can allow attackers to cause a DoS attack.\r\nhttps://github.com/numpy/numpy/issues/9560#issuecomment-322395292",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2017-12852",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/44720/97c"
+        },
+        {
+            "vulnerability_id": "44715",
+            "package_name": "numpy",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<1.22.2"
+            ],
+            "all_vulnerable_specs": [
+                "<1.22.2"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "numpy",
+                "extras": [],
+                "marker": null,
+                "name": "numpy",
+                "specifier": ">=0",
+                "url": null,
+                "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+            },
+            "advisory": "Numpy 1.22.2  includes a fix for CVE-2021-41495: Null Pointer Dereference vulnerability exists in numpy.sort in NumPy in the PyArray_DescrNew function due to missing return-value validation, which allows attackers to conduct DoS attacks by repetitively creating sort arrays. \r\nNOTE: While correct that validation is missing, an error can only occur due to an exhaustion of memory. If the user can exhaust memory, they are already privileged. Further, it should be practically impossible to construct an attack which can target the memory exhaustion to occur at exactly this place.\r\nNOTE2: The specs we include in this advisory differ from the publicly available on other sources. For example, the advisory posted by the NVD indicate that versions up to and including 1.19.0 are affected. However, research by Safety CLI Cybersecurity confirms that the vulnerability remained unaddressed until version 1.22.2.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2021-41495",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/44715/97c"
+        },
+        {
+            "vulnerability_id": "44717",
+            "package_name": "numpy",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<1.22.0"
+            ],
+            "all_vulnerable_specs": [
+                "<1.22.0"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "numpy",
+                "extras": [],
+                "marker": null,
+                "name": "numpy",
+                "specifier": ">=0",
+                "url": null,
+                "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+            },
+            "advisory": "Numpy 1.22.0 includes a fix for CVE-2021-34141: An incomplete string comparison in the numpy.core component in NumPy before 1.22.0 allows attackers to trigger slightly incorrect copying by constructing specific string objects. \r\nNOTE: the vendor states that this reported code behavior is \"completely harmless.\"\r\nhttps://github.com/numpy/numpy/issues/18993",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2021-34141",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/44717/97c"
+        },
+        {
+            "vulnerability_id": "44716",
+            "package_name": "numpy",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<1.22.0"
+            ],
+            "all_vulnerable_specs": [
+                "<1.22.0"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "numpy",
+                "extras": [],
+                "marker": null,
+                "name": "numpy",
+                "specifier": ">=0",
+                "url": null,
+                "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+            },
+            "advisory": "Numpy 1.22.0 includes a fix for CVE-2021-41496: Buffer overflow in the array_from_pyobj function of fortranobject.c, which allows attackers to conduct a Denial of Service attacks by carefully constructing an array with negative values. \r\nNOTE: The vendor does not agree this is a vulnerability; the negative dimensions can only be created by an already privileged user (or internally).\r\nhttps://github.com/numpy/numpy/issues/19000",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2021-41496",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/44716/97c"
+        },
+        {
+            "vulnerability_id": "43453",
+            "package_name": "numpy",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<1.21.0rc1"
+            ],
+            "all_vulnerable_specs": [
+                "<1.21.0rc1"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "numpy",
+                "extras": [],
+                "marker": null,
+                "name": "numpy",
+                "specifier": ">=0",
+                "url": null,
+                "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+            },
+            "advisory": "Numpy 1.21.0rc1 includes a fix for CVE-2021-33430: A Buffer Overflow vulnerability in the PyArray_NewFromDescr_int function of ctors.c when specifying arrays of large dimensions (over 32) from Python code, which could let a malicious user cause a Denial of Service. \r\nNOTE: The vendor does not agree this is a vulnerability. In (very limited) circumstances a user may be able provoke the buffer overflow, the user is most likely already privileged to at least provoke denial of service by exhausting memory. Triggering this further requires the use of uncommon API (complicated structured dtypes), which is very unlikely to be available to an unprivileged user.\r\nhttps://github.com/numpy/numpy/issues/18939",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2021-33430",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/43453/97c"
+        },
+        {
+            "vulnerability_id": "44719",
+            "package_name": "numpy",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<1.8.1"
+            ],
+            "all_vulnerable_specs": [
+                "<1.8.1"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "numpy",
+                "extras": [],
+                "marker": null,
+                "name": "numpy",
+                "specifier": ">=0",
+                "url": null,
+                "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+            },
+            "advisory": "Numpy 1.8.1 includes a fix for CVE-2014-1858: __init__.py in f2py in NumPy before 1.8.1 allows local users to write to arbitrary files via a symlink attack on a temporary file.\r\nhttps://github.com/numpy/numpy/commit/0bb46c1448b0d3f5453d5182a17ea7ac5854ee15",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2014-1858",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/44719/97c"
+        },
+        {
+            "vulnerability_id": "34726",
+            "package_name": "numpy",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<1.8.1"
+            ],
+            "all_vulnerable_specs": [
+                "<1.8.1"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "numpy",
+                "extras": [],
+                "marker": null,
+                "name": "numpy",
+                "specifier": ">=0",
+                "url": null,
+                "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+            },
+            "advisory": "Numpy 1.8.1 includes a fix for CVE-2014-1859: (1) core/tests/test_memmap.py, (2) core/tests/test_multiarray.py, (3) f2py/f2py2e.py, and (4) lib/tests/test_io.py in NumPy before 1.8.1 allow local users to write to arbitrary files via a symlink attack on a temporary file.\r\nhttps://github.com/numpy/numpy/pull/4262",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2014-1859",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/34726/97c"
+        },
+        {
+            "vulnerability_id": "36810",
+            "package_name": "numpy",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<1.16.3"
+            ],
+            "all_vulnerable_specs": [
+                "<1.16.3"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "numpy",
+                "extras": [],
+                "marker": null,
+                "name": "numpy",
+                "specifier": ">=0",
+                "url": null,
+                "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+            },
+            "advisory": "*Disputed* Numpy 1.16.3 includes a fix for CVE-2019-6446: It uses the pickle Python module unsafely, which allows remote attackers to execute arbitrary code via a crafted serialized object, as demonstrated by a numpy.load call.\r\nNOTE: Third parties dispute this issue because it is  a behavior that might have legitimate applications in (for example) loading serialized Python object arrays from trusted and authenticated  sources.\r\nhttps://github.com/numpy/numpy/commit/89b688732b37616c9d26623f81aaee1703c30ffb",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2019-6446",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/36810/97c"
+        },
+        {
+            "vulnerability_id": "78828",
+            "package_name": "torch",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<2.7.1-rc1"
+            ],
+            "all_vulnerable_specs": [
+                "<2.7.1-rc1"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "torch",
+                "extras": [],
+                "marker": null,
+                "name": "torch",
+                "specifier": ">=0",
+                "url": null,
+                "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+            },
+            "advisory": "Affected versions of the PyTorch package are vulnerable to Denial of Service (DoS) due to improper handling in the MKLDNN pooling implementation. The torch.mkldnn_max_pool2d function fails to properly validate input parameters, allowing crafted inputs to trigger resource exhaustion or crashes in the underlying MKLDNN library. An attacker with local access can exploit this vulnerability by passing specially crafted tensor dimensions or parameters to the max pooling function, causing the application to become unresponsive or crash.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2025-2953",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/78828/97c"
+        },
+        {
+            "vulnerability_id": "64663",
+            "package_name": "torch",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<1.10.0"
+            ],
+            "all_vulnerable_specs": [
+                "<1.10.0"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "torch",
+                "extras": [],
+                "marker": null,
+                "name": "torch",
+                "specifier": ">=0",
+                "url": null,
+                "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+            },
+            "advisory": "Torch 1.10.0 addresses a data race condition in the torch.jit.annotations.parse_type_line function which allowed simultaneous reading and writing the set of devices without synchronizing.\r\nhttps://github.com/pytorch/pytorch/pull/58753",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": null,
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/64663/97c"
+        },
+        {
+            "vulnerability_id": "54718",
+            "package_name": "torch",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                ">=0,<1.13.1"
+            ],
+            "all_vulnerable_specs": [
+                ">=0,<1.13.1"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "torch",
+                "extras": [],
+                "marker": null,
+                "name": "torch",
+                "specifier": ">=0",
+                "url": null,
+                "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+            },
+            "advisory": "In PyTorch before trunk/89695, torch.jit.annotations.parse_type_line can cause arbitrary code execution because eval is used unsafely.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2022-45907",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/54718/97c"
+        },
+        {
+            "vulnerability_id": "64660",
+            "package_name": "torch",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<1.13"
+            ],
+            "all_vulnerable_specs": [
+                "<1.13"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "torch",
+                "extras": [],
+                "marker": null,
+                "name": "torch",
+                "specifier": ">=0",
+                "url": null,
+                "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+            },
+            "advisory": "Torch 1.13 addresses a race condition issue in its database management. The bug occurred due to concurrent access to shared resources without adequate synchronization, causing unpredictable system behavior. The commit introduces changes to the torch::jit::GraphExecutor class in C++, improving the robustness of the system.\r\nhttps://github.com/pytorch/pytorch/commit/24a084eda69f2c636537a7614060382032565521",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": null,
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/64660/97c"
+        },
+        {
+            "vulnerability_id": "76769",
+            "package_name": "torch",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<2.8.0"
+            ],
+            "all_vulnerable_specs": [
+                "<2.8.0"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "torch",
+                "extras": [],
+                "marker": null,
+                "name": "torch",
+                "specifier": ">=0",
+                "url": null,
+                "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+            },
+            "advisory": "*Disputed* A vulnerability, which was classified as problematic, was found in PyTorch 2.6.0. Affected is the function torch.nn.functional.ctc_loss of the file aten/src/ATen/native/LossCTC.cpp. The manipulation leads to denial of service. An attack has to be approached locally. The exploit has been disclosed to the public and may be used. The name of the patch is 46fc5d8e360127361211cb237d5f9eef0223e567. It is recommended to apply a patch to fix this issue.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2025-3730",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/76769/97c"
+        },
+        {
+            "vulnerability_id": "64661",
+            "package_name": "torch",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<1.13.1"
+            ],
+            "all_vulnerable_specs": [
+                "<1.13.1"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "torch",
+                "extras": [],
+                "marker": null,
+                "name": "torch",
+                "specifier": ">=0",
+                "url": null,
+                "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+            },
+            "advisory": "Torch 1.13.1 addresses a security vulnerability in the torch.jit.annotations.parse_type_line function, which could potentially allow command injection attacks. This was fixed by introducing the _eval_no_call method, which evaluates statements only if they do not contain any calls, thus preventing potential exploits. This update ensures that the torch.jit.annotations.get_signature function does not result in calling random code, enhancing the security of PyTorch applications.\r\nhttps://github.com/pytorch/pytorch/pull/89189/commits/4772e84f2067b474e0c50d8665a8586a05006861",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": null,
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/64661/97c"
+        },
+        {
+            "vulnerability_id": "76771",
+            "package_name": "torch",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<2.6.0"
+            ],
+            "all_vulnerable_specs": [
+                "<2.6.0"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "torch",
+                "extras": [],
+                "marker": null,
+                "name": "torch",
+                "specifier": ">=0",
+                "url": null,
+                "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+            },
+            "advisory": "PyTorch is a Python package that provides tensor computation with strong GPU acceleration and deep neural networks built on a tape-based autograd system. In version 2.5.1 and prior, a Remote Command Execution (RCE) vulnerability exists in PyTorch when loading a model using torch.load with weights_only=True. This issue has been patched in version 2.6.0.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2025-32434",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/76771/97c"
+        },
+        {
+            "vulnerability_id": "71671",
+            "package_name": "torch",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<2.2.0"
+            ],
+            "all_vulnerable_specs": [
+                "<2.2.0"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "torch",
+                "extras": [],
+                "marker": null,
+                "name": "torch",
+                "specifier": ">=0",
+                "url": null,
+                "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+            },
+            "advisory": "PyTorch before v2.2.0 was discovered to contain a heap buffer overflow vulnerability in the component /runtime/vararg_functions.cpp. This vulnerability allows attackers to cause a Denial of Service (DoS) via a crafted input.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2024-31580",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/71671/97c"
+        },
+        {
+            "vulnerability_id": "71672",
+            "package_name": "torch",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<2.2.0"
+            ],
+            "all_vulnerable_specs": [
+                "<2.2.0"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "torch",
+                "extras": [],
+                "marker": null,
+                "name": "torch",
+                "specifier": ">=0",
+                "url": null,
+                "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+            },
+            "advisory": "Pytorch before version v2.2.0 was discovered to contain a use-after-free vulnerability in torch/csrc/jit/mobile/interpreter.cpp.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2024-31583",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/71672/97c"
+        },
+        {
+            "vulnerability_id": "55261",
+            "package_name": "flask",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<2.2.5",
+                ">=2.3.0,<2.3.2"
+            ],
+            "all_vulnerable_specs": [
+                "<2.2.5",
+                ">=2.3.0,<2.3.2"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "flask",
+                "extras": [],
+                "marker": null,
+                "name": "flask",
+                "specifier": ">=0",
+                "url": null,
+                "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+            },
+            "advisory": "Flask 2.2.5 and 2.3.2 include a fix for CVE-2023-30861: When all of the following conditions are met, a response containing data intended for one client may be cached and subsequently sent by the proxy to other clients. If the proxy also caches 'Set-Cookie' headers, it may send one client's 'session' cookie to other clients. The severity depends on the application's use of the session and the proxy's behavior regarding cookies. The risk depends on all these conditions being met:\r\n1. The application must be hosted behind a caching proxy that does not strip cookies or ignore responses with cookies.\r\n2. The application sets 'session.permanent = True'\r\n3. The application does not access or modify the session at any point during a request.\r\n4. 'SESSION_REFRESH_EACH_REQUEST' enabled (the default).\r\n5. The application does not set a 'Cache-Control' header to indicate that a page is private or should not be cached.\r\nThis happens because vulnerable versions of Flask only set the 'Vary: Cookie' header when the session is accessed or modified, not when it is refreshed (re-sent to update the expiration) without being accessed or modified.\r\nhttps://github.com/pallets/flask/security/advisories/GHSA-m2qf-hxjv-5gpq",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2023-30861",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/55261/97c"
+        },
+        {
+            "vulnerability_id": "77323",
+            "package_name": "flask",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                ">=3.1.0,<3.1.1"
+            ],
+            "all_vulnerable_specs": [
+                ">=3.1.0,<3.1.1"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "flask",
+                "extras": [],
+                "marker": null,
+                "name": "flask",
+                "specifier": ">=0",
+                "url": null,
+                "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+            },
+            "advisory": "Affected versions of Flask (\u2264 3.1.0) are vulnerable to incorrect fallback key configuration in session signing, leading to stale key usage instead of the intended current key. This flaw undermines session integrity, enabling remote attackers to forge or tamper with cookies via manipulated SECRET_KEY_FALLBACKS parameters. The vulnerability exists in the itsdangerous-based signing routines within flask.sessions (fallback key list ordering).",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2025-47278",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/77323/97c"
+        },
+        {
+            "vulnerability_id": "25820",
+            "package_name": "flask",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<0.6.1"
+            ],
+            "all_vulnerable_specs": [
+                "<0.6.1"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "flask",
+                "extras": [],
+                "marker": null,
+                "name": "flask",
+                "specifier": ">=0",
+                "url": null,
+                "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+            },
+            "advisory": "flask 0.6.1 fixes a security problem that allowed clients to download arbitrary files  if the host server was a windows based operating system and the client  uses backslashes to escape the directory the files where exposed from.\r\nhttps://data.safetycli.com/vulnerabilities/PVE-2021-25820/25820/",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": null,
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/25820/97c"
+        },
+        {
+            "vulnerability_id": "36388",
+            "package_name": "flask",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<0.12.3"
+            ],
+            "all_vulnerable_specs": [
+                "<0.12.3"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "flask",
+                "extras": [],
+                "marker": null,
+                "name": "flask",
+                "specifier": ">=0",
+                "url": null,
+                "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+            },
+            "advisory": "flask version Before 0.12.3 contains a CWE-20: Improper Input Validation vulnerability in flask that can result in Large amount of memory usage possibly leading to denial of service. This attack appear to be exploitable via Attacker provides JSON data in incorrect encoding. This vulnerability appears to have been fixed in 0.12.3.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2018-1000656",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/36388/97c"
+        },
+        {
+            "vulnerability_id": "38654",
+            "package_name": "flask",
+            "ignored": true,
+            "ignored_reason": "This vulnerability is being ignored due to the 'ignore-unpinned-requirements' flag (default True). To change this, set 'ignore-unpinned-requirements' to False under 'security' in your policy file. See https://docs.pyup.io/docs/safety-20-policy-file for more information.",
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<0.12.3"
+            ],
+            "all_vulnerable_specs": [
+                "<0.12.3"
+            ],
+            "analyzed_version": null,
+            "analyzed_requirement": {
+                "raw": "flask",
+                "extras": [],
+                "marker": null,
+                "name": "flask",
+                "specifier": ">=0",
+                "url": null,
+                "found": "c:\\Users\\ASUS\\OneDrive\\Desktop\\PD-FSL - Copy\\requirements.txt"
+            },
+            "advisory": "Flask 0.12.3 includes a fix for CVE-2019-1010083: Unexpected memory usage. The impact is denial of service. The attack vector is crafted encoded JSON data. NOTE: this may overlap CVE-2018-1000656.\r\nhttps://github.com/pallets/flask/pull/2695/commits/0e1e9a04aaf29ab78f721cfc79ac2a691f6e3929",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2019-1010083",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/38654/97c"
+        }
+    ],
+    "remediations": {},
+    "remediations_results": {
+        "vulnerabilities_fixed": [],
+        "remediations_applied": {},
+        "remediations_skipped": {}
+    }
+}

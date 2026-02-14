@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+{% block title %}Login - FSL Learning{% endblock %}
+
+{% block content %}
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :root {
+    --sunshine: #FFD93D;
+    --sky-blue: #4CC9F0;
+    --grass-green: #06D6A0;
+    --coral: #FF6B9D;
+    --lavender: #A78BFA;
+    --orange: #FF8C42;
+    --deep-blue: #4361EE;
+    --white: #FFFFFF;
+    --off-white: #FFF8F0;
+    --shadow: rgba(0, 0, 0, 0.15);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-weight: 600;
+    background: linear-gradient(135deg, #E0F4FF 0%, #FFE5EC 50%, #FFF4E0 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  .bg-shapes {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+  }
+
+  .shape {
+    position: absolute;
+    opacity: 0.15;
+    animation: float 20s infinite ease-in-out;
+  }
+
+  .shape:nth-child(1) { 
+    width: 120px; 
+    height: 120px; 
+    background: var(--sunshine); 
+    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+    top: 10%; 
+    left: 5%; 
+    animation-delay: 0s;
+  }
+
+  .shape:nth-child(2) { 
+    width: 90px; 
+    height: 90px; 
+    background: var(--coral); 
+    border-radius: 50%;
+    top: 60%; 
+    left: 80%; 
+    animation-delay: 3s;
+  }
+
+  .shape:nth-child(3) { 
+    width: 150px; 
+    height: 150px; 
+    background: var(--grass-green); 
+    border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
+    bottom: 10%; 
+    right: 10%; 
+    animation-delay: 6s;
+  }
+
+  .shape:nth-child(4) { 
+    width: 100px; 
+    height: 100px; 
+    background: var(--lavender); 
+    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+    top: 30%; 
+    right: 20%; 
+    animation-delay: 9s;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(20px, -20px) rotate(5deg); }
+    50% { transform: translate(-15px, 15px) rotate(-5deg); }
+    75% { transform: translate(10px, -10px) rotate(3deg); }
+  }
+
+  .login-section {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  .login-container {
+    max-width: 480px;
+    width: 100%;
+    animation: popUp 0.6s ease-out;
+  }
+
+  @keyframes popUp {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .login-card {
+    background: var(--white);
+    border-radius: 30px;
+    padding: 50px;
+    text-align: center;
+    box-shadow: 0 12px 40px var(--shadow);
+  }
+
+  .login-icon {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    box-shadow: 0 8px 24px rgba(67, 97, 238, 0.3);
+    animation: bounce 0.6s ease-out 0.2s backwards;
+  }
+
+  @keyframes bounce {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+
+  .login-title {
+    font-size: 40px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+  }
+
+  .login-subtitle {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 32px;
+  }
+
+  .flash-message {
+    padding: 16px 20px;
+    border-radius: 15px;
+    margin-bottom: 24px;
+    font-weight: 700;
+    animation: slideDown 0.4s ease-out;
+  }
+
+  @keyframes slideDown {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .flash-message.success {
+    background: linear-gradient(135deg, rgba(6, 214, 160, 0.2), rgba(76, 201, 240, 0.2));
+    color: var(--grass-green);
+    border: 3px solid var(--grass-green);
+  }
+
+  .flash-message.danger {
+    background: linear-gradient(135deg, rgba(255, 107, 157, 0.2), rgba(255, 140, 66, 0.2));
+    color: var(--coral);
+    border: 3px solid var(--coral);
+  }
+
+  .form-group {
+    margin-bottom: 24px;
+    text-align: left;
+  }
+
+  .form-label {
+    display: block;
+    font-size: 16px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 8px;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 16px 20px;
+    border: 3px solid var(--grass-green);
+    border-radius: 15px;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    background: var(--white);
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: var(--deep-blue);
+    box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.1);
+    transform: translateY(-2px);
+  }
+
+  .form-input::placeholder {
+    color: #999;
+    font-weight: 500;
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 18px;
+    font-size: 20px;
+    font-weight: 700;
+    border: none;
+    border-radius: 15px;
+    background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
+    color: var(--white);
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(6, 214, 160, 0.3);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    margin-bottom: 24px;
+  }
+
+  .submit-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(6, 214, 160, 0.4);
+  }
+
+  .submit-btn:active {
+    transform: translateY(-2px);
+  }
+
+  .signup-section {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 2px solid #EEE;
+  }
+
+  .signup-text {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 12px;
+  }
+
+  .signup-link {
+    display: inline-block;
+    padding: 12px 32px;
+    background: linear-gradient(135deg, var(--coral), var(--orange));
+    color: var(--white);
+    text-decoration: none;
+    border-radius: 15px;
+    font-weight: 700;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+  }
+
+  .signup-link:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(255, 107, 157, 0.4);
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-top: 24px;
+    color: var(--deep-blue);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 16px;
+    transition: all 0.2s ease;
+  }
+
+  .back-link:hover {
+    transform: translateX(-4px);
+  }
+
+  @media (max-width: 768px) {
+    .login-card {
+      padding: 40px 30px;
+    }
+
+    .login-title {
+      font-size: 32px;
+    }
+
+    .login-icon {
+      width: 80px;
+      height: 80px;
+      font-size: 40px;
+    }
+  }
+</style>
+
+<div class="bg-shapes">
+  <div class="shape"></div>
+  <div class="shape"></div>
+  <div class="shape"></div>
+  <div class="shape"></div>
+</div>
+
+<section class="login-section">
+  <div class="login-container">
+    <div class="login-card">
+      <!-- Login Icon -->
+      <div class="login-icon"></div>
+
+      <!-- Title -->
+      <h1 class="login-title">Welcome Back!</h1>
+      <p class="login-subtitle">Sign in to access FSL Learning</p>
+
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash-message {% if category == 'error' %}danger{% else %}{{category}}{% endif %}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <!-- Login Form -->
+      <form method="POST">
+        <div class="form-group">
+          <label for="username" class="form-label">Username</label>
+          <input 
+            type="text" 
+            id="username" 
+            name="username" 
+            class="form-input"
+            placeholder="Enter your username"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="password" class="form-label">Password</label>
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            class="form-input"
+            placeholder="Enter your password"
+            required
+          >
+        </div>
+
+        <button type="submit" class="submit-btn">Sign In</button>
+      </form>
+
+      <!-- Signup Section -->
+      <div class="signup-section">
+        <p class="signup-text">Don't have an account?</p>
+        <a href="{{ url_for('signup') }}" class="signup-link">Create Account</a>
+      </div>
+
+      <!-- Back to Home -->
+      <a href="{{ url_for('home') }}" class="back-link">← Back to Home</a>
+    </div>
+  </div>
+</section>
+
+<script>
+// Add focus effects to form inputs
+document.addEventListener('DOMContentLoaded', function() {
+  const inputs = document.querySelectorAll('.form-input');
+
+  inputs.forEach(input => {
+    input.addEventListener('focus', function() {
+      this.style.borderColor = 'var(--deep-blue)';
+      this.style.boxShadow = '0 0 0 4px rgba(67, 97, 238, 0.1)';
+      this.style.transform = 'translateY(-2px)';
+    });
+
+    input.addEventListener('blur', function() {
+      this.style.borderColor = 'var(--grass-green)';
+      this.style.boxShadow = 'none';
+      this.style.transform = 'translateY(0)';
+    });
+  });
+});
+</script>
+
+{% endblock %}
