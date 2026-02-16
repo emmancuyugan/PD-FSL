@@ -1,3 +1,6 @@
 flask
 torch
 numpy
+python-dotenv
+flask_sqlalchemy
+psycopg2-binary
