@@ -236,16 +236,14 @@
     height: 100%;
     object-fit: cover;
     border-radius: 30px;
-    transform: none;
+    transform: scaleX(-1);
   }
 
   #overlayCanvas {
     position: absolute;
     inset: 0;
     pointer-events: none;
-  transform: none;
-  transform-origin: center;
-}
+  }
 
   .prep-overlay {
     position: absolute;
@@ -853,35 +851,6 @@ window.addEventListener("load", () => {
   }
 
   const videoEl = document.getElementById("mainCamera");
-  // ------------------------------------------------------
-  // Camera correction (applies to BOTH preview + inference)
-  // If your camera sensor feed comes in upside down, keep ROTATE_180 = true.
-  // If your feed is mirrored and you want it NOT mirrored, keep MIRROR = false.
-  // ------------------------------------------------------
-  const ROTATE_180 = true;
-  const MIRROR = false;
-
-  const inputCanvas = document.createElement('canvas');
-  inputCanvas.width = 640;
-  inputCanvas.height = 480;
-  const inputCtx = inputCanvas.getContext('2d', { willReadFrequently: false });
-
-  function drawCorrectedFrame() {
-    const w = inputCanvas.width;
-    const h = inputCanvas.height;
-
-    inputCtx.save();
-    inputCtx.setTransform(1, 0, 0, 1, 0, 0);
-    inputCtx.clearRect(0, 0, w, h);
-
-    inputCtx.translate(w / 2, h / 2);
-    if (ROTATE_180) inputCtx.rotate(Math.PI);
-    if (MIRROR) inputCtx.scale(-1, 1);
-
-    inputCtx.drawImage(videoEl, -w / 2, -h / 2, w, h);
-    inputCtx.restore();
-  }
-
   const canvasEl = document.getElementById("overlayCanvas");
   const ctx = canvasEl.getContext("2d");
 
@@ -1479,8 +1448,7 @@ window.addEventListener("load", () => {
     }
   });
 
-  const camera=new Camera(videoEl,{ onFrame:async function(){ drawCorrectedFrame();
-      await holistic.send({ image: inputCanvas }); }, width:640, height:480 });
+  const camera=new Camera(videoEl,{ onFrame:async function(){ await holistic.send({image:videoEl}); }, width:640, height:480 });
 
   const originalStart = () => {
     const diff = difficultySelect.value;
