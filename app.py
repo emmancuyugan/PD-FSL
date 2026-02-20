@@ -78,22 +78,46 @@ def login_required(fn):
     return wrapper
 
 
+# OPTIMIZATION: Batch database saves instead of commit on every prediction
+# For Jetson, this reduces I/O blocking significantly
+_unsaved_results = []  # Buffer for deferred saves
+MAX_BATCH_SIZE = 10
+
 def save_progress(label: str, confidence=None):
-    """Save a practice result to PostgreSQL if the user is logged in."""
+    """Batch save practice results to reduce commit overhead."""
     uid = session.get("user_id")
     if not uid:
         return
+    
     row = PracticeResult(
         user_id=uid,
         label=label,
         confidence=float(confidence) if isinstance(confidence, (int, float)) else None,
     )
-    db.session.add(row)
-    db.session.commit()
+    _unsaved_results.append(row)
+    
+    # Commit batch when buffer is full
+    if len(_unsaved_results) >= MAX_BATCH_SIZE:
+        flush_progress()
+
+def flush_progress():
+    """Flush all buffered results to database at once."""
+    global _unsaved_results
+    if not _unsaved_results:
+        return
+    try:
+        db.session.add_all(_unsaved_results)
+        db.session.commit()
+        _unsaved_results = []
+    except Exception as e:
+        print(f"[WARNING] Failed to flush progress: {e}")
+        db.session.rollback()
+        _unsaved_results = []
 
 # ======================================================
 # Model setup
 # ======================================================
+# OPTIMIZATION: Model and inference settings for Jetson
 MODEL_PATH = resource_path("run35.pth")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -135,11 +159,31 @@ NUM_LAYERS = 2
 NUM_CLASSES = len(CLASSES)
 SEQ_LEN = 48
 
+# OPTIMIZATION: Tensor pre-allocation and reuse for Jetson
+# Pre-allocate tensor buffer to avoid repeated GPU memory allocations
+_tensor_buffer = torch.zeros(1, 48, 188, dtype=torch.float32, device=device, pin_memory=True)
+
 model = ModifiedLSTM(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, NUM_CLASSES,
                      dropout=0.35, use_layernorm=True).to(device)
 state_dict = torch.load(MODEL_PATH, map_location=device)
 model.load_state_dict(state_dict)
 model.eval()
+
+# Enable inference optimizations for Jetson CUDA
+if device.type == 'cuda':
+    # Enable CUDA optimizations
+    torch.backends.cudnn.enabled = True
+    torch.backends.cudnn.benchmark = True  # Auto-tune convolution algorithms
+    # For Jetson, use reduced precision where possible
+    torch.set_float32_matmul_precision('medium')  # Less precision = faster on Jetson
+
+# Optionally: Convert to TorchScript for faster inference (JIT compilation)
+try:
+    model_for_inference = torch.jit.script(model)
+    print("[INFO] TorchScript JIT compilation successful - using optimized inference")
+except Exception as e:
+    print(f"[WARNING] TorchScript failed, using standard model: {e}")
+    model_for_inference = model
 
 # ======================================================
 # ✅ prepare_sequence (unchanged)
@@ -165,7 +209,7 @@ def prepare_sequence(data_json):
             raise ValueError(f"features size {feat.size}, expected {FEAT_DIM} or {SEQ_LEN*FEAT_DIM}")
     else:
         raise ValueError("Missing 'sequence' or 'features' field in request.")
-    return torch.tensor(seq, dtype=torch.float32).unsqueeze(0).to(device)
+    # Reuse pre-allocated buffer to avoid GPU memory allocation overhead\n    _tensor_buffer[0] = torch.from_numpy(seq)\n    return _tensor_buffer
 
 # ======================================================
 # Helper — locate demo video automatically
@@ -390,12 +434,17 @@ def predict():
             raise ValueError("Missing 'sequence' or 'features'")
 
         with torch.no_grad():
-            logits = model(x)
-            probs = torch.softmax(logits, dim=1).cpu().numpy()[0]
-            pred_idx = int(np.argmax(probs))
+            if device.type == 'cuda':
+                torch.cuda.synchronize()
+            logits = model_for_inference(x)
+            probs = torch.softmax(logits, dim=1)
+            if device.type == 'cuda':
+                torch.cuda.synchronize()
+            probs_np = probs.cpu().numpy()[0]
+            pred_idx = int(np.argmax(probs_np))
             label = CLASSES[pred_idx]
 
-        conf = float(np.max(probs))
+        conf = float(np.max(probs_np))
         save_progress(label, conf)
 
         demo_path = get_demo_video_path(label)
@@ -427,18 +476,23 @@ def predict_auto():
             raise ValueError("Missing 'sequence' or 'features'")
 
         with torch.no_grad():
-            logits = model(x)
-            probs = torch.softmax(logits, dim=1).cpu().numpy()[0]
-            conf = float(np.max(probs))
-            pred_idx = int(np.argmax(probs))
+            if device.type == 'cuda':
+                torch.cuda.synchronize()
+            logits = model_for_inference(x)
+            probs = torch.softmax(logits, dim=1)
+            if device.type == 'cuda':
+                torch.cuda.synchronize()
+            probs_np = probs.cpu().numpy()[0]
+            conf = float(np.max(probs_np))
+            pred_idx = int(np.argmax(probs_np))
             label = CLASSES[pred_idx]
 
         THRESHOLD = 0.8
         if conf < THRESHOLD:
-            sorted_indices = np.argsort(probs)[::-1]
+            sorted_indices = np.argsort(probs_np)[::-1]
             top_idx = sorted_indices[0]
             closest_label = CLASSES[top_idx]
-            closest_conf = float(probs[top_idx])
+            closest_conf = float(probs_np[top_idx])
 
             # Save "closest" (what the model thinks you performed)
             save_progress(closest_label, closest_conf)
@@ -477,26 +531,42 @@ def assess():
         data = request.get_json(force=True)
         x = prepare_sequence(data)
         with torch.no_grad():
-            logits = model(x)
-            probs = torch.softmax(logits, dim=1).cpu().numpy()[0]
-            pred_idx = int(np.argmax(probs))
+            if device.type == 'cuda':
+                torch.cuda.synchronize()
+            logits = model_for_inference(x)
+            probs = torch.softmax(logits, dim=1)
+            if device.type == 'cuda':
+                torch.cuda.synchronize()
+            probs_np = probs.cpu().numpy()[0]
+            pred_idx = int(np.argmax(probs_np))
             label = CLASSES[pred_idx]
 
-        save_progress(label, float(np.max(probs)))
+        save_progress(label, float(np.max(probs_np)))
 
         demo_path = get_demo_video_path(label)
         return jsonify({
             "label": label,
-            "probabilities": probs.tolist(),
+            "probabilities": probs_np.tolist(),
             "demo": demo_path
         })
     except Exception as e:
         print(f"[ERROR] Assessment failed: {e}")
         return jsonify({"error": f"Assessment failed: {str(e)}"}), 500
 
+# OPTIMIZATION: Graceful shutdown handler to flush remaining results
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    """Flush any remaining buffered results on shutdown."""
+    flush_progress()
+
 # ======================================================
 # Run app
 # ======================================================
 if __name__ == "__main__":
     init_db()
-    app.run(host="127.0.0.1", port=5000, debug=False, use_reloader=False)
+    # OPTIMIZATION: For Jetson, single-threaded mode reduces GIL contention
+    # and avoids double-loading the model, use_reloader=False keeps model in memory
+    print("[INFO] Starting FSL Flask app optimized for Jetson")
+    print(f"[INFO] Using device: {device} (CUDA: {device.type == 'cuda'})")
+    app.run(host="127.0.0.1", port=5000, debug=False, use_reloader=False, 
+            threaded=False, processes=1)
