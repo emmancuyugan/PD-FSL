@@ -159,10 +159,6 @@ NUM_LAYERS = 2
 NUM_CLASSES = len(CLASSES)
 SEQ_LEN = 48
 
-# OPTIMIZATION: Tensor pre-allocation and reuse for Jetson
-# Pre-allocate tensor buffer to avoid repeated GPU memory allocations
-_tensor_buffer = torch.zeros(1, 48, 188, dtype=torch.float32, device=device, pin_memory=True)
-
 model = ModifiedLSTM(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, NUM_CLASSES,
                      dropout=0.35, use_layernorm=True).to(device)
 state_dict = torch.load(MODEL_PATH, map_location=device)
@@ -186,9 +182,9 @@ except Exception as e:
     model_for_inference = model
 
 # ======================================================
-# ✅ prepare_sequence (unchanged)
-# ======================================================
+# OPTIMIZATION: prepare_sequence with proper tensor handling
 def prepare_sequence(data_json):
+    """Efficiently prepare sequence for inference."""
     SEQ_LEN, FEAT_DIM = 48, 188
     if "sequence" in data_json:
         seq = np.array(data_json["sequence"], dtype=np.float32)
@@ -209,7 +205,9 @@ def prepare_sequence(data_json):
             raise ValueError(f"features size {feat.size}, expected {FEAT_DIM} or {SEQ_LEN*FEAT_DIM}")
     else:
         raise ValueError("Missing 'sequence' or 'features' field in request.")
-    # Reuse pre-allocated buffer to avoid GPU memory allocation overhead\n    _tensor_buffer[0] = torch.from_numpy(seq)\n    return _tensor_buffer
+    
+    # Create tensor on correct device - simple and reliable
+    return torch.from_numpy(seq).unsqueeze(0).to(device)
 
 # ======================================================
 # Helper — locate demo video automatically
