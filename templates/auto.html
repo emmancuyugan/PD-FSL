@@ -623,11 +623,16 @@
 
   const PREDICT_URL=location.origin+'/predict_auto';
   const SAVE_URL=location.origin+'/api/save_result';
-  const SEQ_LEN=48;
-  let buf=[],running=false,handsPresent=false,frameCount=0,showVisuals=true,showTimer=true,showResults=true;
   // OPTIMIZATION: Jetson Orin Nano frame skipping for auto detection
   // Skip every 2nd frame = ~15 FPS effective (from 30 FPS camera)
+  // 5.5s capture × 15 fps = ~83 frames achievable
+  const SEQ_LEN = 48;
+  const CAPTURE_MAX = 80;  // Adjusted for frameSkip=2
+  const BASE_CAPTURE_MS = 5500;  // Increased to ensure enough frames
+  let CAPTURE_MS = BASE_CAPTURE_MS;
+  let buf=[],running=false,handsPresent=false,frameCount=0,showVisuals=true,showTimer=true,showResults=true;
   let frameSkip=2;
+  let autoJudge=false;  // Track auto-trigger to prevent multiple calls
   let predictInterval=null,tickInterval=null,countdown=5;
 
   const HAND_CONN=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20]];
@@ -882,10 +887,18 @@
       // OPTIMIZATION: Apply frame skipping for Jetson Orin Nano
       frameCount++;
       if(frameCount % frameSkip === 0){
-        buf.push(feat);
-        if(buf.length>SEQ_LEN)buf.shift();
+        // Keep buffer at max size
+        if(buf.length<CAPTURE_MAX) buf.push(feat);
+        else { buf.shift(); buf.push(feat); }
         frameInfo.textContent='Capturing: '+Math.floor(buf.length)+' frames';
         frameInfo.style.display='block';
+        
+        // Auto-trigger when buffer reaches 75% capacity
+        const threshold = Math.ceil(CAPTURE_MAX * 0.75);
+        if(buf.length >= threshold && !autoJudge){
+          autoJudge=true; 
+          setTimeout(()=>predict(), 200);
+        }
       }
     }
   });
@@ -983,6 +996,7 @@
     running=true;
     buf=[];
     frameCount=0;
+    autoJudge=false;  // Reset auto-trigger flag for new capture
     recBadge.style.display='inline-block';
     stateBadge.textContent='Learning Mode ON! 🎓';
     stateBadge.style.background='linear-gradient(135deg, var(--coral), var(--orange))';

@@ -848,10 +848,14 @@ window.addEventListener("load", () => {
   const SEQ_LEN = 48, CAPTURE_MAX = 120;
   const BASE_CAPTURE_MS = 5000;
   let CAPTURE_MS = BASE_CAPTURE_MS;
-  let buf=[], running=false, frameSkip=3, frameCounter=0, autoJudge=false, captureStartMs=0;
   // OPTIMIZATION: Jetson Orin Nano frame skipping
   // Activity mode: skip every 3rd frame = ~10 FPS effective (from 30 FPS camera)
-  // Still captures 30+ frames in 5s sessions, sufficient for 48-frame LSTM sequence
+  // 6s capture × 10 fps = ~60 frames, adjusted CAPTURE_MAX = 65
+  const SEQ_LEN = 48;
+  const CAPTURE_MAX = 65;  // Reduced from 120 to be realistic with frameSkip=3
+  const BASE_CAPTURE_MS = 6000;  // Increased to 6s to ensure enough frames
+  let CAPTURE_MS = BASE_CAPTURE_MS;
+  let buf=[], running=false, frameSkip=3, frameCounter=0, autoJudge=false, captureStartMs=0;
 
   function updateGestureDisplay(gesture) {
     targetLabel.textContent = gesture ? gesture : 'None';
@@ -932,10 +936,20 @@ window.addEventListener("load", () => {
   }
 
   function temporalFix(frames,seqLen){
+    // Jetson optimization: Work with smaller frame buffers due to frame skipping
+    if(!frames || frames.length===0){
+      console.warn('[temporalFix] Empty frame buffer in activity!');
+      const zero=new Float32Array(188);
+      return Array(seqLen).fill(zero);
+    }
+    
     if(frames.length<=seqLen){
-      const pad=Array.from({length:seqLen-frames.length},()=>frames[frames.length-1]);
+      const lastFrame=frames[frames.length-1];
+      if(!lastFrame) return Array(seqLen).fill(new Float32Array(188));
+      const pad=Array.from({length:seqLen-frames.length},()=>lastFrame);
       return frames.concat(pad);
     }
+    
     const scores=new Array(frames.length).fill(0);
     for(let i=1;i<frames.length;i++){
       const f0=frames[i-1], f1=frames[i]; if(!f0||!f1) continue;
@@ -972,8 +986,10 @@ window.addEventListener("load", () => {
     } else {
       timerBar.style.width='0%';
     }
-    if(buf.length>=CAPTURE_MAX && !autoJudge){
-      autoJudge=true; setTimeout(()=>stopAndPredict(),200);
+    // Auto-trigger when buffer reaches 70% of CAPTURE_MAX (adjusted for frameSkip=3)
+    const thresholdFrames = Math.ceil(CAPTURE_MAX * 0.7);
+    if(buf.length>=thresholdFrames && !autoJudge){
+      autoJudge=true; setTimeout(()=>stopAndPredict(),150);
     }
   }
 
