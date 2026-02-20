@@ -1126,7 +1126,11 @@ window.addEventListener("load", () => {
 
   const PREDICT_URL = location.origin + '/predict';
   async function callPredict(sequence) {
-    const payload = { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ sequence }) };
+    const payload = { 
+      method:'POST', 
+      headers:{ 'Content-Type':'application/json' }, 
+      body: JSON.stringify({ sequence, source: 'select' }) 
+    };
     const res = await fetch(PREDICT_URL, payload);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
