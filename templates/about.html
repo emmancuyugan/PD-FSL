@@ -43,7 +43,6 @@
   .shape {
     position: absolute;
     opacity: 0.15;
-    animation: float 20s infinite ease-in-out;
   }
 
   .shape:nth-child(1) { 
@@ -53,7 +52,6 @@
     border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
     top: 10%; 
     left: 5%; 
-    animation-delay: 0s;
   }
 
   .shape:nth-child(2) { 
@@ -63,7 +61,6 @@
     border-radius: 50%;
     top: 60%; 
     left: 80%; 
-    animation-delay: 3s;
   }
 
   .shape:nth-child(3) { 
@@ -73,7 +70,6 @@
     border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
     bottom: 10%; 
     right: 10%; 
-    animation-delay: 6s;
   }
 
   .shape:nth-child(4) { 
@@ -83,14 +79,6 @@
     border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
     top: 30%; 
     right: 20%; 
-    animation-delay: 9s;
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translate(0, 0) rotate(0deg); }
-    25% { transform: translate(20px, -20px) rotate(5deg); }
-    50% { transform: translate(-15px, 15px) rotate(-5deg); }
-    75% { transform: translate(10px, -10px) rotate(3deg); }
   }
 
   .page-container {
@@ -251,7 +239,6 @@
     padding: 30px;
     text-align: center;
     box-shadow: 0 8px 24px var(--shadow);
-    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     animation: popUp 0.6s ease-out backwards;
   }
 
@@ -266,11 +253,6 @@
     to { transform: translateY(0) scale(1); opacity: 1; }
   }
 
-  .team-card:hover {
-    transform: translateY(-12px) scale(1.02);
-    box-shadow: 0 16px 40px var(--shadow);
-  }
-
   .team-avatar {
     width: 120px;
     height: 120px;
@@ -281,12 +263,6 @@
     background: linear-gradient(white, white) padding-box,
                 linear-gradient(135deg, var(--deep-blue), var(--lavender), var(--coral)) border-box;
     box-shadow: 0 8px 24px var(--shadow);
-    transition: all 0.3s ease;
-  }
-
-  .team-card:hover .team-avatar {
-    transform: scale(1.1) rotate(5deg);
-    box-shadow: 0 12px 32px rgba(67, 97, 238, 0.4);
   }
 
   .team-avatar img {
@@ -315,25 +291,11 @@
     box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
   }
 
-  .team-card:nth-child(1) .team-role {
-    background: linear-gradient(135deg, var(--deep-blue), var(--sky-blue));
-  }
-
-  .team-card:nth-child(2) .team-role {
-    background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
-  }
-
-  .team-card:nth-child(3) .team-role {
-    background: linear-gradient(135deg, var(--coral), var(--orange));
-  }
-
-  .team-card:nth-child(4) .team-role {
-    background: linear-gradient(135deg, var(--lavender), var(--coral));
-  }
-
-  .team-card:nth-child(5) .team-role {
-    background: linear-gradient(135deg, var(--orange), var(--sunshine));
-  }
+  .team-card:nth-child(1) .team-role { background: linear-gradient(135deg, var(--deep-blue), var(--sky-blue)); }
+  .team-card:nth-child(2) .team-role { background: linear-gradient(135deg, var(--grass-green), var(--sky-blue)); }
+  .team-card:nth-child(3) .team-role { background: linear-gradient(135deg, var(--coral), var(--orange)); }
+  .team-card:nth-child(4) .team-role { background: linear-gradient(135deg, var(--lavender), var(--coral)); }
+  .team-card:nth-child(5) .team-role { background: linear-gradient(135deg, var(--orange), var(--sunshine)); }
 
   .team-description {
     font-size: 14px;
@@ -341,40 +303,15 @@
     line-height: 1.6;
   }
 
-  @media (max-width: 1400px) {
-    .team-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-
-  @media (max-width: 1024px) {
-    .team-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
+  @media (max-width: 1400px) { .team-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 1024px) { .team-grid { grid-template-columns: repeat(2, 1fr); } }
 
   @media (max-width: 768px) {
-    .hero-title {
-      font-size: 40px;
-    }
-
-    .hero-subtitle {
-      font-size: 16px;
-    }
-
-    .mission-grid {
-      grid-template-columns: 1fr;
-      gap: 30px;
-    }
-
-    .team-title {
-      font-size: 36px;
-    }
-
-    .team-grid {
-      grid-template-columns: 1fr;
-      gap: 20px;
-    }
+    .hero-title { font-size: 40px; }
+    .hero-subtitle { font-size: 16px; }
+    .mission-grid { grid-template-columns: 1fr; gap: 30px; }
+    .team-title { font-size: 36px; }
+    .team-grid { grid-template-columns: 1fr; gap: 20px; }
   }
 </style>
 
@@ -386,7 +323,6 @@
 </div>
 
 <div class="page-container">
-  <!-- Hero Section -->
   <div class="hero-section">
     <h1 class="hero-title">Meet Our Team!</h1>
     <p class="hero-subtitle">
@@ -394,15 +330,13 @@
     </p>
   </div>
 
-  <!-- Mission Section -->
   <div class="mission-section">
     <div class="mission-card">
       <h2 class="mission-title">Our Mission</h2>
-
       <div class="mission-grid">
         <div class="mission-item">
           <h3>
-            <span class="icon-circle icon-blue"></span>
+            <span class="icon-circle icon-blue"><img src="{{ url_for('static', filename='img/A.png') }}" alt="Building Inclusive Technology" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></span>
             Building Inclusive Technology
           </h3>
           <p>
@@ -411,10 +345,9 @@
             to create a comprehensive learning experience.
           </p>
         </div>
-
         <div class="mission-item">
           <h3>
-            <span class="icon-circle icon-green"></span>
+            <span class="icon-circle icon-green"><img src="{{ url_for('static', filename='img/A.png') }}" alt="Key Features" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></span>
             Key Features
           </h3>
           <ul>
@@ -427,71 +360,50 @@
     </div>
   </div>
 
-  <!-- Team Section -->
   <div class="team-section">
     <div class="team-header">
       <h2 class="team-title">Our Development Team</h2>
     </div>
-
     <div class="team-grid">
-      <!-- Bernardo, Christian Emmanuel M. -->
       <div class="team-card">
         <div class="team-avatar">
           <img src="{{ url_for('static', filename='img/Bernardo.png') }}" alt="Bernardo, Christian Emmanuel M.">
         </div>
         <h4 class="team-name">Bernardo, Christian Emmanuel M.</h4>
         <div class="team-role">Frontend Developer</div>
-        <p class="team-description">
-          Develops the desktop app interface with a focus on usability and responsiveness, translating learning and feedback requirements into a clear, student-friendly user experience.
-        </p>
+        <p class="team-description">Develops the desktop app interface with a focus on usability and responsiveness, translating learning and feedback requirements into a clear, student-friendly user experience.</p>
       </div>
-
-      <!-- Carale, Alyzza R. -->
       <div class="team-card">
         <div class="team-avatar">
           <img src="{{ url_for('static', filename='img/Carale.png') }}" alt="Carale, Alyzza R.">
         </div>
         <h4 class="team-name">Carale, Alyzza R.</h4>
         <div class="team-role">Embedded Systems Engineer</div>
-        <p class="team-description">
-          Handles the prototype's hardware components and device setup, ensuring stable operation of the camera/display system and dependable real-time capture for recognition.
-        </p>
+        <p class="team-description">Handles the prototype's hardware components and device setup, ensuring stable operation of the camera/display system and dependable real-time capture for recognition.</p>
       </div>
-
-      <!-- Cuyugan, Emmanuel Luis B. -->
       <div class="team-card">
         <div class="team-avatar">
           <img src="{{ url_for('static', filename='img/Cuyugan.jpg') }}" alt="Cuyugan, Emmanuel Luis B.">
         </div>
         <h4 class="team-name">Cuyugan, Emmanuel Luis B.</h4>
         <div class="team-role">Backend Developer</div>
-        <p class="team-description">
-          Leads the desktop app backend and system integration, ensuring reliable real-time processing, data flow, and seamless connection between recognition, feedback, and app features.
-        </p>
+        <p class="team-description">Leads the desktop app backend and system integration, ensuring reliable real-time processing, data flow, and seamless connection between recognition, feedback, and app features.</p>
       </div>
-
-      <!-- Doria, Jhon D. -->
       <div class="team-card">
         <div class="team-avatar">
           <img src="{{ url_for('static', filename='img/Doria.png') }}" alt="Doria, Jhon D.">
         </div>
         <h4 class="team-name">Doria, Jhon D.</h4>
         <div class="team-role">Frontend Developer</div>
-        <p class="team-description">
-          Supports UI development and interaction design, helping structure user flows and visual feedback elements to keep the learning experience intuitive and consistent during practice.
-        </p>
+        <p class="team-description">Supports UI development and interaction design, helping structure user flows and visual feedback elements to keep the learning experience intuitive and consistent during practice.</p>
       </div>
-
-      <!-- Montojo, Lance M. -->
       <div class="team-card">
         <div class="team-avatar">
           <img src="{{ url_for('static', filename='img/Montojo.png') }}" alt="Montojo, Lance M.">
         </div>
         <h4 class="team-name">Montojo, Lance M.</h4>
         <div class="team-role">Machine Learning Engineer</div>
-        <p class="team-description">
-          Leads model development and training, optimizing gesture recognition performance and handling all tasks related to dataset preparation, evaluation, and inference readiness.
-        </p>
+        <p class="team-description">Leads model development and training, optimizing gesture recognition performance and handling all tasks related to dataset preparation, evaluation, and inference readiness.</p>
       </div>
     </div>
   </div>

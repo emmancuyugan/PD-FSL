@@ -75,11 +75,6 @@
       gap: 12px;
       text-decoration: none;
       color: inherit;
-      transition: all 0.3s ease;
-    }
-
-    .brand-link:hover {
-      transform: translateY(-2px);
     }
 
     .brand-logo {
@@ -87,12 +82,7 @@
       height: 50px;
       border-radius: 12px;
       overflow: hidden;
-      transition: transform 0.3s ease;
       box-shadow: 0 4px 12px var(--shadow);
-    }
-
-    .brand-logo:hover {
-      transform: scale(1.1) rotate(5deg);
     }
 
     .brand-logo img {
@@ -108,7 +98,6 @@
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
-      transition: all 0.3s ease;
     }
 
     .tagline {
@@ -132,62 +121,39 @@
       font-size: 14px;
       color: #333;
       border-radius: 12px;
-      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-      position: relative;
-      overflow: hidden;
     }
 
-    nav a::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-      transition: left 0.5s ease;
-    }
-
-    nav a:hover::before {
-      left: 100%;
-    }
-
-    nav a:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 4px 12px var(--shadow);
-    }
-
-    nav a:nth-child(1):hover, nav a:nth-child(1).active {
+    nav a:nth-child(1).active {
       background: linear-gradient(135deg, var(--deep-blue), var(--sky-blue));
       color: var(--white);
     }
 
-    nav a:nth-child(2):hover, nav a:nth-child(2).active {
+    nav a:nth-child(2).active {
       background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
       color: var(--white);
     }
 
-    nav a:nth-child(3):hover, nav a:nth-child(3).active {
+    nav a:nth-child(3).active {
       background: linear-gradient(135deg, var(--coral), var(--orange));
       color: var(--white);
     }
 
-    nav a:nth-child(4):hover, nav a:nth-child(4).active {
+    nav a:nth-child(4).active {
       background: linear-gradient(135deg, var(--lavender), var(--coral));
       color: var(--white);
     }
 
-    nav a:nth-child(5):hover, nav a:nth-child(5).active {
+    nav a:nth-child(5).active {
       background: linear-gradient(135deg, var(--orange), var(--sunshine));
       color: var(--white);
     }
 
-    nav a:nth-child(6):hover, nav a:nth-child(6).active {
+    nav a:nth-child(6).active {
       background: linear-gradient(135deg, var(--lavender), var(--deep-blue));
       color: var(--white);
     }
 
-    nav a:nth-child(7):hover, nav a:nth-child(7).active {
+    nav a:nth-child(7).active {
       background: linear-gradient(135deg, var(--coral), var(--lavender));
       color: var(--white);
     }
@@ -264,30 +230,6 @@
     /* Utilities */
     .flex {
       display: flex;
-    }
-
-    /* =============================
-       Performance + Touch Optimizations
-       (Keeps same look/layout, removes expensive effects on touch & during camera)
-       ============================= */
-
-    @media (hover: none), (pointer: coarse) {
-      nav a::before { display: none !important; }
-      nav a:hover { transform: none !important; box-shadow: none !important; }
-      nav a:hover::before { left: -100% !important; }
-
-      .big-button:hover,
-      .start-button:hover,
-      .assist-btn:hover,
-      .ghost-btn:hover,
-      .reset-btn:hover,
-      .control-btn:hover,
-      .btn:hover,
-      button:hover {
-        transform: none !important;
-        box-shadow: inherit !important;
-        filter: none !important;
-      }
     }
 
     @media (prefers-reduced-motion: reduce) {
