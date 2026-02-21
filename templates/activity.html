@@ -660,15 +660,15 @@
         <div class="settings-panel">
           <div class="setting-item">
             <input type="checkbox" id="toggleVisuals" checked>
-            <span>[Eye] Hand Markers</span>
+            <span>Hand Markers</span>
           </div>
           <div class="setting-item">
             <input type="checkbox" id="toggleTimer" checked>
-            <span>[Timer] Timer</span>
+            <span>Timer</span>
           </div>
           <div class="setting-item">
             <input type="checkbox" id="toggleResults" checked>
-            <span>[Note] Results</span>
+            <span>Results</span>
           </div>
         </div>
 
@@ -690,7 +690,7 @@
         </div>
 
         <div class="control-buttons" id="startOverlay">
-          <button class="big-button" id="startBtn">▶️ Start Activity!</button>
+          <button class="big-button" id="startBtn">Start Activity!</button>
         </div>
       </div>
     </div>
@@ -1300,20 +1300,11 @@ window.addEventListener("load", () => {
   holistic.setOptions({selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.55,minTrackingConfidence:0.55});
 
   holistic.onResults(function(res){
-    try {
-      if (!res || !res.image) return;
-      
-      // Ensure canvas dimensions are set to prevent black screen
-    if (canvasEl.width === 0 || canvasEl.height === 0) {
-      canvasEl.width = videoEl.clientWidth;
-      canvasEl.height = videoEl.clientHeight;
-    }
-    
     ctx.save();
-      ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
-      ctx.drawImage(res.image, 0, 0, canvasEl.width, canvasEl.height);
+    ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+    ctx.drawImage(res.image, 0, 0, canvasEl.width, canvasEl.height);
 
-      const pose = res.poseLandmarks || [];
+    const pose = res.poseLandmarks || [];
     const face = res.faceLandmarks || [];
     const anchors = {};
     anchors.L_SH = lm(pose, 11);
@@ -1404,22 +1395,16 @@ window.addEventListener("load", () => {
         setTimeout(() => stopAndPredict(), 80);
       }
     }
-    catch (err) {
-      console.error('Holistic onResults error:', err);
-    }
   });
 
   const camera=new Camera(videoEl,{ 
     onFrame: async function(){ 
-      try {
-        await holistic.send({image:videoEl}); 
-      } catch(err) {
-        console.error('Camera onFrame error:', err);
-      }
+      await holistic.send({image:videoEl}); 
     }, 
-    width:640, 
-    height:480 
+    width:480, 
+    height:360
   });
+  // Camera resolution optimized for Jetson: 480x360 (28% fewer pixels than 640x480)
 
   const originalStart = async () => {
     const diff = difficultySelect.value;
