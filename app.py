@@ -17,6 +17,7 @@ from contextlib import nullcontext
 from model import ModifiedLSTM
 from pathutils import resource_path
 from jetson_optimization import JetsonOptimizer, OptimizedSequencePreprocessor
+from gpu_profiler import GPUProfiler, AdvancedOptimizer, JetsonDiagnostics
 
 # ======================================================
 # Flask setup
@@ -193,6 +194,13 @@ if torch.cuda.is_available():
 print(f"[INFO] Using device: {device}")
 
 # ======================================================
+# GPU Profiler & Diagnostics
+# ======================================================
+gpu_profiler = GPUProfiler(device)
+JetsonDiagnostics.check_hardware()
+JetsonDiagnostics.estimate_jetson_performance("ModifiedLSTM")
+
+# ======================================================
 # Jetson Optimization Setup
 # ======================================================
 JETSON_ENABLED = os.getenv("JETSON_OPTIMIZED", "true").lower() == "true"
@@ -205,6 +213,10 @@ if JETSON_ENABLED:
     # Convert to FP16 if CUDA available (Jetson has dedicated FP16 cores)
     if device.type == 'cuda':
         model = JetsonOptimizer.convert_to_half_precision(model, device)
+        # Enable advanced GPU optimizations
+        AdvancedOptimizer.enable_tensor_cores(device)
+        AdvancedOptimizer.enable_cu_blas_lt(device)
+        AdvancedOptimizer.optimize_memory(device, fraction=0.5)
     
     print(f"[JETSON] Model ready for inference on {device}")
 else:
@@ -213,6 +225,7 @@ else:
         torch.backends.cudnn.enabled = True
         torch.backends.cudnn.benchmark = True
         torch.set_float32_matmul_precision('medium')
+        AdvancedOptimizer.enable_tensor_cores(device)
         print("[INFO] CUDA optimizations enabled")
 
 # Set up inference mode for faster execution
@@ -505,16 +518,17 @@ def predict():
         # Use automatic mixed precision context for faster inference
         autocast_context = torch.cuda.amp.autocast() if device.type == 'cuda' else nullcontext()
         
-        with torch.inference_mode(), autocast_context:
-            if device.type == 'cuda':
-                torch.cuda.synchronize()
-            logits = model_for_inference(x)
-            print(f"[PREDICT] Output logits shape: {logits.shape}")
-            probs = torch.softmax(logits, dim=1)
-            if device.type == 'cuda':
-                torch.cuda.synchronize()
-            probs_np = probs.cpu().numpy()[0]
-            pred_idx = int(np.argmax(probs_np))
+        with gpu_profiler.profile_inference(label="predict"):
+            with torch.inference_mode(), autocast_context:
+                if device.type == 'cuda':
+                    torch.cuda.synchronize()
+                logits = model_for_inference(x)
+                print(f"[PREDICT] Output logits shape: {logits.shape}")
+                probs = torch.softmax(logits, dim=1)
+                if device.type == 'cuda':
+                    torch.cuda.synchronize()
+                probs_np = probs.cpu().numpy()[0]
+                pred_idx = int(np.argmax(probs_np))
             label = CLASSES[pred_idx]
 
         conf = float(np.max(probs_np))

@@ -33,54 +33,7 @@
     position: relative;
   }
 
-  .bg-shapes {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    overflow: hidden;
-    z-index: 0;
-  }
-
-  .shape {
-    position: absolute;
-    opacity: 0.15;
-  }
-
-  .shape:nth-child(1) { 
-    width: 120px; 
-    height: 120px; 
-    background: var(--sunshine); 
-    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-    top: 10%; 
-    left: 5%; 
-  }
-
-  .shape:nth-child(2) { 
-    width: 90px; 
-    height: 90px; 
-    background: var(--coral); 
-    border-radius: 50%;
-    top: 60%; 
-    left: 80%; 
-  }
-
-  .shape:nth-child(3) { 
-    width: 150px; 
-    height: 150px; 
-    background: var(--grass-green); 
-    border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
-    bottom: 10%; 
-    right: 10%; 
-  }
-
-  .shape:nth-child(4) { 
-    width: 100px; 
-    height: 100px; 
-    background: var(--lavender); 
-    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-    top: 30%; 
-    right: 20%; 
-  }
+  /* OPTIMIZATION: Disabled background shape animations for Jetson Orin Nano */
 
   .app-container {
     position: relative;
@@ -519,12 +472,7 @@
 
 </style>
 
-<div class="bg-shapes">
-  <div class="shape"></div>
-  <div class="shape"></div>
-  <div class="shape"></div>
-  <div class="shape"></div>
-</div>
+
 
 <div class="app-container">
   <div class="header">
@@ -552,21 +500,21 @@
         <div class="settings-panel">
           <div class="setting-item">
             <input type="checkbox" id="toggleVisuals" checked>
-            <span>[Eye] Hand Markers</span>
+            <span>Hand Markers</span>
           </div>
           <div class="setting-item">
             <input type="checkbox" id="toggleTimer" checked>
-            <span>[Timer] Timer</span>
+            <span>Timer</span>
           </div>
           <div class="setting-item">
             <input type="checkbox" id="toggleResults" checked>
-            <span>[Note] Show Results</span>
+            <span>Show Results</span>
           </div>
         </div>
 
         <div class="control-buttons">
-          <button class="big-button start-btn" id="startBtn">▶️ Start Learning!</button>
-          <button class="big-button stop-btn" id="stopBtn">■ Stop</button>
+          <button class="big-button start-btn" id="startBtn">Start Learning!</button>
+          <button class="big-button stop-btn" id="stopBtn">Stop</button>
         </div>
       </div>
     </div>
@@ -580,11 +528,11 @@
       </div>
 
       <div class="card history-card">
-        <div class="card-title">Your Practice History [Book]</div>
+        <div class="card-title">Your Practice History</div>
         <div class="history-content" id="history">
           <div style="color: #999;">Start signing to see your progress!</div>
         </div>
-        <button class="clear-btn" id="clearBtn">🗑️ Clear History</button>
+        <button class="clear-btn" id="clearBtn">Clear History</button>
       </div>
     </div>
   </div>
@@ -809,6 +757,10 @@
     }
 
     ghostReady=ghostFrames&&ghostFrames.length>0;
+    // CLEANUP: Close ghost holistic instance to prevent ML accumulation memory leak
+    if(ghostHolistic && typeof ghostHolistic.close === 'function') {
+      ghostHolistic.close();
+    }
     return ghostReady;
   }
 
