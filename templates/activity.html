@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% block title %}Activity Mode – FSL Learning{% endblock %}
-<!-- Cache bust: {{ range(1, 2)|random }} -->
 {% block content %}
 
 <style>
@@ -33,7 +32,54 @@
     position: relative;
   }
 
-  /* OPTIMIZATION: Disabled background shape animations for Jetson Orin Nano */
+  .bg-shapes {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+  }
+
+  .shape {
+    position: absolute;
+    opacity: 0.15;
+  }
+
+  .shape:nth-child(1) { 
+    width: 120px; 
+    height: 120px; 
+    background: var(--sunshine); 
+    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+    top: 10%; 
+    left: 5%; 
+  }
+
+  .shape:nth-child(2) { 
+    width: 90px; 
+    height: 90px; 
+    background: var(--coral); 
+    border-radius: 50%;
+    top: 60%; 
+    left: 80%; 
+  }
+
+  .shape:nth-child(3) { 
+    width: 150px; 
+    height: 150px; 
+    background: var(--grass-green); 
+    border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
+    bottom: 10%; 
+    right: 10%; 
+  }
+
+  .shape:nth-child(4) { 
+    width: 100px; 
+    height: 100px; 
+    background: var(--lavender); 
+    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+    top: 30%; 
+    right: 20%; 
+  }
 
   .app-container {
     position: relative;
@@ -85,7 +131,8 @@
     font-size: 20px;
     display: none;
     box-shadow: 0 4px 16px rgba(255, 107, 157, 0.5);
-    animation: blink 1.5s infinite;
+    /* OPTIMIZATION: Disabled infinite animation for performance */
+    /* animation: blink 1.5s infinite; */
     background: var(--coral);
     color: var(--white);
   }
@@ -102,7 +149,8 @@
     background: var(--white);
     border-radius: 50%;
     margin-right: 8px;
-    animation: pulse-dot 1.5s infinite;
+    /* OPTIMIZATION: Disabled infinite animation for performance */
+    /* animation: pulse-dot 1.5s infinite; */
   }
 
   @keyframes pulse-dot {
@@ -129,17 +177,7 @@
     font-size: 18px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
     box-shadow: 0 4px 16px rgba(255, 140, 66, 0.3);
-  }
-
-  .reset-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(255, 140, 66, 0.4);
-  }
-
-  .reset-btn:active {
-    transform: translateY(-1px);
   }
 
   .main-content {
@@ -331,12 +369,6 @@
     font-weight: 600;
     cursor: pointer;
     box-shadow: 0 2px 8px var(--shadow);
-    transition: all 0.2s ease;
-  }
-
-  .ghost-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px var(--shadow);
   }
 
   .control-buttons {
@@ -356,22 +388,12 @@
     border: none;
     border-radius: 25px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     box-shadow: 0 6px 20px var(--shadow);
     display: flex;
     align-items: center;
     gap: 10px;
     background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
     color: var(--white);
-  }
-
-  .big-button:hover {
-    transform: translateY(-4px) scale(1.05);
-    box-shadow: 0 10px 30px var(--shadow);
-  }
-
-  .big-button:active {
-    transform: translateY(-2px) scale(1.02);
   }
 
   .sidebar {
@@ -510,17 +532,7 @@
     font-size: 16px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
     box-shadow: 0 2px 8px var(--shadow);
-  }
-
-  .assist-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px var(--shadow);
-  }
-
-  .assist-btn:active {
-    transform: translateY(0);
   }
 
   .show-how-btn {
@@ -631,11 +643,16 @@
   }
 </style>
 
-
+<div class="bg-shapes">
+  <div class="shape"></div>
+  <div class="shape"></div>
+  <div class="shape"></div>
+  <div class="shape"></div>
+</div>
 
 <div class="app-container">
   <div class="header">
-    <div class="logo">[Target] Activity Mode</div>
+    <div class="logo">Activity Mode</div>
     <div class="header-controls">
       <div class="rec-badge" id="recBadge">
         <span class="rec-dot"></span>REC
@@ -660,15 +677,15 @@
         <div class="settings-panel">
           <div class="setting-item">
             <input type="checkbox" id="toggleVisuals" checked>
-            <span>[Eye] Hand Markers</span>
+            <span>Hand Markers</span>
           </div>
           <div class="setting-item">
             <input type="checkbox" id="toggleTimer" checked>
-            <span>[Timer] Timer</span>
+            <span>Timer</span>
           </div>
           <div class="setting-item">
             <input type="checkbox" id="toggleResults" checked>
-            <span>[Note] Results</span>
+            <span>Results</span>
           </div>
         </div>
 
@@ -680,7 +697,7 @@
           </select>
         </div>
 
-        <div class="ghost-badge" id="ghostBadge">[Guide] Ghost Helper ON</div>
+        <div class="ghost-badge" id="ghostBadge">Ghost Helper ON</div>
 
         <div class="ghost-controls" id="ghostControls">
           <button class="ghost-btn" id="btnSizeDown">Size −</button>
@@ -805,6 +822,7 @@ window.addEventListener("load", () => {
   const toggleVisuals = document.getElementById('toggleVisuals');
   const toggleTimer   = document.getElementById('toggleTimer');
   const toggleResults = document.getElementById('toggleResults');
+  const toggleSpeed   = document.getElementById('toggleSpeed');
 
   let showVisuals = true;
   let showTimer   = true;
@@ -825,12 +843,17 @@ window.addEventListener("load", () => {
   function setState(s){ state=s; stateBadge.textContent="State: "+["READY","PREP","CAPTURE"][s]; }
 
   let targetGesture=null, correctCount=0, incorrectCount=0;
-  const SEQ_LEN = 48;
-  // Optimization: Frame settings aligned with other modes for Jetson Orin Nano
-  // 5.5s capture × ~15 fps = ~83 frames achievable, CAPTURE_MAX=80 is reasonable
-  const CAPTURE_MAX = 80;
-  const BASE_CAPTURE_MS = 5500;
+  const SEQ_LEN = 48, CAPTURE_MAX = 120;
+  const BASE_CAPTURE_MS = 5000;
   let CAPTURE_MS = BASE_CAPTURE_MS;
+  // OPTIMIZATION: Jetson Orin Nano frame skipping
+  // Activity mode: skip every 3rd frame = ~10 FPS effective (from 30 FPS camera)
+  // 6s capture × 10 fps = ~60 frames, adjusted CAPTURE_MAX = 65
+  const SEQ_LEN = 48;
+  const CAPTURE_MAX = 65;  // Reduced from 120 to be realistic with frameSkip=3
+  const BASE_CAPTURE_MS = 6000;  // Increased to 6s to ensure enough frames
+  let CAPTURE_MS = BASE_CAPTURE_MS;
+  let buf=[], running=false, frameSkip=3, frameCounter=0, autoJudge=false, captureStartMs=0;
 
   function updateGestureDisplay(gesture) {
     targetLabel.textContent = gesture ? gesture : 'None';
@@ -911,9 +934,17 @@ window.addEventListener("load", () => {
   }
 
   function temporalFix(frames,seqLen){
-    // Jetson optimization: Adaptive frame selection with motion scoring
+    // Jetson optimization: Work with smaller frame buffers due to frame skipping
+    if(!frames || frames.length===0){
+      console.warn('[temporalFix] Empty frame buffer in activity!');
+      const zero=new Float32Array(188);
+      return Array(seqLen).fill(zero);
+    }
+    
     if(frames.length<=seqLen){
-      const pad=Array.from({length:seqLen-frames.length},()=>frames[frames.length-1]);
+      const lastFrame=frames[frames.length-1];
+      if(!lastFrame) return Array(seqLen).fill(new Float32Array(188));
+      const pad=Array.from({length:seqLen-frames.length},()=>lastFrame);
       return frames.concat(pad);
     }
     
@@ -953,7 +984,7 @@ window.addEventListener("load", () => {
     } else {
       timerBar.style.width='0%';
     }
-    // Trigger when buffer reaches sufficient size for inference
+    // Trigger when buffer reaches sufficient size
     if(buf.length>=CAPTURE_MAX && !autoJudge){
       autoJudge=true; setTimeout(()=>stopAndPredict(),200);
     }
@@ -961,7 +992,7 @@ window.addEventListener("load", () => {
 
   const PREDICT_URL = location.origin + '/predict';
   async function callPredict(sequence) {
-    const payload = { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ sequence }) };
+    const payload = { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ sequence, source: 'activity' }) };
     const res = await fetch(PREDICT_URL, payload);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
@@ -1236,8 +1267,8 @@ window.addEventListener("load", () => {
     v.src=url; v.muted=true; v.playsInline=true; v.crossOrigin='anonymous';
     await new Promise((resolve,reject)=>{ v.onloadedmetadata=resolve; v.onerror=()=>reject(new Error('Video error')); });
     const ghostHolistic=new Holistic({locateFile: (f) => `/static/mediapipe/holistic/${f}`});
-    // OPTIMIZATION: Lite model (complexity 1) for ghost frame processing - prevents performance issues
-    ghostHolistic.setOptions({selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
+    // Ghost model for demo skeleton: optimized inference
+    ghostHolistic.setOptions({selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.60,minTrackingConfidence:0.60});
     ghostFrames=[];
     ghostHolistic.onResults(res=>{
       const pose=res.poseLandmarks||[], face=res.faceLandmarks||[];
@@ -1261,11 +1292,6 @@ window.addEventListener("load", () => {
     }
     ghostReady = ghostFrames.length>0;
     assistHint.textContent = ghostReady ? 'Overlay loaded. Use Size/Align controls if needed.' : 'No hands detected in demo video.';
-    // CLEANUP: Close ghost holistic instance to prevent ML accumulation memory leak
-    // This implements Singleton pattern - instance is only created when needed and properly disposed
-    if(ghostHolistic && typeof ghostHolistic.close === 'function') {
-      ghostHolistic.close();
-    }
     return ghostReady;
   }
 
@@ -1296,24 +1322,15 @@ window.addEventListener("load", () => {
   };
 
   const holistic=new Holistic({locateFile: (f) => `/static/mediapipe/holistic/${f}`});
-  // Optimized for Jetson: lite model (complexity 1), matches select.html and auto.html
+  // Optimized for Jetson: lite model, standard thresholds
   holistic.setOptions({selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.55,minTrackingConfidence:0.55});
 
   holistic.onResults(function(res){
-    try {
-      if (!res || !res.image) return;
-      
-      // Ensure canvas dimensions are set to prevent black screen
-    if (canvasEl.width === 0 || canvasEl.height === 0) {
-      canvasEl.width = videoEl.clientWidth;
-      canvasEl.height = videoEl.clientHeight;
-    }
-    
     ctx.save();
-      ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
-      ctx.drawImage(res.image, 0, 0, canvasEl.width, canvasEl.height);
+    ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+    ctx.drawImage(res.image, 0, 0, canvasEl.width, canvasEl.height);
 
-      const pose = res.poseLandmarks || [];
+    const pose = res.poseLandmarks || [];
     const face = res.faceLandmarks || [];
     const anchors = {};
     anchors.L_SH = lm(pose, 11);
@@ -1381,14 +1398,9 @@ window.addEventListener("load", () => {
 
     if (running && state === STATE_CAPTURE) {
       frameCounter++;
-      // OPTIMIZATION: Apply frame skipping for Jetson Orin Nano
       if (frameCounter % frameSkip === 0) {
-        try {
-          const feat = packFeature(res);
-          if (feat) updateBuffer(feat);
-        } catch(e) {
-          console.warn('Feature extraction error:', e);
-        }
+        const feat = packFeature(res);
+        if (feat) updateBuffer(feat);
       }
 
       const elapsed = Date.now() - captureStartMs;
@@ -1404,26 +1416,14 @@ window.addEventListener("load", () => {
         setTimeout(() => stopAndPredict(), 80);
       }
     }
-    catch (err) {
-      console.error('Holistic onResults error:', err);
-    }
   });
 
-  const camera=new Camera(videoEl,{ 
-    onFrame: async function(){ 
-      try {
-        await holistic.send({image:videoEl}); 
-      } catch(err) {
-        console.error('Camera onFrame error:', err);
-      }
-    }, 
-    width:640, 
-    height:480 
-  });
+  const camera=new Camera(videoEl,{ onFrame:async function(){ await holistic.send({image:videoEl}); }, width:480, height:360 });
+  // Camera resolution optimized: 480x360 (28% fewer pixels than 640x480)
 
-  const originalStart = async () => {
+  const originalStart = () => {
     const diff = difficultySelect.value;
-    // Optimization: Removed fast mode, always use BASE_CAPTURE_MS (5.5s)
+    // Always use base time (12s for compound)
     CAPTURE_MS = (diff === "compound") ? BASE_CAPTURE_MS * 2 : BASE_CAPTURE_MS;
 
     if (diff === "easy") {
@@ -1445,17 +1445,7 @@ window.addEventListener("load", () => {
     resultText.textContent = "—";
     capturePhase.textContent = "Get Ready…";
     running = true;
-    try {
-      await camera.start();
-      console.log('[Activity] Camera started successfully');
-    } catch(e) {
-      console.error('[Activity] Camera start error:', e);
-      running = false;
-      setState(STATE_READY);
-      prepOverlay.style.display = "none";
-      startBtn.style.display = "inline-block";
-      return;
-    }
+    camera.start();
     timerBar.style.width = "0%";
     document.getElementById("assistRow").style.display = "none";
 
@@ -1465,12 +1455,12 @@ window.addEventListener("load", () => {
       recBadge.style.display = "inline-block";
       capturePhase.textContent = (diff === "compound") ? "Perform first sign (~5 s)…" : "Perform Now (~5 s)…";
       captureStartMs = Date.now();
-      startNumericTimer();
+      startNumericTimer(false);
     }, 1000);
   };
 
   startBtn.onclick = async () => {
-    document.body.classList.add('camera-running'); await stopPreviewIfAny(); await originalStart(); };
+    document.body.classList.add('camera-running'); await stopPreviewIfAny(); originalStart(); };
 
   const originalReset = () => {
     correctCount=0; incorrectCount=0;
@@ -1491,11 +1481,11 @@ window.addEventListener("load", () => {
   let tickInterval = null;
   const timerOverlay = document.getElementById("timerOverlay");
 
-  function startNumericTimer() {
+  function startNumericTimer(fastMode) {
     if (!showTimer) return;
     clearInterval(tickInterval);
 
-    let countdown = 5;
+    let countdown = 6;
     timerOverlay.textContent = countdown;
     timerOverlay.style.display = "block";
     timerOverlay.style.background = "linear-gradient(135deg, var(--deep-blue), var(--lavender))";
@@ -1528,13 +1518,6 @@ window.addEventListener("load", () => {
   }
   new ResizeObserver(resize).observe(videoEl);
   resize();
-  
-  // Ensure canvas is initialized with proper dimensions
-  setTimeout(() => {
-    if (canvasEl.width === 0 || canvasEl.height === 0) {
-      resize();
-    }
-  }, 100);
 });
 </script>
 

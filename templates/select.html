@@ -725,7 +725,12 @@
   }
 </style>
 
-
+<div class="bg-shapes">
+  <div class="shape"></div>
+  <div class="shape"></div>
+  <div class="shape"></div>
+  <div class="shape"></div>
+</div>
 
 <div class="app-container">
   <div class="header">
@@ -745,7 +750,7 @@
   <div class="main-content">
     <div class="video-section">
       <div class="skeleton-container">
-        <span class="skeleton-label">Skeleton AI</span>
+        <span class="skeleton-label">[AI] Skeleton AI</span>
         <canvas id="skeletonCanvas"></canvas>
 
         <!-- Picture-in-Picture Camera (Top Right) -->
@@ -795,19 +800,19 @@
         </div>
 
         <div class="toggle-panel">
-          <div class="toggle-title">Display Options</div>
+          <div class="toggle-title">⚙ Display Options</div>
           <div class="toggle-grid">
             <label class="toggle-item">
               <input type="checkbox" id="toggleVisuals" checked>
-              <span>Landmarks</span>
+              <span>[Eye] Landmarks</span>
             </label>
             <label class="toggle-item">
               <input type="checkbox" id="toggleTimer" checked>
-              <span>Timer</span>
+              <span>[Timer] Timer</span>
             </label>
             <label class="toggle-item">
               <input type="checkbox" id="toggleResults" checked>
-              <span>Results</span>
+              <span>[Note] Results</span>
             </label>
           </div>
         </div>
@@ -846,7 +851,7 @@
         </div>
 
         <div id="startOverlay">
-          <button class="start-button" id="startBtn">Start Practice!</button>
+          <button class="start-button" id="startBtn">▶️ Start Practice!</button>
         </div>
 
         <div class="stats-grid">
@@ -1397,10 +1402,6 @@ window.addEventListener("load", () => {
     }
     ghostReady = ghostFrames.length>0;
     assistHint.textContent = ghostReady ? 'Skeleton guide loaded! Watch the big screen.' : 'No skeleton found in demo.';
-    // CLEANUP: Close ghost holistic instance to prevent ML accumulation memory leak
-    if(ghostHolistic && typeof ghostHolistic.close === 'function') {
-      ghostHolistic.close();
-    }
     return ghostReady;
   }
 
