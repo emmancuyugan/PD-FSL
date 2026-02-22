@@ -625,14 +625,14 @@
   const SAVE_URL=location.origin+'/api/save_result';
   // OPTIMIZATION: Jetson Orin Nano frame skipping for auto detection
   // Skip every 2nd frame = ~15 FPS effective (from 30 FPS camera)
-  // 6s capture × 15 fps = ~90 frames achievable
+  // 5.5s capture × 15 fps = ~83 frames achievable
   const SEQ_LEN = 48;
-  const CAPTURE_MAX = 90;  // Adjusted for frameSkip=2 and 6s duration
-  const BASE_CAPTURE_MS = 6000;  // Consistent 6s like select mode
+  const CAPTURE_MAX = 80;  // Adjusted for frameSkip=2
+  const BASE_CAPTURE_MS = 5500;  // Increased to ensure enough frames
   let CAPTURE_MS = BASE_CAPTURE_MS;
   let buf=[],running=false,handsPresent=false,frameCount=0,showVisuals=true,showTimer=true,showResults=true;
   let frameSkip=2;
-  let autoJudge=false, captureStopped=false;  // Track auto-trigger to prevent multiple calls
+  let autoJudge=false;  // Track auto-trigger to prevent multiple calls
   let predictInterval=null,tickInterval=null,countdown=5;
 
   const HAND_CONN=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20]];
@@ -834,8 +834,8 @@
   }
 
   const holistic=new Holistic({locateFile: (f) => `/static/mediapipe/holistic/${f}`});
-  // Optimized for Jetson Orin Nano: reduced complexity, better detection thresholds
-  holistic.setOptions({selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.60,minTrackingConfidence:0.60});
+  // Optimized for Jetson Orin Nano: reduced complexity, higher confidence thresholds for auto mode
+  holistic.setOptions({selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.70,minTrackingConfidence:0.70});
 
   holistic.onResults(res=>{
     ctx.clearRect(0,0,canvasEl.width,canvasEl.height);
@@ -884,9 +884,6 @@
 
     const feat=packFeature(res);
     if(running&&feat){
-      // CRITICAL: Reject frames after capture window closes
-      if(captureStopped) return;
-      
       // OPTIMIZATION: Apply frame skipping for Jetson Orin Nano
       frameCount++;
       if(frameCount % frameSkip === 0){
@@ -910,11 +907,6 @@
   // Camera resolution optimized for Jetson: 480x360 (28% fewer pixels)
 
   async function predict(){
-    // Stop processing if capture window has closed
-    if(captureStopped && buf.length<SEQ_LEN){
-      console.warn('[predict] Capture stopped, insufficient data');
-      return;
-    }
     if(buf.length<5)return;
     const fixed=temporalFix(buf,SEQ_LEN);
     const seq=fixed.flatMap(f=>Array.from(f));
@@ -1005,7 +997,6 @@
     buf=[];
     frameCount=0;
     autoJudge=false;  // Reset auto-trigger flag for new capture
-    captureStopped=false;  // Reset capture stop flag
     recBadge.style.display='inline-block';
     stateBadge.textContent='Learning Mode ON! 🎓';
     stateBadge.style.background='linear-gradient(135deg, var(--coral), var(--orange))';
@@ -1013,32 +1004,23 @@
     startBtn.style.display='none';
     stopBtn.style.display='inline-block';
 
-    // REMOVED: Fast mode - always use 6 seconds for consistency
-    const intervalMs=6000;
-    countdown=6;
+    const fastMode=toggleSpeed.checked;
+    const intervalMs=fastMode?3000:5000;
+    countdown=fastMode?3:5;
 
     timerOverlay.textContent=countdown;
     timerOverlay.style.display=showTimer?'block':'none';
 
     tickInterval=setInterval(()=>{
       countdown--;
-      if(countdown<=0){
-        // CRITICAL: Stop capturing and processing when timer expires
-        captureStopped=true;
-        clearInterval(tickInterval);
-        clearInterval(predictInterval);
-        timerOverlay.style.display='none';
-        // Final prediction
-        setTimeout(()=>predict(), 100);
-        return;
-      }
+      if(countdown<=0)countdown=fastMode?3:5;
       timerOverlay.textContent=countdown;
-      if(countdown<=2)timerOverlay.style.background='var(--coral)';
-      else if(countdown<=3)timerOverlay.style.background='var(--orange)';
+      if(countdown<=1)timerOverlay.style.background='var(--coral)';
+      else if(countdown<=2)timerOverlay.style.background='var(--orange)';
       else timerOverlay.style.background='var(--sunshine)';
     },1000);
 
-    setTimeout(()=>predict(),1000);
+    setTimeout(()=>{predict();},1000);
     predictInterval=setInterval(predict,intervalMs);
   };
 
