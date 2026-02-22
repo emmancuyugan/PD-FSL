@@ -74,13 +74,10 @@
       <div class="sub">Track your progress across all modes</div>
     </div>
   </div>
-  
-  <div style="padding:12px 20px; background:rgba(67,97,238,0.1); border-radius:20px; margin-bottom:15px;">
-    <div id="userInfo">Loading user info...</div>
-  </div>
 
   <div class="tabs-wrapper">
-    <button class="tab-btn active" data-mode="select">👆 Select Mode</button>
+    <button class="tab-btn active" data-mode="all">📊 Overall</button>
+    <button class="tab-btn" data-mode="select">👆 Select Mode</button>
     <button class="tab-btn" data-mode="activity">🎮 Activity</button>
     <button class="tab-btn" data-mode="auto">🎯 Auto</button>
   </div>
@@ -149,37 +146,24 @@ const CATEGORIES = {
 };
 
 let allResults = [];
-let currentMode = 'select';
+let currentMode = 'all';
 
 async function loadResults() {
   try {
-    console.log('[LOG] Fetching /api/results with credentials');
-    const response = await fetch('/api/results', {
-      method: 'GET',
-      credentials: 'include',  // Important: send session cookies
-      headers: { 'Content-Type': 'application/json' }
-    });
-    console.log(`[LOG] Response status: ${response.status}`);
-    
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`HTTP ${response.status}: ${text}`);
-    }
+    const response = await fetch('/api/results');
+    if (!response.ok) throw new Error('Failed to fetch results');
     const data = await response.json();
-    console.log(`[LOG] Received ${data.length} results from API`);
     allResults = Array.isArray(data) ? data : data.results || [];
-    console.log(`[LOG] Loaded ${allResults.length} results into allResults`);
     renderResults();
   } catch (err) {
     console.error('[ERROR] Loading results:', err);
-    console.error('[ERROR] Full error:', err.stack);
     allResults = [];
     renderResults();
   }
 }
 
 function getMode(result) {
-  const source = result.source || 'unknown';
+  const source = result.source || '';
   if (source.toLowerCase().includes('select')) return 'select';
   if (source.toLowerCase().includes('activity')) return 'activity';
   if (source.toLowerCase().includes('auto')) return 'auto';
@@ -191,6 +175,7 @@ function isCorrect(result) {
 }
 
 function getFilteredResults() {
+  if (currentMode === 'all') return allResults;
   return allResults.filter(r => getMode(r) === currentMode);
 }
 
@@ -203,6 +188,7 @@ function renderResults() {
   const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
 
   const titles = {
+    'all': '📊 Overall Performance',
     'select': '👆 Select Mode',
     'activity': '🎮 Activity Mode',
     'auto': '🎯 Auto Mode'
@@ -301,20 +287,6 @@ document.getElementById('exportBtn').addEventListener('click', () => {
 
 document.getElementById('homeBtn').addEventListener('click', () => {
   window.location.href = '/';
-});
-
-// Load results on page load
-console.log('[LOG] Results page loaded, calling loadResults()');
-
-// Fetch and display user info
-fetch('/api/user-info', {
-  credentials: 'include'
-}).then(r => r.json()).then(data => {
-  document.getElementById('userInfo').textContent = `👤 Logged in as: ${data.username || 'Unknown'}`;
-  console.log(`[LOG] User: ${data.username}`);
-}).catch(err => {
-  console.error('[ERROR] Could not fetch user info:', err);
-  document.getElementById('userInfo').textContent = '⚠️ Could not load user info - you may not be logged in';
 });
 
 loadResults();

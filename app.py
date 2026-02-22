@@ -12,11 +12,9 @@ import os
 import random
 import json
 import datetime
-from contextlib import nullcontext
 
 from model import ModifiedLSTM
 from pathutils import resource_path
-from jetson_optimization import JetsonOptimizer, OptimizedSequencePreprocessor
 
 # ======================================================
 # Flask setup
@@ -61,30 +59,13 @@ class PracticeResult(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     label = db.Column(db.String(120), nullable=False)
     confidence = db.Column(db.Float, nullable=True)
-    source = db.Column(db.String(50), default="unknown")  # 'select', 'activity', 'auto'
     created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
 
 
 def init_db():
-    """Create tables if they don't exist and migrate existing ones (safe to call repeatedly)."""
+    """Create tables if they don't exist (safe to call repeatedly)."""
     with app.app_context():
         db.create_all()
-        
-        # Migration: Add 'source' column if it doesn't exist
-        try:
-            inspector = db.inspect(db.engine)
-            columns = [col['name'] for col in inspector.get_columns('practice_results')]
-            if 'source' not in columns:
-                try:
-                    with db.engine.connect() as conn:
-                        conn.execute(db.text("ALTER TABLE practice_results ADD COLUMN source VARCHAR(50) DEFAULT 'unknown';"))
-                        conn.commit()
-                        print("[INFO] Successfully added 'source' column to practice_results table")
-                except Exception as e:
-                    print(f"[INFO] source column might already exist or migration skipped: {e}")
-        except Exception as e:
-            print(f"[INFO] Could not check/migrate schema: {e}")
-
 
 
 def login_required(fn):
@@ -102,7 +83,7 @@ def login_required(fn):
 _unsaved_results = []  # Buffer for deferred saves
 MAX_BATCH_SIZE = 10
 
-def save_progress(label: str, confidence=None, source="unknown"):
+def save_progress(label: str, confidence=None):
     """Batch save practice results to reduce commit overhead."""
     uid = session.get("user_id")
     if not uid:
@@ -112,7 +93,6 @@ def save_progress(label: str, confidence=None, source="unknown"):
         user_id=uid,
         label=label,
         confidence=float(confidence) if isinstance(confidence, (int, float)) else None,
-        source=source,
     )
     _unsaved_results.append(row)
     
@@ -192,49 +172,50 @@ if torch.cuda.is_available():
     print(f"[INFO] CUDA device name: {torch.cuda.get_device_name(0)}")
 print(f"[INFO] Using device: {device}")
 
-# ======================================================
-# Jetson Optimization Setup
-# ======================================================
-JETSON_ENABLED = os.getenv("JETSON_OPTIMIZED", "true").lower() == "true"
-if JETSON_ENABLED:
-    print("[JETSON] Initializing Jetson Orin Nano Super optimizations...")
-    
-    # Enable mixed precision for Jetson Tensor Cores
-    JetsonOptimizer.enable_mixed_precision(model, device)
-    
-    # Convert to FP16 if CUDA available (Jetson has dedicated FP16 cores)
-    if device.type == 'cuda':
-        model = JetsonOptimizer.convert_to_half_precision(model, device)
-    
-    print(f"[JETSON] Model ready for inference on {device}")
-else:
-    # Standard CUDA optimizations for non-Jetson devices
-    if device.type == 'cuda':
-        torch.backends.cudnn.enabled = True
-        torch.backends.cudnn.benchmark = True
-        torch.set_float32_matmul_precision('medium')
-        print("[INFO] CUDA optimizations enabled")
+# Enable inference optimizations for Jetson CUDA
+if device.type == 'cuda':
+    # Enable CUDA optimizations
+    torch.backends.cudnn.enabled = True
+    torch.backends.cudnn.benchmark = True  # Auto-tune convolution algorithms
+    # For Jetson, use reduced precision where possible
+    torch.set_float32_matmul_precision('medium')  # Less precision = faster on Jetson
+    print("[INFO] CUDA optimizations enabled: cuDNN benchmarking, float32 matmul precision set to medium")
 
-# Set up inference mode for faster execution
-model.eval()
+# Optionally: Convert to TorchScript for faster inference (JIT compilation)
 try:
-    if device.type == 'cuda':
-        model = torch.jit.trace(model, torch.randn(1, SEQ_LEN, INPUT_SIZE, device=device))
-        print("[JETSON] Model compiled with TorchScript for faster inference")
+    model_for_inference = torch.jit.script(model)
+    print("[INFO] TorchScript JIT compilation successful - using optimized inference")
 except Exception as e:
-    print(f"[INFO] TorchScript compilation skipped: {e}")
-    # Keep model as-is if tracing fails
+    print(f"[WARNING] TorchScript JIT failed, using standard model: {e}")
+    model_for_inference = model
 
-model_for_inference = model
-
-# Initialize optimized preprocessor
-sequence_preprocessor = OptimizedSequencePreprocessor(device, SEQ_LEN, INPUT_SIZE)
-print("[INFO] Model loaded and ready for inference")
-
-# Use optimized preprocessor
+# ======================================================
+# OPTIMIZATION: prepare_sequence with proper tensor handling
 def prepare_sequence(data_json):
-    """Efficiently prepare sequence for inference using optimized preprocessor."""
-    return sequence_preprocessor.prepare_sequence(data_json)
+    """Efficiently prepare sequence for inference."""
+    SEQ_LEN, FEAT_DIM = 48, 188
+    if "sequence" in data_json:
+        seq = np.array(data_json["sequence"], dtype=np.float32)
+        if seq.ndim == 1 and seq.size == SEQ_LEN * FEAT_DIM:
+            seq = seq.reshape(SEQ_LEN, FEAT_DIM)
+        elif seq.ndim == 2:
+            if seq.shape != (SEQ_LEN, FEAT_DIM):
+                raise ValueError(f"sequence shape {seq.shape}, expected {(SEQ_LEN, FEAT_DIM)}")
+        else:
+            raise ValueError("sequence must be 1D (flattened) or 2D array")
+    elif "features" in data_json:
+        feat = np.array(data_json["features"], dtype=np.float32)
+        if feat.size == SEQ_LEN * FEAT_DIM:
+            seq = feat.reshape(SEQ_LEN, FEAT_DIM)
+        elif feat.size == FEAT_DIM:
+            seq = np.tile(feat, (SEQ_LEN, 1))
+        else:
+            raise ValueError(f"features size {feat.size}, expected {FEAT_DIM} or {SEQ_LEN*FEAT_DIM}")
+    else:
+        raise ValueError("Missing 'sequence' or 'features' field in request.")
+    
+    # Create tensor on correct device - simple and reliable
+    return torch.from_numpy(seq).unsqueeze(0).to(device)
 
 # ======================================================
 # Helper — locate demo video automatically
@@ -440,46 +421,6 @@ def api_save_result():
     save_progress(label, confidence)
     return jsonify({"status": "ok"})
 
-@app.route("/api/results", methods=["GET"])
-@login_required
-def api_results():
-    """Return all practice results for the logged-in user."""
-    # Flush any pending results before querying
-    flush_progress()
-    
-    user_id = session.get('user_id')
-    print(f"[API/RESULTS] Fetching results for user_id={user_id}")
-    
-    rows = (PracticeResult.query
-            .filter_by(user_id=user_id)
-            .order_by(PracticeResult.created_at.desc())
-            .all())
-    
-    print(f"[API/RESULTS] Found {len(rows)} results for user {user_id}")
-    
-    results_data = [
-        {
-            "id": r.id,
-            "label": r.label,
-            "confidence": r.confidence,
-            "source": r.source,
-            "created_at": r.created_at.isoformat() if r.created_at else None,
-            "is_correct": (r.confidence or 0) >= 0.75 if r.confidence else None
-        }
-        for r in rows
-    ]
-    
-    return jsonify(results_data)
-
-@app.route("/api/user-info", methods=["GET"])
-@login_required
-def api_user_info():
-    """Return current logged-in user info."""
-    user = User.query.get(session.get('user_id'))
-    if user:
-        return jsonify({"username": user.username, "id": user.id})
-    return jsonify({"username": "Unknown"})
-
 @app.route("/ping", methods=["GET"])
 def ping():
     return jsonify({"message": "Backend is reachable ✅"})
@@ -498,18 +439,10 @@ def predict():
         else:
             raise ValueError("Missing 'sequence' or 'features'")
 
-        print(f"[PREDICT] Input tensor shape: {x.shape}, device: {x.device}")
-        print(f"[PREDICT] Model: {type(model_for_inference)}")
-        print(f"[PREDICT] Model device: {next(model_for_inference.parameters()).device}")
-        
-        # Use automatic mixed precision context for faster inference
-        autocast_context = torch.cuda.amp.autocast() if device.type == 'cuda' else nullcontext()
-        
-        with torch.inference_mode(), autocast_context:
+        with torch.no_grad():
             if device.type == 'cuda':
                 torch.cuda.synchronize()
             logits = model_for_inference(x)
-            print(f"[PREDICT] Output logits shape: {logits.shape}")
             probs = torch.softmax(logits, dim=1)
             if device.type == 'cuda':
                 torch.cuda.synchronize()
@@ -518,10 +451,7 @@ def predict():
             label = CLASSES[pred_idx]
 
         conf = float(np.max(probs_np))
-        # Get source from request, default to "activity"
-        source = data.get("source", "activity")
-        save_progress(label, conf, source=source)
-        flush_progress()  # Flush immediately so results appear in UI
+        save_progress(label, conf)
 
         demo_path = get_demo_video_path(label)
         response = {
@@ -551,9 +481,7 @@ def predict_auto():
         else:
             raise ValueError("Missing 'sequence' or 'features'")
 
-        autocast_context = torch.cuda.amp.autocast() if device.type == 'cuda' else nullcontext()
-        
-        with torch.inference_mode(), autocast_context:
+        with torch.no_grad():
             if device.type == 'cuda':
                 torch.cuda.synchronize()
             logits = model_for_inference(x)
@@ -573,8 +501,7 @@ def predict_auto():
             closest_conf = float(probs_np[top_idx])
 
             # Save "closest" (what the model thinks you performed)
-            save_progress(closest_label, closest_conf, source="auto")
-            flush_progress()  # Flush immediately so results appear in UI
+            save_progress(closest_label, closest_conf)
 
             response = {
                 "prediction": "Incorrect",
@@ -586,8 +513,7 @@ def predict_auto():
             print(f"[AUTO] Incorrect (conf={conf:.4f}) → Closest: {closest_label} ({closest_conf:.4f})")
         else:
             # Save correct sign
-            save_progress(label, conf, source="auto")
-            flush_progress()  # Flush immediately so results appear in UI
+            save_progress(label, conf)
 
             response = {
                 "prediction": label,
@@ -610,9 +536,7 @@ def assess():
     try:
         data = request.get_json(force=True)
         x = prepare_sequence(data)
-        
-        autocast_context = torch.cuda.amp.autocast() if device.type == 'cuda' else nullcontext()
-        with torch.inference_mode(), autocast_context:
+        with torch.no_grad():
             if device.type == 'cuda':
                 torch.cuda.synchronize()
             logits = model_for_inference(x)
@@ -623,8 +547,7 @@ def assess():
             pred_idx = int(np.argmax(probs_np))
             label = CLASSES[pred_idx]
 
-        save_progress(label, float(np.max(probs_np)), source="select")
-        flush_progress()  # Flush immediately so results appear in UI
+        save_progress(label, float(np.max(probs_np)))
 
         demo_path = get_demo_video_path(label)
         return jsonify({
