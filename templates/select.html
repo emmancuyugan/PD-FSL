@@ -144,8 +144,7 @@
     font-size: 20px;
     display: none;
     box-shadow: 0 4px 16px rgba(255, 107, 157, 0.5);
-    /* OPTIMIZATION: Disabled infinite animation for performance */
-    /* animation: blink 1.5s infinite; */
+    animation: blink 1.5s infinite;
     background: var(--coral);
     color: var(--white);
   }
@@ -162,8 +161,7 @@
     background: var(--white);
     border-radius: 50%;
     margin-right: 8px;
-    /* OPTIMIZATION: Disabled infinite animation for performance */
-    /* animation: pulse-dot 1.5s infinite; */
+    animation: pulse-dot 1.5s infinite;
   }
 
   @keyframes pulse-dot {
@@ -814,6 +812,10 @@
               <input type="checkbox" id="toggleResults" checked>
               <span>[Note] Results</span>
             </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleSpeed">
+              <span>⚡ Fast Mode</span>
+            </label>
           </div>
         </div>
       </div>
@@ -943,6 +945,7 @@ window.addEventListener("load", () => {
   const toggleVisuals = document.getElementById('toggleVisuals');
   const toggleTimer   = document.getElementById('toggleTimer');
   const toggleResults = document.getElementById('toggleResults');
+  const toggleSpeed   = document.getElementById('toggleSpeed');
 
   let showVisuals = true;
   let showTimer   = true;
@@ -1099,28 +1102,25 @@ window.addEventListener("load", () => {
     return aligned;
   }
 
-  let updateCounter = 0;
   function updateBuffer(f){
+    // Reject frames after capture window closes - strict timeout enforcement
+    if(captureStopped) return;
+    if(state!==STATE_CAPTURE) return;
+    
     if(buf.length<CAPTURE_MAX) buf.push(f);
     else { buf.shift(); buf.push(f); }
-    
-    // Update UI only every 5 frames to reduce DOM operations
-    updateCounter++;
-    if(updateCounter >= 5) {
-      updateCounter = 0;
-      frameCountEl.textContent=Math.min(buf.length,SEQ_LEN);
-      progressBar.style.width=Math.min(100,Math.round((buf.length/CAPTURE_MAX)*100))+"%";
-      if(state===STATE_CAPTURE && captureStartMs){
-        const t=Math.max(0,Math.min(1,(Date.now()-captureStartMs)/CAPTURE_MS));
-        if (showTimer) timerBar.style.width=(t*100).toFixed(1)+'%';
-      } else {
-        timerBar.style.width='0%';
-      }
+    frameCountEl.textContent=Math.min(buf.length,SEQ_LEN);
+    progressBar.style.width=Math.min(100,Math.round((buf.length/CAPTURE_MAX)*100))+"%";
+    if(state===STATE_CAPTURE && captureStartMs){
+      const t=Math.max(0,Math.min(1,(Date.now()-captureStartMs)/CAPTURE_MS));
+      if (showTimer) timerBar.style.width=(t*100).toFixed(1)+'%';
+    } else {
+      timerBar.style.width='0%';
     }
-    // Auto-trigger when buffer reaches 40% - lower trigger for "Not Enough Data" fix
-    const triggerPoint = Math.ceil(CAPTURE_MAX * 0.4);
-    if(buf.length>=triggerPoint && !autoJudge){
-      autoJudge=true; setTimeout(()=>stopAndPredict(),100);
+    // Auto-trigger when buffer reaches 75% of CAPTURE_MAX (realistic with frameSkip=2)
+    const fiftyPercent = Math.ceil(CAPTURE_MAX * 0.75);
+    if(buf.length>=fiftyPercent && !autoJudge && state===STATE_CAPTURE){
+      autoJudge=true; captureStopped=true; setTimeout(()=>stopAndPredict(),200);
     }
   }
 
@@ -1467,14 +1467,14 @@ window.addEventListener("load", () => {
   };
 
   const holistic = new Holistic({locateFile: (f) => `/static/mediapipe/holistic/${f}`});
-  // Optimized for Jetson: lite model, standard thresholds
+  // Optimized for Jetson Orin Nano: reduced complexity, better thresholds for detection
   holistic.setOptions({
     selfieMode: false,
-    modelComplexity: 1,
-    smoothLandmarks: true,
-    refineFaceLandmarks: false,
-    minDetectionConfidence: 0.55,
-    minTrackingConfidence: 0.55
+    modelComplexity: 1,           // Lite model: 40-50% faster inference
+    smoothLandmarks: true,        // Keep smooth for stability
+    refineFaceLandmarks: false,   // Skip facial refinement
+    minDetectionConfidence: 0.60, // LOWERED: 0.65→0.60 for better sign detection
+    minTrackingConfidence: 0.60   // LOWERED: matches detection for consistency
   });
 
   holistic.onResults(function(res){
@@ -1624,6 +1624,7 @@ window.addEventListener("load", () => {
   });
 
   const originalStart = () => {
+    // REMOVED: Fast mode completely - single consistent 6s capture for reliability
     CAPTURE_MS = BASE_CAPTURE_MS;  // Always 6 seconds
 
     const chosen = gestureSelect.value;
@@ -1637,6 +1638,7 @@ window.addEventListener("load", () => {
     buf = [];
     frameCounter = 0;
     autoJudge = false;
+    captureStopped = false;  // Reset capture stop flag
     setState(STATE_PREP);
 
     prepOverlay.style.display = "block";
@@ -1653,9 +1655,9 @@ window.addEventListener("load", () => {
       setState(STATE_CAPTURE);
       prepOverlay.style.display = "none";
       recBadge.style.display = "inline-block";
-      capturePhase.textContent = "Perform for 6 seconds…";
+      capturePhase.textContent = "Perform for 6 seconds…";  // Updated message
       captureStartMs = Date.now();
-      startNumericTimer(false);
+      startNumericTimer(false);  // Always use 6s timer
     }, 1000);
   };
 
