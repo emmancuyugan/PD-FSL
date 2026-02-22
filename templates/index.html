@@ -43,6 +43,7 @@
   .shape {
     position: absolute;
     opacity: 0.15;
+    animation: float 20s infinite ease-in-out;
   }
 
   .shape:nth-child(1) { 
@@ -52,6 +53,7 @@
     border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
     top: 10%; 
     left: 5%; 
+    animation-delay: 0s;
   }
 
   .shape:nth-child(2) { 
@@ -61,6 +63,7 @@
     border-radius: 50%;
     top: 60%; 
     left: 80%; 
+    animation-delay: 3s;
   }
 
   .shape:nth-child(3) { 
@@ -70,6 +73,7 @@
     border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
     bottom: 10%; 
     right: 10%; 
+    animation-delay: 6s;
   }
 
   .shape:nth-child(4) { 
@@ -79,6 +83,14 @@
     border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
     top: 30%; 
     right: 20%; 
+    animation-delay: 9s;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(20px, -20px) rotate(5deg); }
+    50% { transform: translate(-15px, 15px) rotate(-5deg); }
+    75% { transform: translate(10px, -10px) rotate(3deg); }
   }
 
   .hero-section {
@@ -148,6 +160,12 @@
     background: var(--white);
     border-radius: 20px;
     box-shadow: 0 4px 12px var(--shadow);
+    transition: all 0.3s ease;
+  }
+
+  .feature-badge:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px var(--shadow);
   }
 
   .badge-dot {
@@ -190,7 +208,17 @@
     display: inline-flex;
     align-items: center;
     gap: 10px;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     box-shadow: 0 6px 20px var(--shadow);
+  }
+
+  .hero-btn:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 10px 30px var(--shadow);
+  }
+
+  .hero-btn:active {
+    transform: translateY(-2px) scale(1.02);
   }
 
   .btn-primary {
@@ -250,6 +278,7 @@
     padding: 40px;
     text-align: center;
     box-shadow: 0 8px 24px var(--shadow);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     animation: popUp 0.6s ease-out backwards;
   }
 
@@ -262,6 +291,11 @@
     to { transform: translateY(0) scale(1); opacity: 1; }
   }
 
+  .feature-card:hover {
+    transform: translateY(-12px) scale(1.02);
+    box-shadow: 0 16px 40px var(--shadow);
+  }
+
   .feature-icon {
     width: 80px;
     height: 80px;
@@ -272,6 +306,11 @@
     justify-content: center;
     font-size: 40px;
     box-shadow: 0 8px 24px var(--shadow);
+    transition: all 0.3s ease;
+  }
+
+  .feature-card:hover .feature-icon {
+    transform: scale(1.1) rotate(5deg);
   }
 
   .icon-blue {
@@ -393,7 +432,7 @@
     <div class="features-grid">
       <!-- Feature 1: AI-Powered Recognition -->
       <div class="feature-card">
-        <div class="feature-icon icon-blue"><img src="{{ url_for('static', filename='img/A.png') }}" alt="AI-Powered Recognition" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></div>
+        <div class="feature-icon icon-blue"></div>
         <h3 class="feature-title">AI-Powered Recognition</h3>
         <p class="feature-description">
           Advanced LSTM neural networks provide accurate and real-time gesture recognition.
@@ -402,7 +441,7 @@
 
       <!-- Feature 2: Interactive Learning -->
       <div class="feature-card">
-        <div class="feature-icon icon-green"><img src="{{ url_for('static', filename='img/A.png') }}" alt="Interactive Learning" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></div>
+        <div class="feature-icon icon-green"></div>
         <h3 class="feature-title">Interactive Learning</h3>
         <p class="feature-description">
           Dual-mode system with tutor mode for guided learning and activity mode for practical application and testing.
@@ -411,7 +450,7 @@
 
       <!-- Feature 3: Performance Feedback -->
       <div class="feature-card">
-        <div class="feature-icon icon-coral"><img src="{{ url_for('static', filename='img/A.png') }}" alt="Performance Feedback" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></div>
+        <div class="feature-icon icon-coral"></div>
         <h3 class="feature-title">Performance Feedback</h3>
         <p class="feature-description">
           Real-time evaluation and corrective insights help you improve your sign language accuracy and enhance your learning progress.

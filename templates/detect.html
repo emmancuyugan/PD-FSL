@@ -43,6 +43,7 @@
   .shape {
     position: absolute;
     opacity: 0.15;
+    animation: float 20s infinite ease-in-out;
   }
 
   .shape:nth-child(1) { 
@@ -52,6 +53,7 @@
     border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
     top: 10%; 
     left: 5%; 
+    animation-delay: 0s;
   }
 
   .shape:nth-child(2) { 
@@ -61,6 +63,7 @@
     border-radius: 50%;
     top: 60%; 
     left: 80%; 
+    animation-delay: 3s;
   }
 
   .shape:nth-child(3) { 
@@ -70,6 +73,7 @@
     border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
     bottom: 10%; 
     right: 10%; 
+    animation-delay: 6s;
   }
 
   .shape:nth-child(4) { 
@@ -79,6 +83,14 @@
     border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
     top: 30%; 
     right: 20%; 
+    animation-delay: 9s;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(20px, -20px) rotate(5deg); }
+    50% { transform: translate(-15px, 15px) rotate(-5deg); }
+    75% { transform: translate(10px, -10px) rotate(3deg); }
   }
 
   .page-container {
@@ -132,6 +144,12 @@
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 4px 16px rgba(255, 140, 66, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .new-challenge-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(255, 140, 66, 0.4);
   }
 
   .target-card {
@@ -212,7 +230,13 @@
     font-size: 18px;
     font-weight: 700;
     cursor: pointer;
+    transition: all 0.3s ease;
     box-shadow: 0 4px 12px var(--shadow);
+  }
+
+  .control-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px var(--shadow);
   }
 
   .start-cam-btn {
@@ -274,6 +298,12 @@
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 4px 12px rgba(167, 139, 250, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .demo-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(167, 139, 250, 0.4);
   }
 
   .feedback-section {
@@ -399,7 +429,7 @@
   <!-- Header Section -->
   <div class="header-section">
     <div class="header-info">
-      <h1>Practice & Evaluate</h1>
+      <h1>🎯 Practice & Evaluate</h1>
       <p>Practice signing the phrase shown below using your camera, then get AI-powered feedback and guidance!</p>
     </div>
     <button id="nextChallenge" class="new-challenge-btn">🎲 New Challenge</button>
@@ -413,7 +443,7 @@
 
   <!-- Camera Section -->
   <div class="camera-section">
-    <div class="camera-label">Live Camera</div>
+    <div class="camera-label">📹 Live Camera</div>
     <video id="cam" autoplay muted playsinline></video>
   </div>
 
@@ -428,7 +458,7 @@
 
   <!-- Demo Mode Section -->
   <details class="demo-section">
-    <summary class="demo-summary">No camera? Try manual input (Demo Mode)</summary>
+    <summary class="demo-summary">🤔 No camera? Try manual input (Demo Mode)</summary>
     <div class="demo-content">
       <select id="attemptPick" class="demo-select"></select>
       <input id="attemptManual" class="demo-input" placeholder="Type your attempt..." />
@@ -440,19 +470,19 @@
 <!-- Feedback Section -->
 <div class="page-container">
   <div class="feedback-section" id="feedbackSec">
-    <h2 class="feedback-title">Performance Feedback</h2>
+    <h2 class="feedback-title">📊 Performance Feedback</h2>
 
     <div id="feedbackBox" class="feedback-box"></div>
 
     <div id="reteach" class="reteach-section">
-      <h3 class="reteach-title">Learn the Correct Sign</h3>
+      <h3 class="reteach-title">🎓 Learn the Correct Sign</h3>
 
       <div class="video-container">
         <video id="reteachVideo" controls></video>
       </div>
 
       <div class="steps-container">
-        <h4 class="steps-title">Correct Steps:</h4>
+        <h4 class="steps-title">📝 Correct Steps:</h4>
         <ol id="reteachSteps"></ol>
       </div>
     </div>

@@ -43,6 +43,7 @@
   .shape {
     position: absolute;
     opacity: 0.15;
+    animation: float 20s infinite ease-in-out;
   }
 
   .shape:nth-child(1) { 
@@ -52,6 +53,7 @@
     border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
     top: 10%; 
     left: 5%; 
+    animation-delay: 0s;
   }
 
   .shape:nth-child(2) { 
@@ -61,6 +63,7 @@
     border-radius: 50%;
     top: 60%; 
     left: 80%; 
+    animation-delay: 3s;
   }
 
   .shape:nth-child(3) { 
@@ -70,6 +73,7 @@
     border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
     bottom: 10%; 
     right: 10%; 
+    animation-delay: 6s;
   }
 
   .shape:nth-child(4) { 
@@ -79,6 +83,14 @@
     border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
     top: 30%; 
     right: 20%; 
+    animation-delay: 9s;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(20px, -20px) rotate(5deg); }
+    50% { transform: translate(-15px, 15px) rotate(-5deg); }
+    75% { transform: translate(10px, -10px) rotate(3deg); }
   }
 
   .app-container {
@@ -175,7 +187,17 @@
     font-size: 18px;
     font-weight: 700;
     cursor: pointer;
+    transition: all 0.3s ease;
     box-shadow: 0 4px 16px rgba(255, 140, 66, 0.3);
+  }
+
+  .reset-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(255, 140, 66, 0.4);
+  }
+
+  .reset-btn:active {
+    transform: translateY(-1px);
   }
 
   .main-content {
@@ -367,6 +389,12 @@
     font-weight: 600;
     cursor: pointer;
     box-shadow: 0 2px 8px var(--shadow);
+    transition: all 0.2s ease;
+  }
+
+  .ghost-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow);
   }
 
   .control-buttons {
@@ -386,12 +414,22 @@
     border: none;
     border-radius: 25px;
     cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     box-shadow: 0 6px 20px var(--shadow);
     display: flex;
     align-items: center;
     gap: 10px;
     background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
     color: var(--white);
+  }
+
+  .big-button:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 10px 30px var(--shadow);
+  }
+
+  .big-button:active {
+    transform: translateY(-2px) scale(1.02);
   }
 
   .sidebar {
@@ -530,6 +568,7 @@
     font-size: 16px;
     font-weight: 700;
     cursor: pointer;
+    transition: all 0.3s ease;
     box-shadow: 0 2px 8px var(--shadow);
   }
 
@@ -541,6 +580,15 @@
   .try-again-btn {
     background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
     color: var(--white);
+  }
+
+  .assist-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow);
+  }
+
+  .assist-btn:active {
+    transform: translateY(0);
   }
 
   .assist-hint {
@@ -650,7 +698,7 @@
 
 <div class="app-container">
   <div class="header">
-    <div class="logo">Activity Mode</div>
+    <div class="logo">[Target] Activity Mode</div>
     <div class="header-controls">
       <div class="rec-badge" id="recBadge">
         <span class="rec-dot"></span>REC
@@ -675,19 +723,19 @@
         <div class="settings-panel">
           <div class="setting-item">
             <input type="checkbox" id="toggleVisuals" checked>
-            <span>Hand Markers</span>
+            <span>[Eye] Hand Markers</span>
           </div>
           <div class="setting-item">
             <input type="checkbox" id="toggleTimer" checked>
-            <span>Timer</span>
+            <span>[Timer] Timer</span>
           </div>
           <div class="setting-item">
             <input type="checkbox" id="toggleResults" checked>
-            <span>Results</span>
+            <span>[Note] Results</span>
           </div>
           <div class="setting-item">
             <input type="checkbox" id="toggleSpeed">
-            <span>Fast Mode</span>
+            <span>⚡ Fast Mode</span>
           </div>
         </div>
 
@@ -699,7 +747,7 @@
           </select>
         </div>
 
-        <div class="ghost-badge" id="ghostBadge">Ghost Helper ON</div>
+        <div class="ghost-badge" id="ghostBadge">[Guide] Ghost Helper ON</div>
 
         <div class="ghost-controls" id="ghostControls">
           <button class="ghost-btn" id="btnSizeDown">Size −</button>
@@ -768,7 +816,7 @@
 
 <script>
 window.addEventListener("load", () => {
-  const ENABLE_CONFETTI = false;
+  const ENABLE_CONFETTI = false; // keep look, disable expensive confetti
   const NUMBER_SIGNS = ["One","Two","Three","Four","Five"];
   const COLOR_SIGNS  = ["Black","Blue","Green","Orange","Pink","Red","White","Yellow"];
   const FAMILY_SIGNS = ["Daughter","Father","Grandfather","Grandmother","Mother","Son"];
@@ -848,10 +896,7 @@ window.addEventListener("load", () => {
   const SEQ_LEN = 48, CAPTURE_MAX = 120;
   const BASE_CAPTURE_MS = 5000;
   let CAPTURE_MS = BASE_CAPTURE_MS;
-  let buf=[], running=false, frameSkip=3, frameCounter=0, autoJudge=false, captureStartMs=0;
-  // OPTIMIZATION: Jetson Orin Nano frame skipping
-  // Activity mode: skip every 3rd frame = ~10 FPS effective (from 30 FPS camera)
-  // Still captures 30+ frames in 5s sessions, sufficient for 48-frame LSTM sequence
+  let buf=[], running=false, frameSkip=1, frameCounter=0, autoJudge=false, captureStartMs=0;
 
   function updateGestureDisplay(gesture) {
     targetLabel.textContent = gesture ? gesture : 'None';
@@ -1254,8 +1299,7 @@ window.addEventListener("load", () => {
     v.src=url; v.muted=true; v.playsInline=true; v.crossOrigin='anonymous';
     await new Promise((resolve,reject)=>{ v.onloadedmetadata=resolve; v.onerror=()=>reject(new Error('Video error')); });
     const ghostHolistic=new Holistic({locateFile: (f) => `/static/mediapipe/holistic/${f}`});
-    // Ghost model for demo skeleton: optimized inference
-    ghostHolistic.setOptions({selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.60,minTrackingConfidence:0.60});
+    ghostHolistic.setOptions({selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
     ghostFrames=[];
     ghostHolistic.onResults(res=>{
       const pose=res.poseLandmarks||[], face=res.faceLandmarks||[];
@@ -1309,8 +1353,7 @@ window.addEventListener("load", () => {
   };
 
   const holistic=new Holistic({locateFile: (f) => `/static/mediapipe/holistic/${f}`});
-  // Optimized for Jetson Orin Nano: reduced complexity, higher confidence thresholds
-  holistic.setOptions({selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.65,minTrackingConfidence:0.65});
+  holistic.setOptions({selfieMode:false,modelComplexity:2,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.55,minTrackingConfidence:0.55});
 
   holistic.onResults(function(res){
     ctx.save();
@@ -1405,8 +1448,7 @@ window.addEventListener("load", () => {
     }
   });
 
-  const camera=new Camera(videoEl,{ onFrame:async function(){ await holistic.send({image:videoEl}); }, width:480, height:360 });
-  // Camera resolution optimized: 480x360 (28% fewer pixels than 640x480)
+  const camera=new Camera(videoEl,{ onFrame:async function(){ await holistic.send({image:videoEl}); }, width:640, height:480 });
 
   const originalStart = () => {
     const diff = difficultySelect.value;
@@ -1508,3 +1550,4 @@ window.addEventListener("load", () => {
 </script>
 
 {% endblock %}
+</document_content>
