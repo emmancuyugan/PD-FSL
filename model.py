@@ -24,21 +24,14 @@ class ModifiedLSTM(nn.Module):
 
     def forward(self, x, reset_mask=None):
         out = x
-        if self.use_layernorm:
-            for lstm, layernorm in zip(self.lstm_layers, self.layernorms):
-                out, _ = lstm(out)
-                out = layernorm(out)
-                out = self.act(out)
-                out = self.drop(out)
-                if reset_mask is not None:
-                    out = out * reset_mask.unsqueeze(-1)
-        else:
-            for lstm in self.lstm_layers:
-                out, _ = lstm(out)
-                out = self.act(out)
-                out = self.drop(out)
-                if reset_mask is not None:
-                    out = out * reset_mask.unsqueeze(-1)
+        for i, lstm in enumerate(self.lstm_layers):
+            out, _ = lstm(out)
+            if self.use_layernorm:
+                out = self.layernorms[i](out)
+            out = self.act(out)
+            out = self.drop(out)
+            if reset_mask is not None:
+                out = out * reset_mask.unsqueeze(-1)
         out = out.mean(dim=1)
         return self.fc(out)
 

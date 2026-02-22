@@ -165,13 +165,6 @@ state_dict = torch.load(MODEL_PATH, map_location=device)
 model.load_state_dict(state_dict)
 model.eval()
 
-# Log device info
-print(f"[INFO] CUDA available: {torch.cuda.is_available()}")
-if torch.cuda.is_available():
-    print(f"[INFO] CUDA device count: {torch.cuda.device_count()}")
-    print(f"[INFO] CUDA device name: {torch.cuda.get_device_name(0)}")
-print(f"[INFO] Using device: {device}")
-
 # Enable inference optimizations for Jetson CUDA
 if device.type == 'cuda':
     # Enable CUDA optimizations
@@ -179,14 +172,13 @@ if device.type == 'cuda':
     torch.backends.cudnn.benchmark = True  # Auto-tune convolution algorithms
     # For Jetson, use reduced precision where possible
     torch.set_float32_matmul_precision('medium')  # Less precision = faster on Jetson
-    print("[INFO] CUDA optimizations enabled: cuDNN benchmarking, float32 matmul precision set to medium")
 
 # Optionally: Convert to TorchScript for faster inference (JIT compilation)
 try:
     model_for_inference = torch.jit.script(model)
     print("[INFO] TorchScript JIT compilation successful - using optimized inference")
 except Exception as e:
-    print(f"[WARNING] TorchScript JIT failed, using standard model: {e}")
+    print(f"[WARNING] TorchScript failed, using standard model: {e}")
     model_for_inference = model
 
 # ======================================================
