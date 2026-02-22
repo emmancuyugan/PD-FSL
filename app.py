@@ -428,8 +428,8 @@ def predict_auto():
             closest_label = CLASSES[top_idx]
             closest_conf = float(probs[top_idx])
 
-            # Save "closest" (what the model thinks you performed)
-            save_progress(closest_label, closest_conf)
+            # Save "Incorrect" to record that child did gesture incorrectly
+            save_progress("Incorrect", conf)
 
             response = {
                 "prediction": "Incorrect",

@@ -1028,11 +1028,26 @@ window.addEventListener("load", () => {
   }
 
   const PREDICT_URL = location.origin + '/predict';
+  const SAVE_URL = location.origin + '/api/save_result';
+  
   async function callPredict(sequence) {
     const payload = { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ sequence }) };
     const res = await fetch(PREDICT_URL, payload);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
+  }
+
+  async function saveResult(label, confidence = null) {
+    try {
+      const payload = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label, confidence })
+      };
+      await fetch(SAVE_URL, payload);
+    } catch (e) {
+      console.error('Failed to save result:', e);
+    }
   }
 
   function extractPredictedLabel(j){
@@ -1061,13 +1076,17 @@ window.addEventListener("load", () => {
       if (!silent) {
         const target = normLabel(targetGesture || '');
         if (predicted && target && predicted === target) {
+          // CORRECT: Save the target gesture as the result
           correctCount++;
           resultText.textContent = '✓ Correct!';
           resultText.className = 'result-text correct';
           correctCountEl.textContent = String(correctCount);
           document.getElementById("assistRow").style.display = 'none';
           celebrate();
+          // Save correct result with confidence from backend
+          await saveResult(target, j?.confidence || null);
         } else {
+          // INCORRECT: Save "Incorrect" to record the failure
           incorrectCount++;
           resultText.textContent = '✗ Incorrect';
           resultText.className = 'result-text incorrect';
@@ -1076,6 +1095,8 @@ window.addEventListener("load", () => {
           const assistHint = document.getElementById("assistHint");
           assistRow.style.display = 'block';
           assistHint.textContent = 'Watch the skeleton guide, then try again!';
+          // Save incorrect result
+          await saveResult("Incorrect", j?.confidence || null);
         }
       }
       return { predicted, raw: j };

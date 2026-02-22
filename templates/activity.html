@@ -926,11 +926,26 @@ window.addEventListener("load", () => {
   }
 
   const PREDICT_URL = location.origin + '/predict';
+  const SAVE_URL = location.origin + '/api/save_result';
+  
   async function callPredict(sequence) {
     const payload = { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ sequence }) };
     const res = await fetch(PREDICT_URL, payload);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
+  }
+
+  async function saveResult(label, confidence = null) {
+    try {
+      const payload = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label, confidence })
+      };
+      await fetch(SAVE_URL, payload);
+    } catch (e) {
+      console.error('Failed to save result:', e);
+    }
   }
 
   function extractPredictedLabel(j){
@@ -959,13 +974,17 @@ window.addEventListener("load", () => {
       if (difficultySelect.value !== "compound" && !silent) {
         const target = normLabel(targetGesture || '');
         if (predicted && target && predicted === target) {
+          // CORRECT: Save the target gesture
           correctCount++;
           resultText.textContent = '✓ Correct!';
           resultText.className = 'result-text correct';
           correctCountEl.textContent = String(correctCount);
           document.getElementById("assistRow").style.display = 'none';
           celebrate();
+          // Save correct result
+          await saveResult(target, j?.confidence || null);
         } else {
+          // INCORRECT: Save "Incorrect"
           incorrectCount++;
           resultText.textContent = '✗ Incorrect';
           resultText.className = 'result-text incorrect';
@@ -974,6 +993,8 @@ window.addEventListener("load", () => {
           const assistHint = document.getElementById("assistHint");
           assistRow.style.display = 'block';
           assistHint.textContent = 'Watch the overlay, then try again.';
+          // Save incorrect result
+          await saveResult("Incorrect", j?.confidence || null);
         }
       }
       return { predicted, raw: j };
@@ -1055,18 +1076,30 @@ window.addEventListener("load", () => {
         resultText.className = "result-text correct";
         correctCount++;
         celebrate();
+        // Save both correct results
+        await saveResult(firstExpected, firstResult?.raw?.confidence || null);
+        await saveResult(secondExpected, secondResult?.raw?.confidence || null);
       } else if (firstPred === firstExpected && secondPred !== secondExpected) {
         summary = `✗ Second sign incorrect — expected ${secondExpected}`;
         resultText.className = "result-text incorrect";
         incorrectCount++;
+        // Save first as correct, second as incorrect
+        await saveResult(firstExpected, firstResult?.raw?.confidence || null);
+        await saveResult("Incorrect", secondResult?.raw?.confidence || null);
       } else if (firstPred !== firstExpected && secondPred === secondExpected) {
         summary = `✗ First sign incorrect — expected ${firstExpected}`;
         resultText.className = "result-text incorrect";
         incorrectCount++;
+        // Save first as incorrect, second as correct
+        await saveResult("Incorrect", firstResult?.raw?.confidence || null);
+        await saveResult(secondExpected, secondResult?.raw?.confidence || null);
       } else {
         summary = `✗ Both signs incorrect`;
         resultText.className = "result-text incorrect";
         incorrectCount++;
+        // Save both as incorrect
+        await saveResult("Incorrect", firstResult?.raw?.confidence || null);
+        await saveResult("Incorrect", secondResult?.raw?.confidence || null);
       }
 
       resultText.textContent = summary;
