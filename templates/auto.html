@@ -33,7 +33,6 @@
     position: relative;
   }
 
-  /* Animated floating shapes background */
   .bg-shapes {
     position: fixed;
     inset: 0;
@@ -45,7 +44,6 @@
   .shape {
     position: absolute;
     opacity: 0.15;
-    animation: float 20s infinite ease-in-out;
   }
 
   .shape:nth-child(1) { 
@@ -55,7 +53,6 @@
     border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
     top: 10%; 
     left: 5%; 
-    animation-delay: 0s;
   }
 
   .shape:nth-child(2) { 
@@ -65,7 +62,6 @@
     border-radius: 50%;
     top: 60%; 
     left: 80%; 
-    animation-delay: 3s;
   }
 
   .shape:nth-child(3) { 
@@ -75,7 +71,6 @@
     border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
     bottom: 10%; 
     right: 10%; 
-    animation-delay: 6s;
   }
 
   .shape:nth-child(4) { 
@@ -85,14 +80,6 @@
     border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
     top: 30%; 
     right: 20%; 
-    animation-delay: 9s;
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translate(0, 0) rotate(0deg); }
-    25% { transform: translate(20px, -20px) rotate(5deg); }
-    50% { transform: translate(-15px, 15px) rotate(-5deg); }
-    75% { transform: translate(10px, -10px) rotate(3deg); }
   }
 
   .app-container {
@@ -114,12 +101,6 @@
     padding: 15px 25px;
     border-radius: 30px;
     box-shadow: 0 8px 24px var(--shadow);
-    animation: slideDown 0.6s ease-out;
-  }
-
-  @keyframes slideDown {
-    from { transform: translateY(-100%); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
   }
 
   .logo {
@@ -140,12 +121,6 @@
     font-weight: 700;
     font-size: 20px;
     box-shadow: 0 4px 12px rgba(6, 214, 160, 0.3);
-    animation: pulse 2s infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
   }
 
   .main-content {
@@ -162,12 +137,6 @@
     border-radius: 30px;
     box-shadow: 0 8px 32px var(--shadow);
     overflow: hidden;
-    animation: scaleIn 0.6s ease-out 0.2s backwards;
-  }
-
-  @keyframes scaleIn {
-    from { transform: scale(0.9); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
   }
 
   .camera-wrapper {
@@ -199,14 +168,8 @@
     font-size: 20px;
     display: none;
     box-shadow: 0 4px 16px rgba(255, 107, 157, 0.5);
-    animation: blink 1.5s infinite;
     background: var(--coral);
     color: var(--white);
-  }
-
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
   }
 
   .live-dot {
@@ -216,12 +179,6 @@
     background: var(--white);
     border-radius: 50%;
     margin-right: 8px;
-    animation: pulse-dot 1.5s infinite;
-  }
-
-  @keyframes pulse-dot {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.3); }
   }
 
   .result-overlay {
@@ -239,12 +196,6 @@
     z-index: 10;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(10px);
-    animation: popIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  }
-
-  @keyframes popIn {
-    from { transform: translateX(-50%) scale(0); }
-    to { transform: translateX(-50%) scale(1); }
   }
 
   .timer-overlay {
@@ -331,20 +282,11 @@
     border: none;
     border-radius: 25px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     box-shadow: 0 6px 20px var(--shadow);
     display: flex;
     align-items: center;
     gap: 10px;
-  }
-
-  .big-button:hover {
-    transform: translateY(-4px) scale(1.05);
-    box-shadow: 0 10px 30px var(--shadow);
-  }
-
-  .big-button:active {
-    transform: translateY(-2px) scale(1.02);
+    transition: none;
   }
 
   .start-btn {
@@ -363,12 +305,6 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
-    animation: slideLeft 0.6s ease-out 0.4s backwards;
-  }
-
-  @keyframes slideLeft {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
   }
 
   .card {
@@ -458,35 +394,11 @@
     font-size: 18px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
     box-shadow: 0 4px 16px rgba(255, 140, 66, 0.3);
   }
 
-  .clear-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(255, 140, 66, 0.4);
-  }
-
-  .clear-btn:active {
-    transform: translateY(-1px);
-  }
-
   .confetti {
-    position: fixed;
-    width: 10px;
-    height: 10px;
-    background: var(--sunshine);
-    position: absolute;
-    animation: confetti-fall 3s linear forwards;
-    z-index: 1000;
-    pointer-events: none;
-  }
-
-  @keyframes confetti-fall {
-    to {
-      transform: translateY(100vh) rotate(360deg);
-      opacity: 0;
-    }
+    display: none;
   }
 
   @media (max-width: 1024px) {
@@ -514,29 +426,20 @@
     }
   }
 
-    /* =========================================================
-    FIX: Prevent sidebar/history from stretching the whole UI
-    Make only the history list scroll
-    ========================================================= */
-
-  /* Lock app to viewport height (so the page doesn't grow) */
   .app-container {
-    height: 100vh;     /* was min-height: 100vh */
-    min-height: 0;     /* critical for flex scrolling */
+    height: 100vh;
+    min-height: 0;
   }
 
-  /* Ensure the flex row can shrink and children can scroll */
   .main-content {
     min-height: 0;
   }
 
-  /* Prevent sidebar content from pushing layout taller */
   .sidebar {
     min-height: 0;
-    overflow: hidden;  /* contain scrolling inside history-content */
+    overflow: hidden;
   }
 
-  /* Make camera section fill available height and not be stretched by sidebar */
   .camera-section {
     min-height: 0;
     display: flex;
@@ -548,25 +451,14 @@
     min-height: 0;
   }
 
-  /* History card: allow internal scroll */
   .history-card {
     min-height: 0;
   }
 
-  /* This is the only thing that should scroll */
   .history-content {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-  }
-
-  /* Touchscreen-friendly: disable hover lift effects on touch devices */
-  @media (hover: none), (pointer: coarse) {
-    .big-button:hover,
-    .clear-btn:hover {
-      transform: none !important;
-      box-shadow: 0 6px 20px var(--shadow) !important;
-    }
   }
 
 </style>
@@ -580,7 +472,7 @@
 
 <div class="app-container">
   <div class="header">
-    <div class="logo">[FSL] FSL Learning</div>
+    <div class="logo">FSL Learning</div>
     <div style="display: flex; align-items: center; gap: 16px;">
       <div class="live-badge" id="recBadge">
         <span class="live-dot"></span>LIVE
@@ -599,7 +491,7 @@
 
         <div class="timer-overlay" id="timerOverlay">5</div>
 
-        <div class="ghost-badge" id="ghostBadge">[Guide] Ghost Helper ON</div>
+        <div class="ghost-badge" id="ghostBadge">Ghost Helper ON</div>
 
         <div class="settings-panel">
           <div class="setting-item">
@@ -676,8 +568,16 @@
 
   const PREDICT_URL=location.origin+'/predict_auto';
   const SAVE_URL=location.origin+'/api/save_result';
-  const SEQ_LEN=48;
+  // OPTIMIZATION: Jetson Orin Nano frame skipping for auto detection
+  // Skip every 2nd frame = ~15 FPS effective (from 30 FPS camera)
+  // 5.5s capture × 15 fps = ~83 frames achievable
+  const SEQ_LEN = 48;
+  const CAPTURE_MAX = 80;  // Adjusted for frameSkip=2
+  const BASE_CAPTURE_MS = 5500;  // Increased to ensure enough frames
+  let CAPTURE_MS = BASE_CAPTURE_MS;
   let buf=[],running=false,handsPresent=false,frameCount=0,showVisuals=true,showTimer=true,showResults=true;
+  let frameSkip=2;
+  let autoJudge=false;  // Track auto-trigger to prevent multiple calls
   let predictInterval=null,tickInterval=null,countdown=5;
 
   const HAND_CONN=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20]];
@@ -837,7 +737,8 @@
 
     ghostFrames=[];
     const ghostHolistic=new Holistic({locateFile: (f) => `/static/mediapipe/holistic/${f}`});
-    ghostHolistic.setOptions({selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
+    // Ghost model for demo skeleton: optimized for Jetson
+    ghostHolistic.setOptions({selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.60,minTrackingConfidence:0.60});
 
     ghostHolistic.onResults(res=>{
       const pose=res.poseLandmarks||[];
@@ -878,7 +779,8 @@
   }
 
   const holistic=new Holistic({locateFile: (f) => `/static/mediapipe/holistic/${f}`});
-  holistic.setOptions({selfieMode:false,modelComplexity:2,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.55,minTrackingConfidence:0.55});
+  // Optimized for Jetson Orin Nano: reduced complexity, higher confidence thresholds for auto mode
+  holistic.setOptions({selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.70,minTrackingConfidence:0.70});
 
   holistic.onResults(res=>{
     ctx.clearRect(0,0,canvasEl.width,canvasEl.height);
@@ -927,97 +829,128 @@
 
     const feat=packFeature(res);
     if(running&&feat){
-      buf.push(feat);
-      if(buf.length>SEQ_LEN)buf.shift();
-      frameCount=buf.length;
-      frameInfo.textContent='Capturing: '+frameCount+' frames';
-      frameInfo.style.display='block';
+      // OPTIMIZATION: Apply frame skipping for Jetson Orin Nano
+      frameCount++;
+      if(frameCount % frameSkip === 0){
+        // Keep buffer at max size
+        if(buf.length<CAPTURE_MAX) buf.push(feat);
+        else { buf.shift(); buf.push(feat); }
+        frameInfo.textContent='Capturing: '+Math.floor(buf.length)+' frames';
+        frameInfo.style.display='block';
+        
+        // Auto-trigger when buffer reaches 75% capacity
+        const threshold = Math.ceil(CAPTURE_MAX * 0.75);
+        if(buf.length >= threshold && !autoJudge){
+          autoJudge=true; 
+          setTimeout(()=>predict(), 200);
+        }
+      }
     }
   });
 
-  const camera=new Camera(videoEl,{onFrame:async()=>{await holistic.send({image:videoEl});},width:640,height:480});
+  const camera=new Camera(videoEl,{onFrame:async()=>{await holistic.send({image:videoEl});},width:480,height:360});
+  // Camera resolution optimized for Jetson: 480x360 (28% fewer pixels)
 
-  async function predict(){
-    if(buf.length<5)return;
-    const fixed=temporalFix(buf,SEQ_LEN);
-    const seq=fixed.flatMap(f=>Array.from(f));
+async function predict(){
+    if(buf.length < 5) return;
+
+    const fixed = temporalFix(buf, SEQ_LEN);
+    const seq = fixed.flatMap(f => Array.from(f));
+
     try{
-      const res=await fetch(PREDICT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sequence:seq})});
-      const j=await res.json();
-      if(!showResults)return;
+        const res = await fetch(PREDICT_URL,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({sequence:seq})
+        });
 
-      // Update history
-      const now=new Date().toLocaleTimeString();
-      const histEntry=document.createElement('div');
-      histEntry.style.marginBottom='8px';
-      histEntry.style.padding='8px';
-      histEntry.style.borderRadius='8px';
-      histEntry.style.background='rgba(255,255,255,0.6)';
+        const j = await res.json();
+        if(!showResults) return;
 
-      if(j.prediction==='Incorrect'){
-        histEntry.innerHTML=`<strong style="color:var(--coral);">${now}</strong>: ✗ Incorrect (closest: ${j.closest_sign||'—'})`;
-        gestureOverlay.textContent=`✗ Try Again! Hint: ${j.closest_sign||'—'}`;
-        gestureOverlay.style.display='block';
-        gestureOverlay.style.background='rgba(255,107,157,0.9)';
-        detLabel.textContent=j.closest_sign||'—';
-        detStatus.textContent='Try again!';
+        const now = new Date().toLocaleTimeString();
+        const histEntry = document.createElement('div');
+        histEntry.style.marginBottom='8px';
+        histEntry.style.padding='8px';
+        histEntry.style.borderRadius='8px';
+        histEntry.style.background='rgba(255,255,255,0.6)';
 
-        if(j.closest_sign&&!loadingGhost){
-          loadingGhost=true;
-          ghostEnabled=false;
-          ghostReady=false;
-          ghostFrames=null;
-          ghostIdx=0;
-          if(ghostTimer)clearTimeout(ghostTimer);
+        if(j.prediction==='Incorrect'){
+            histEntry.innerHTML =
+                `<strong style="color:var(--coral);">${now}</strong>: ✗ Incorrect (closest: ${j.closest_sign||'—'})`;
 
-          try{
-            const ok=await loadGhostFor(j.closest_sign);
-            if(ok){
-              ghostEnabled=true;
-              ghostTimer=setTimeout(()=>{
-                ghostEnabled=false;
-                ghostReady=false;
-                ghostFrames=null;
-                ghostBadge.style.display='none';
-              },GHOST_DURATION_MS);
+            gestureOverlay.textContent =
+                `✗ Try Again! Hint: ${j.closest_sign||'—'}`;
+            gestureOverlay.style.display='block';
+            gestureOverlay.style.background='rgba(255,107,157,0.9)';
+
+            detLabel.textContent = j.closest_sign||'—';
+            detStatus.textContent = 'Try again!';
+
+            if(j.closest_sign && !loadingGhost){
+                loadingGhost = true;
+                ghostEnabled = false;
+                ghostReady = false;
+                ghostFrames = null;
+                ghostIdx = 0;
+                if(ghostTimer) clearTimeout(ghostTimer);
+
+                try{
+                    const ok = await loadGhostFor(j.closest_sign);
+                    if(ok){
+                        ghostEnabled = true;
+                        ghostTimer = setTimeout(()=>{
+                            ghostEnabled = false;
+                            ghostReady = false;
+                            ghostFrames = null;
+                            ghostBadge.style.display='none';
+                        }, GHOST_DURATION_MS);
+                    }
+                }catch(e){
+                    console.error('Ghost load error', e);
+                }finally{
+                    loadingGhost = false;
+                }
             }
-          }catch(e){
-            console.error('Ghost load error',e);
-          }finally{
-            loadingGhost=false;
-          }
+
+        }else{
+            histEntry.innerHTML =
+                `<strong style="color:var(--grass-green);">${now}</strong>: ✓ ${j.prediction||'—'}`;
+
+            gestureOverlay.textContent =
+                `✓ Great Job! ${j.prediction||'—'}`;
+            gestureOverlay.style.display='block';
+            gestureOverlay.style.background='rgba(6,214,160,0.9)';
+
+            detLabel.textContent = j.prediction||'—';
+            detStatus.textContent = 'Correct! Keep going!';
+            celebrate();
+
+            ghostEnabled=false;
+            ghostReady=false;
+            ghostFrames=null;
+            if(ghostTimer) clearTimeout(ghostTimer);
+            ghostBadge.style.display='none';
         }
-      }else{
-        histEntry.innerHTML=`<strong style="color:var(--grass-green);">${now}</strong>: ✓ ${j.prediction||'—'}`;
-        gestureOverlay.textContent=`✓ Great Job! ${j.prediction||'—'}`;
-        gestureOverlay.style.display='block';
-        gestureOverlay.style.background='rgba(6,214,160,0.9)';
-        detLabel.textContent=j.prediction||'—';
-        detStatus.textContent='Correct! Keep going!';
-        celebrate();
 
-        ghostEnabled=false;
-        ghostReady=false;
-        ghostFrames=null;
-        if(ghostTimer)clearTimeout(ghostTimer);
-        ghostBadge.style.display='none';
-      }
-
-      // Add to history (prepend so newest is on top)
-      if(historyEl.children.length===1&&historyEl.children[0].style.color==='#999'){
-        historyEl.innerHTML='';
-      }
-      historyEl.insertBefore(histEntry,historyEl.firstChild);
-      historyEl.scrollTop = 0;
+        if(historyEl.children.length===1 && historyEl.children[0].style.color==='#999'){
+            historyEl.innerHTML='';
+        }
+        historyEl.insertBefore(histEntry, historyEl.firstChild);
+        historyEl.scrollTop = 0;
 
     }catch(e){
-      console.error(e);
-      gestureOverlay.textContent='⚠️ Oops! Try again';
-      gestureOverlay.style.display='block';
-      gestureOverlay.style.background='rgba(255,140,66,0.9)';
-      detStatus.textContent='Connection error';
+        console.error(e);
+        gestureOverlay.textContent='⚠️ Oops! Try again';
+        gestureOverlay.style.display='block';
+        gestureOverlay.style.background='rgba(255,140,66,0.9)';
+        detStatus.textContent='Connection error';
     }
-  }
+
+    // 🔥 CRITICAL RESET — TRUE WINDOW MODE
+    buf = [];
+    frameCount = 0;
+    autoJudge = false;
+}
 
   toggleVisuals.onchange=()=>{showVisuals=toggleVisuals.checked;};
   toggleTimer.onchange=()=>{showTimer=toggleTimer.checked;timerOverlay.style.display=showTimer?'block':'none';};
@@ -1029,6 +962,7 @@
     running=true;
     buf=[];
     frameCount=0;
+    autoJudge=false;  // Reset auto-trigger flag for new capture
     recBadge.style.display='inline-block';
     stateBadge.textContent='Learning Mode ON! 🎓';
     stateBadge.style.background='linear-gradient(135deg, var(--coral), var(--orange))';
@@ -1043,17 +977,22 @@
     timerOverlay.textContent=countdown;
     timerOverlay.style.display=showTimer?'block':'none';
 
-    tickInterval=setInterval(()=>{
+    tickInterval = setInterval(() => {
       countdown--;
-      if(countdown<=0)countdown=fastMode?3:5;
-      timerOverlay.textContent=countdown;
-      if(countdown<=1)timerOverlay.style.background='var(--coral)';
-      else if(countdown<=2)timerOverlay.style.background='var(--orange)';
-      else timerOverlay.style.background='var(--sunshine)';
-    },1000);
+      timerOverlay.textContent = countdown;
+      if(countdown <= 1)
+        timerOverlay.style.background='var(--coral)';
+      else if(countdown <= 2)
+        timerOverlay.style.background='var(--orange)';
+      else
+        timerOverlay.style.background='var(--sunshine)';
 
-    setTimeout(()=>{predict();},1000);
-    predictInterval=setInterval(predict,intervalMs);
+      if(countdown <= 0){
+        predict();
+        countdown=fastMode?3:5;
+        timerOverlay.textContent = countdown;
+      }
+    }, 1000);
   };
 
   stopBtn.onclick=async()=>{
@@ -1085,3 +1024,4 @@
 </script>
 
 {% endblock %}
+

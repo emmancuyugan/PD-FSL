@@ -409,7 +409,7 @@
 
     <!-- Hero Buttons -->
     <div class="hero-buttons">
-      {% if session.get('authenticated') %}
+      {% if session.get('user_id') %}
         <a class="hero-btn btn-primary" href="{{ url_for('tutor') }}">Start Learning</a>
       {% else %}
         <a class="hero-btn btn-primary" href="{{ url_for('login') }}">Start Learning</a>

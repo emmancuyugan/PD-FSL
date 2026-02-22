@@ -16,32 +16,24 @@ import datetime
 from model import ModifiedLSTM
 from pathutils import resource_path
 
-# ======================================================
-# Flask setup
-# ======================================================
-
 app = Flask(
     __name__,
     template_folder=resource_path("templates"),
     static_folder=resource_path("static"),
 )
 
-# Optional (kept) – if you need CORS later
 CORS(app)
-
-# ======================================================
-# Environment + DB setup (offline/local)
-# ======================================================
 load_dotenv()
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret")
 
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+app.config["SQLALCHEMY_DATABASE_URI"] = (
+    os.getenv("DATABASE_URL") 
+    or "sqlite:///fsl.db"
+)
+
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
-# ======================================================
-# Database models
-# ======================================================
 class User(db.Model):
     __tablename__ = "users"
 
@@ -91,80 +83,76 @@ def save_progress(label: str, confidence=None):
     db.session.add(row)
     db.session.commit()
 
-# ======================================================
-# Model setup
-# ======================================================
-MODEL_PATH = resource_path("run35.pth")
+MODEL_PATH = r"run2.pt"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-CLASSES = [
-    "Color_Black",
-    "Color_Blue",
-    "Color_Green",
-    "Color_Orange",
-    "Color_Pink",
-    "Color_Red",
-    "Color_White",
-    "Color_Yellow",
-    "Family_Daughter",
-    "Family_Father",
-    "Family_Grandfather",
-    "Family_Grandmother",
-    "Family_Mother",
-    "Family_Son",
-    "Numbers_Five",
-    "Numbers_Four",
-    "Numbers_One",
-    "Numbers_Three",
-    "Numbers_Two",
-    "Relationship_Boy",
-    "Relationship_Girl",
-    "Relationship_Man",
-    "Relationship_Woman",
-    "Survival_Correct",
-    "Survival_Don'tUnderstand",
-    "Survival_No",
-    "Survival_Understand",
-    "Survival_Wrong",
-    "Survival_Yes",
-]
+checkpoint = torch.load(
+    MODEL_PATH,
+    map_location=device,
+    weights_only=False
+)
 
-INPUT_SIZE = 188
-HIDDEN_SIZE = 256
-NUM_LAYERS = 2
-NUM_CLASSES = len(CLASSES)
-SEQ_LEN = 48
+config = checkpoint["config"]
 
-model = ModifiedLSTM(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, NUM_CLASSES,
-                     dropout=0.35, use_layernorm=True).to(device)
-state_dict = torch.load(MODEL_PATH, map_location=device)
-model.load_state_dict(state_dict)
+CLASSES = config["CLASSES"]
+INPUT_SIZE = config["FEATURE_DIM"]
+HIDDEN_SIZE = config["HIDDEN_SIZE"]
+NUM_LAYERS = config["NUM_LAYERS"]
+DROPOUT = config["DROPOUT"]
+SEQ_LEN = config.get("SEQ_LEN", 48)
+
+model = ModifiedLSTM(
+    INPUT_SIZE,
+    HIDDEN_SIZE,
+    NUM_LAYERS,
+    len(CLASSES),
+    dropout=DROPOUT,
+    use_layernorm=True
+).to(device)
+
+model.load_state_dict(checkpoint["model_state_dict"])
 model.eval()
 
-# ======================================================
-# ✅ prepare_sequence (unchanged)
-# ======================================================
+print("Loaded Config:")
+print("Hidden:", HIDDEN_SIZE)
+print("Layers:", NUM_LAYERS)
+print("Dropout:", DROPOUT)
+print("Classes:", len(CLASSES))
+print("SEQ_LEN from config:", SEQ_LEN)
+print(f"[APP] Loaded model → hidden={HIDDEN_SIZE}, layers={NUM_LAYERS}, dropout={DROPOUT}")
+
 def prepare_sequence(data_json):
-    SEQ_LEN, FEAT_DIM = 48, 188
+    seq_len = SEQ_LEN
+    feat_dim = INPUT_SIZE
+
     if "sequence" in data_json:
         seq = np.array(data_json["sequence"], dtype=np.float32)
-        if seq.ndim == 1 and seq.size == SEQ_LEN * FEAT_DIM:
-            seq = seq.reshape(SEQ_LEN, FEAT_DIM)
+
+        if seq.ndim == 1 and seq.size == seq_len * feat_dim:
+            seq = seq.reshape(seq_len, feat_dim)
+
         elif seq.ndim == 2:
-            if seq.shape != (SEQ_LEN, FEAT_DIM):
-                raise ValueError(f"sequence shape {seq.shape}, expected {(SEQ_LEN, FEAT_DIM)}")
+            if seq.shape != (seq_len, feat_dim):
+                raise ValueError(f"sequence shape {seq.shape}, expected {(seq_len, feat_dim)}")
+
         else:
             raise ValueError("sequence must be 1D (flattened) or 2D array")
+
     elif "features" in data_json:
         feat = np.array(data_json["features"], dtype=np.float32)
-        if feat.size == SEQ_LEN * FEAT_DIM:
-            seq = feat.reshape(SEQ_LEN, FEAT_DIM)
-        elif feat.size == FEAT_DIM:
-            seq = np.tile(feat, (SEQ_LEN, 1))
+
+        if feat.size == seq_len * feat_dim:
+            seq = feat.reshape(seq_len, feat_dim)
+
+        elif feat.size == feat_dim:
+            seq = np.tile(feat, (seq_len, 1))
+
         else:
-            raise ValueError(f"features size {feat.size}, expected {FEAT_DIM} or {SEQ_LEN*FEAT_DIM}")
+            raise ValueError(f"features size {feat.size}, expected {feat_dim} or {seq_len*feat_dim}")
+
     else:
         raise ValueError("Missing 'sequence' or 'features' field in request.")
+
     return torch.tensor(seq, dtype=torch.float32).unsqueeze(0).to(device)
 
 # ======================================================
@@ -337,7 +325,7 @@ def login():
             session['user_id'] = user.id
             session['username'] = user.username
             flash("Logged in successfully!", "success")
-            return redirect(url_for('select'))
+            return redirect(url_for('home'))
 
         flash("Invalid username or password.", "danger")
         return redirect(url_for('login'))

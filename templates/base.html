@@ -75,11 +75,6 @@
       gap: 12px;
       text-decoration: none;
       color: inherit;
-      transition: all 0.3s ease;
-    }
-
-    .brand-link:hover {
-      transform: translateY(-2px);
     }
 
     .brand-logo {
@@ -87,12 +82,7 @@
       height: 50px;
       border-radius: 12px;
       overflow: hidden;
-      transition: transform 0.3s ease;
       box-shadow: 0 4px 12px var(--shadow);
-    }
-
-    .brand-logo:hover {
-      transform: scale(1.1) rotate(5deg);
     }
 
     .brand-logo img {
@@ -108,7 +98,6 @@
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
-      transition: all 0.3s ease;
     }
 
     .tagline {
@@ -132,29 +121,8 @@
       font-size: 14px;
       color: #333;
       border-radius: 12px;
-      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
       position: relative;
       overflow: hidden;
-    }
-
-    nav a::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-      transition: left 0.5s ease;
-    }
-
-    nav a:hover::before {
-      left: 100%;
-    }
-
-    nav a:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 4px 12px var(--shadow);
     }
 
     nav a:nth-child(1):hover, nav a:nth-child(1).active {
@@ -193,7 +161,7 @@
     }
 
     nav a.active {
-      box-shadow: 0 4px 16px var(--shadow);
+      box-shadow: 0 2px 8px var(--shadow);
     }
 
     /* Main content area */

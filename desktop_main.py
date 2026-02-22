@@ -10,5 +10,5 @@ def run_server():
 if __name__ == "__main__":
     threading.Thread(target=run_server, daemon=True).start()
     time.sleep(0.8)
-    webview.create_window("FSL Learning", f"http://127.0.0.1:{PORT}", width=1200, height=800)
+    webview.create_window("Senyasalin", f"http://127.0.0.1:{PORT}", width=1200, height=800)
     webview.start()

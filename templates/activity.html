@@ -43,7 +43,6 @@
   .shape {
     position: absolute;
     opacity: 0.15;
-    animation: float 20s infinite ease-in-out;
   }
 
   .shape:nth-child(1) { 
@@ -53,7 +52,6 @@
     border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
     top: 10%; 
     left: 5%; 
-    animation-delay: 0s;
   }
 
   .shape:nth-child(2) { 
@@ -63,7 +61,6 @@
     border-radius: 50%;
     top: 60%; 
     left: 80%; 
-    animation-delay: 3s;
   }
 
   .shape:nth-child(3) { 
@@ -73,7 +70,6 @@
     border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
     bottom: 10%; 
     right: 10%; 
-    animation-delay: 6s;
   }
 
   .shape:nth-child(4) { 
@@ -83,15 +79,9 @@
     border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
     top: 30%; 
     right: 20%; 
-    animation-delay: 9s;
-  }
+  }}
 
-  @keyframes float {
-    0%, 100% { transform: translate(0, 0) rotate(0deg); }
-    25% { transform: translate(20px, -20px) rotate(5deg); }
-    50% { transform: translate(-15px, 15px) rotate(-5deg); }
-    75% { transform: translate(10px, -10px) rotate(3deg); }
-  }
+
 
   .app-container {
     position: relative;
@@ -112,12 +102,6 @@
     padding: 15px 25px;
     border-radius: 30px;
     box-shadow: 0 8px 24px var(--shadow);
-    animation: slideDown 0.6s ease-out;
-  }
-
-  @keyframes slideDown {
-    from { transform: translateY(-100%); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
   }
 
   .logo {
@@ -143,14 +127,8 @@
     font-size: 20px;
     display: none;
     box-shadow: 0 4px 16px rgba(255, 107, 157, 0.5);
-    animation: blink 1.5s infinite;
     background: var(--coral);
     color: var(--white);
-  }
-
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
   }
 
   .rec-dot {
@@ -160,12 +138,6 @@
     background: var(--white);
     border-radius: 50%;
     margin-right: 8px;
-    animation: pulse-dot 1.5s infinite;
-  }
-
-  @keyframes pulse-dot {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.3); }
   }
 
   .status-badge {
@@ -187,17 +159,7 @@
     font-size: 18px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
     box-shadow: 0 4px 16px rgba(255, 140, 66, 0.3);
-  }
-
-  .reset-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(255, 140, 66, 0.4);
-  }
-
-  .reset-btn:active {
-    transform: translateY(-1px);
   }
 
   .main-content {
@@ -214,12 +176,6 @@
     border-radius: 30px;
     box-shadow: 0 8px 32px var(--shadow);
     overflow: hidden;
-    animation: scaleIn 0.6s ease-out 0.2s backwards;
-  }
-
-  @keyframes scaleIn {
-    from { transform: scale(0.9); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
   }
 
   .camera-wrapper {
@@ -256,12 +212,6 @@
     display: none;
     z-index: 10;
     text-shadow: 3px 3px 8px #000;
-    animation: popIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  }
-
-  @keyframes popIn {
-    from { transform: translate(-50%, -50%) scale(0); }
-    to { transform: translate(-50%, -50%) scale(1); }
   }
 
   .timer-bar-container {
@@ -389,12 +339,6 @@
     font-weight: 600;
     cursor: pointer;
     box-shadow: 0 2px 8px var(--shadow);
-    transition: all 0.2s ease;
-  }
-
-  .ghost-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px var(--shadow);
   }
 
   .control-buttons {
@@ -414,7 +358,6 @@
     border: none;
     border-radius: 25px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     box-shadow: 0 6px 20px var(--shadow);
     display: flex;
     align-items: center;
@@ -423,26 +366,11 @@
     color: var(--white);
   }
 
-  .big-button:hover {
-    transform: translateY(-4px) scale(1.05);
-    box-shadow: 0 10px 30px var(--shadow);
-  }
-
-  .big-button:active {
-    transform: translateY(-2px) scale(1.02);
-  }
-
   .sidebar {
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: 20px;
-    animation: slideLeft 0.6s ease-out 0.4s backwards;
-  }
-
-  @keyframes slideLeft {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
   }
 
   .card {
@@ -542,7 +470,6 @@
     height: 100%;
     width: 0%;
     background: linear-gradient(90deg, var(--grass-green), var(--sky-blue));
-    transition: width 0.3s ease;
   }
 
   .assist-section {
@@ -568,7 +495,6 @@
     font-size: 16px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
     box-shadow: 0 2px 8px var(--shadow);
   }
 
@@ -580,15 +506,6 @@
   .try-again-btn {
     background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
     color: var(--white);
-  }
-
-  .assist-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px var(--shadow);
-  }
-
-  .assist-btn:active {
-    transform: translateY(0);
   }
 
   .assist-hint {
@@ -642,21 +559,7 @@
   }
 
   .confetti {
-    position: fixed;
-    width: 10px;
-    height: 10px;
-    background: var(--sunshine);
-    position: absolute;
-    animation: confetti-fall 3s linear forwards;
-    z-index: 1000;
-    pointer-events: none;
-  }
-
-  @keyframes confetti-fall {
-    to {
-      transform: translateY(100vh) rotate(360deg);
-      opacity: 0;
-    }
+    display: none;
   }
 
   @media (max-width: 1024px) {
