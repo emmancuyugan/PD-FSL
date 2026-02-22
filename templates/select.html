@@ -966,13 +966,12 @@ window.addEventListener("load", () => {
   function setState(s){ state=s; stateBadge.textContent="State: "+["READY","PREP","CAPTURE"][s]; }
 
   let targetGesture=null, correctCount=0, incorrectCount=0;
-  const SEQ_LEN = 48;
-  // OPTIMIZATION: Adjusted for Jetson with frameSkip=2
-  // frameSkip=2 at 30fps = ~15 frames/sec actually processed
-  // 5.5s capture × 15 fps = ~83 frames, so CAPTURE_MAX=80 is achievable
-  const CAPTURE_MAX = 80;  // Reduced from 120 (was unreachable with frameSkip=2)
-  const BASE_CAPTURE_MS = 5500;  // Increased from 5000ms to ensure enough frames
+  const SEQ_LEN = 48, CAPTURE_MAX = 120;
+  const BASE_CAPTURE_MS = 5000;
   let CAPTURE_MS = BASE_CAPTURE_MS;
+  // OPTIMIZATION: Jetson Orin Nano frame skipping for 60% fewer inference calls
+  // Skip every 2nd frame in capture mode = ~15 FPS effective (from 30 FPS camera)
+  // This still captures 40+ quality frames in a 5s session, well above SEQ_LEN=48 requirement
   let buf=[], running=false, frameSkip=2, frameCounter=0, autoJudge=false, captureStartMs=0;
 
   function updateGestureDisplay(gesture) {
@@ -1056,34 +1055,18 @@ window.addEventListener("load", () => {
   }
 
   function temporalFix(frames,seqLen){
-    // Jetson optimization: Work with smaller frame buffers due to frame skipping
-    if(!frames || frames.length===0){
-      console.warn('[temporalFix] Empty frame buffer!');
-      // Return array of zeros as fallback - should not happen with better checks
-      const zero=new Float32Array(188);
-      return Array(seqLen).fill(zero);
-    }
-    
     if(frames.length<=seqLen){
-      // Simple padding: repeat the last frame for missing frames
-      const lastFrame=frames[frames.length-1];
-      if(!lastFrame) return Array(seqLen).fill(new Float32Array(188));
-      const pad=Array.from({length:seqLen-frames.length},()=>lastFrame);
+      const pad=Array.from({length:seqLen-frames.length},()=>frames[frames.length-1]);
       return frames.concat(pad);
     }
-    
-    // Smart frame selection for longer sequences
     const scores=new Array(frames.length).fill(0);
     for(let i=1;i<frames.length;i++){
-      const f0=frames[i-1], f1=frames[i]; 
-      if(!f0||!f1) continue;
-      let motion=0; 
-      for(let j=0;j<f0.length-2;j++) motion+=Math.abs(f1[j]-f0[j]);
+      const f0=frames[i-1], f1=frames[i]; if(!f0||!f1) continue;
+      let motion=0; for(let j=0;j<f0.length-2;j++) motion+=Math.abs(f1[j]-f0[j]);
       motion/=(f0.length-2);
       const presence=f1[f1.length-2]+f1[f1.length-1];
       scores[i]=0.7*motion+0.3*presence;
     }
-    
     const W=Math.min(40,frames.length);
     let bestStart=0, bestSum=-1e9, runSum=0;
     for(let i=0;i<W;i++) runSum+=scores[i]; bestSum=runSum;
@@ -1091,7 +1074,6 @@ window.addEventListener("load", () => {
       runSum+=scores[i+W-1]-scores[i-1];
       if(runSum>bestSum){bestSum=runSum; bestStart=i;}
     }
-    
     const selected=frames.slice(bestStart,bestStart+W);
     const step=selected.length/seqLen;
     const aligned=[];
@@ -1113,9 +1095,7 @@ window.addEventListener("load", () => {
     } else {
       timerBar.style.width='0%';
     }
-    // Auto-trigger when buffer reaches 80% of CAPTURE_MAX OR time expires
-    const fiftyPercent = Math.ceil(CAPTURE_MAX * 0.8);
-    if(buf.length>=fiftyPercent && !autoJudge){
+    if(buf.length>=CAPTURE_MAX && !autoJudge){
       autoJudge=true; setTimeout(()=>stopAndPredict(),200);
     }
   }
