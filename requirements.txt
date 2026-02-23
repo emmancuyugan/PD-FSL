@@ -1,6 +1,10 @@
 flask
+flask-cors
 torch
 numpy
 python-dotenv
 flask_sqlalchemy
 psycopg2-binary
+mediapipe
+opencv-python
+Pillow
