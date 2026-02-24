@@ -3,10 +3,3 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.md
-.DS_Store
-*.egg-info/
-build/
-dist/
-.pytest_cache/
-.coverage

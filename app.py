@@ -12,22 +12,9 @@ import os
 import random
 import json
 import datetime
-import threading
 
 from model import ModifiedLSTM
 from pathutils import resource_path
-
-# ============================================
-# C++ Camera Handler Integration
-# ============================================
-try:
-    from camera_handler import CameraCPPHandler
-    CAMERA_CPP_AVAILABLE = True
-    camera_handler = None
-except ImportError:
-    CAMERA_CPP_AVAILABLE = False
-    print("[WARNING] C++ camera handler not available. Install or build camera_handler.so/.dll")
-    print("[WARNING] Falling back to browser-based Mediapipe processing")
 
 app = Flask(
     __name__,
@@ -376,109 +363,6 @@ def api_save_result():
 def ping():
     return jsonify({"message": "Backend is reachable ✅"})
 
-# ======================================================
-# Camera Handler Endpoints (C++ Optimization)
-# ======================================================
-@app.route("/camera/init", methods=["POST"])
-def camera_init():
-    """Initialize C++ camera handler"""
-    global camera_handler
-    
-    if not CAMERA_CPP_AVAILABLE:
-        return jsonify({
-            "status": "fallback",
-            "message": "C++ camera handler not available. Using browser Mediapipe."
-        }), 200
-    
-    try:
-        if camera_handler is None:
-            camera_handler = CameraCPPHandler()
-            if not camera_handler.initialize():
-                return jsonify({"error": "Camera initialization failed"}), 500
-        
-        return jsonify({"status": "ok", "message": "Camera initialized"})
-    except Exception as e:
-        print(f"[ERROR] Camera init failed: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/camera/start", methods=["POST"])
-def camera_start():
-    """Start camera processing"""
-    global camera_handler
-    
-    if not CAMERA_CPP_AVAILABLE or camera_handler is None:
-        return jsonify({
-            "status": "fallback",
-            "message": "C++ camera handler not available"
-        }), 200
-    
-    try:
-        if camera_handler.start():
-            return jsonify({"status": "ok", "message": "Camera started"})
-        else:
-            return jsonify({"error": "Failed to start camera"}), 500
-    except Exception as e:
-        print(f"[ERROR] Camera start failed: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/camera/stop", methods=["POST"])
-def camera_stop():
-    """Stop camera processing"""
-    global camera_handler
-    
-    if camera_handler:
-        camera_handler.stop()
-    
-    return jsonify({"status": "ok", "message": "Camera stopped"})
-
-@app.route("/camera/frame", methods=["GET"])
-def camera_frame():
-    """Get latest processed frame from C++ handler"""
-    global camera_handler
-    
-    if not CAMERA_CPP_AVAILABLE or camera_handler is None:
-        return jsonify({"error": "Camera not available"}), 503
-    
-    try:
-        frame_data = camera_handler.get_frame()
-        if frame_data is None:
-            return jsonify({"status": "no_frame"}), 204
-        
-        # Return frame with embedded landmarks and base64 encoded image
-        return jsonify({
-            "status": "ok",
-            "pose": frame_data['pose'],
-            "left_hand": frame_data['left_hand'],
-            "right_hand": frame_data['right_hand'],
-            "frame_b64": f"data:image/jpeg;base64,{frame_data['frame_b64']}",
-            "timestamp": frame_data['timestamp']
-        })
-    except Exception as e:
-        print(f"[ERROR] Failed to get frame: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/camera/landmarks", methods=["GET"])
-def camera_landmarks():
-    """Get latest landmarks only (for model inference)"""
-    global camera_handler
-    
-    if not CAMERA_CPP_AVAILABLE or camera_handler is None:
-        return jsonify({"error": "Camera not available"}), 503
-    
-    try:
-        landmarks = camera_handler.get_landmarks_only()
-        if landmarks is None:
-            return jsonify({"status": "no_frame"}), 204
-        
-        return jsonify({
-            "status": "ok",
-            "landmarks": landmarks,
-            "count": len(landmarks)
-        })
-    except Exception as e:
-        print(f"[ERROR] Failed to get landmarks: {e}")
-        return jsonify({"error": str(e)}), 500
-
 # --------------------------
 # Normal /predict (Activity)
 # --------------------------
@@ -601,26 +485,6 @@ def assess():
 # ======================================================
 # Run app
 # ======================================================
-
-@app.teardown_appcontext
-def cleanup_camera_on_exit(exception=None):
-    """Clean up camera handler when Flask shuts down"""
-    global camera_handler
-    if camera_handler:
-        try:
-            camera_handler.cleanup()
-        except Exception as e:
-            print(f"[ERROR] Failed to cleanup camera handler: {e}")
-
 if __name__ == "__main__":
     init_db()
-    
-    # Initialize camera handler if available
-    if CAMERA_CPP_AVAILABLE:
-        try:
-            print("[INFO] Initializing C++ camera handler...")
-            # Camera will be initialized on demand via /camera/init endpoint
-        except Exception as e:
-            print(f"[WARNING] Could not initialize camera handler: {e}")
-    
     app.run(host="127.0.0.1", port=5000, debug=False, use_reloader=False)
