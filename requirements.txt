@@ -1,20 +1,11 @@
-# --- NVIDIA JETSON OPTIMIZED (Install manually via .whl) ---
 # torch (Installed: 2.5.0a0+872d972e41.nv24.08)
 # torchvision (Install manually to match Torch version)
-
-# --- WEB & CORE ---
 flask
 flask-cors
 python-dotenv
 flask_sqlalchemy
 psycopg2-binary
-
-# --- MATH & IMAGE ---
 numpy
 Pillow
-
-# --- VISION & AI ---
 mediapipe
-# Note: For Jetson, opencv-python is heavy. 
-# Using the system-installed OpenCV is often faster.
 opencv-python
