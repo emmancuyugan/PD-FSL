@@ -1,6 +1,6 @@
 flask
 flask-cors
-torch==2.1.0+cu121
+torch>=2.1.0
 numpy
 python-dotenv
 flask_sqlalchemy
