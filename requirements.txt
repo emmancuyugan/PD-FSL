@@ -1,17 +1,10 @@
 flask
-<<<<<<< HEAD
 flask-cors
 torch>=2.1.0
-=======
-torch
->>>>>>> parent of 82eb1e8 (Added C++ camera optimization for Jetson Orin Nano Super)
 numpy
 python-dotenv
 flask_sqlalchemy
 psycopg2-binary
-<<<<<<< HEAD
 mediapipe
 opencv-python
 Pillow
-=======
->>>>>>> parent of 82eb1e8 (Added C++ camera optimization for Jetson Orin Nano Super)
