@@ -3,9 +3,29 @@
 {% block content %}
 
 <style>
-  /* detect.html — inherits :root vars and resets from base.html */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :root {
+    --sunshine: #FFD93D;
+    --sky-blue: #4CC9F0;
+    --grass-green: #06D6A0;
+    --coral: #FF6B9D;
+    --lavender: #A78BFA;
+    --orange: #FF8C42;
+    --deep-blue: #4361EE;
+    --white: #FFFFFF;
+    --off-white: #FFF8F0;
+    --shadow: rgba(0, 0, 0, 0.15);
+  }
 
   body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-weight: 600;
     background: linear-gradient(135deg, #E0F4FF 0%, #FFE5EC 50%, #FFF4E0 100%);
     background-attachment: fixed;
     min-height: 100vh;
@@ -23,34 +43,54 @@
   .shape {
     position: absolute;
     opacity: 0.15;
+    animation: float 20s infinite ease-in-out;
   }
 
   .shape:nth-child(1) { 
-    width: 120px; height: 120px; 
+    width: 120px; 
+    height: 120px; 
     background: var(--sunshine); 
     border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-    top: 10%; left: 5%; 
+    top: 10%; 
+    left: 5%; 
+    animation-delay: 0s;
   }
 
   .shape:nth-child(2) { 
-    width: 90px; height: 90px; 
+    width: 90px; 
+    height: 90px; 
     background: var(--coral); 
     border-radius: 50%;
-    top: 60%; left: 80%; 
+    top: 60%; 
+    left: 80%; 
+    animation-delay: 3s;
   }
 
   .shape:nth-child(3) { 
-    width: 150px; height: 150px; 
+    width: 150px; 
+    height: 150px; 
     background: var(--grass-green); 
     border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
-    bottom: 10%; right: 10%; 
+    bottom: 10%; 
+    right: 10%; 
+    animation-delay: 6s;
   }
 
   .shape:nth-child(4) { 
-    width: 100px; height: 100px; 
+    width: 100px; 
+    height: 100px; 
     background: var(--lavender); 
     border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-    top: 30%; right: 20%; 
+    top: 30%; 
+    right: 20%; 
+    animation-delay: 9s;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(20px, -20px) rotate(5deg); }
+    50% { transform: translate(-15px, 15px) rotate(-5deg); }
+    75% { transform: translate(10px, -10px) rotate(3deg); }
   }
 
   .page-container {
