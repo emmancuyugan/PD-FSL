@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
-from functools import lru_cache
 
 import torch
 import torch.nn as nn
@@ -69,22 +68,6 @@ def login_required(fn):
             return redirect(url_for("login"))
         return fn(*args, **kwargs)
     return wrapper
-
-
-# ======================================================
-# Inference helper — shared by all prediction routes
-# ======================================================
-def _run_inference(data_json):
-    """Run model inference and return (label, confidence, probs_array).
-    Uses torch.inference_mode() for ~5-10% faster inference than no_grad."""
-    x = prepare_sequence(data_json)
-    with torch.inference_mode():
-        logits = model(x)
-        probs = torch.softmax(logits, dim=1).cpu().numpy()[0]
-        pred_idx = int(np.argmax(probs))
-        label = CLASSES[pred_idx]
-        conf = float(probs[pred_idx])
-    return label, conf, probs
 
 
 def save_progress(label: str, confidence=None):
@@ -188,14 +171,6 @@ def prepare_sequence(data_json):
 # ======================================================
 # Helper — locate demo video automatically
 # ======================================================
-@lru_cache(maxsize=128)
-def _list_video_dir(folder_abs):
-    """Cache directory listings to avoid repeated os.listdir calls."""
-    if not os.path.exists(folder_abs):
-        return ()
-    return tuple(os.listdir(folder_abs))
-
-
 def get_demo_video_path(label):
     parts = label.split("_")
     if len(parts) != 2:
@@ -205,10 +180,10 @@ def get_demo_video_path(label):
     name = parts[1].lower().replace("'", "")
 
     folder_abs = resource_path(os.path.join("static", "video", category))
-    files = _list_video_dir(folder_abs)
-    if not files:
+    if not os.path.exists(folder_abs):
         return None
 
+    files = os.listdir(folder_abs)
     candidates = [f for f in files if f.lower().startswith(name)]
     if not candidates:
         return None
@@ -408,8 +383,20 @@ def ping():
 def predict():
     try:
         data = request.get_json(force=True)
-        label, conf, probs = _run_inference(data)
+        if "sequence" in data:
+            x = prepare_sequence({"sequence": data["sequence"]})
+        elif "features" in data:
+            x = prepare_sequence({"features": data["features"]})
+        else:
+            raise ValueError("Missing 'sequence' or 'features'")
 
+        with torch.no_grad():
+            logits = model(x)
+            probs = torch.softmax(logits, dim=1).cpu().numpy()[0]
+            pred_idx = int(np.argmax(probs))
+            label = CLASSES[pred_idx]
+
+        conf = float(np.max(probs))
         save_progress(label, conf)
 
         demo_path = get_demo_video_path(label)
@@ -432,21 +419,41 @@ def predict():
 def predict_auto():
     try:
         data = request.get_json(force=True)
-        label, conf, probs = _run_inference(data)
+
+        if "sequence" in data:
+            x = prepare_sequence({"sequence": data["sequence"]})
+        elif "features" in data:
+            x = prepare_sequence({"features": data["features"]})
+        else:
+            raise ValueError("Missing 'sequence' or 'features'")
+
+        with torch.no_grad():
+            logits = model(x)
+            probs = torch.softmax(logits, dim=1).cpu().numpy()[0]
+            conf = float(np.max(probs))
+            pred_idx = int(np.argmax(probs))
+            label = CLASSES[pred_idx]
 
         THRESHOLD = 0.8
         if conf < THRESHOLD:
+            sorted_indices = np.argsort(probs)[::-1]
+            top_idx = sorted_indices[0]
+            closest_label = CLASSES[top_idx]
+            closest_conf = float(probs[top_idx])
+
+            # Save "Incorrect" to record that child did gesture incorrectly
             save_progress("Incorrect", conf)
 
             response = {
                 "prediction": "Incorrect",
-                "closest_sign": label,
-                "closest_confidence": round(conf, 4),
+                "closest_sign": closest_label,
+                "closest_confidence": round(closest_conf, 4),
                 "confidence": conf,
-                "message": f"❌ Incorrect — closest sign you performed is {label.replace('_', ' ')}"
+                "message": f"❌ Incorrect — closest sign you performed is {closest_label.replace('_', ' ')}"
             }
-            print(f"[AUTO] Incorrect (conf={conf:.4f}) → Closest: {label} ({conf:.4f})")
+            print(f"[AUTO] Incorrect (conf={conf:.4f}) → Closest: {closest_label} ({closest_conf:.4f})")
         else:
+            # Save correct sign
             save_progress(label, conf)
 
             response = {
@@ -469,9 +476,14 @@ def predict_auto():
 def assess():
     try:
         data = request.get_json(force=True)
-        label, conf, probs = _run_inference(data)
+        x = prepare_sequence(data)
+        with torch.no_grad():
+            logits = model(x)
+            probs = torch.softmax(logits, dim=1).cpu().numpy()[0]
+            pred_idx = int(np.argmax(probs))
+            label = CLASSES[pred_idx]
 
-        save_progress(label, conf)
+        save_progress(label, float(np.max(probs)))
 
         demo_path = get_demo_video_path(label)
         return jsonify({
@@ -482,15 +494,6 @@ def assess():
     except Exception as e:
         print(f"[ERROR] Assessment failed: {e}")
         return jsonify({"error": f"Assessment failed: {str(e)}"}), 500
-
-
-# --------------------------
-# /api/random — provide random challenge phrase for detect.html
-# --------------------------
-@app.route("/api/random", methods=["GET"])
-def api_random():
-    phrase = random.choice(CLASSES) if CLASSES else "hello"
-    return jsonify({"phrase": phrase.replace("_", " ")})
 
 # ======================================================
 # Run app

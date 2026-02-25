@@ -1,11 +1,32 @@
 {% extends "base.html" %}
 {% block title %}Auto Recognition – FSL Learning{% endblock %}
+<!-- Cache bust: {{ range(1, 2)|random }} -->
 {% block content %}
 
 <style>
-  /* auto.html — inherits :root vars and resets from base.html */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :root {
+    --sunshine: #FFD93D;
+    --sky-blue: #4CC9F0;
+    --grass-green: #06D6A0;
+    --coral: #FF6B9D;
+    --lavender: #A78BFA;
+    --orange: #FF8C42;
+    --deep-blue: #4361EE;
+    --white: #FFFFFF;
+    --off-white: #FFF8F0;
+    --shadow: rgba(0, 0, 0, 0.15);
+  }
 
   body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-weight: 600;
     background: linear-gradient(135deg, #E0F4FF 0%, #FFE5EC 50%, #FFF4E0 100%);
     background-attachment: fixed;
     min-height: 100vh;
@@ -26,31 +47,39 @@
   }
 
   .shape:nth-child(1) { 
-    width: 120px; height: 120px; 
+    width: 120px; 
+    height: 120px; 
     background: var(--sunshine); 
     border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-    top: 10%; left: 5%; 
+    top: 10%; 
+    left: 5%; 
   }
 
   .shape:nth-child(2) { 
-    width: 90px; height: 90px; 
+    width: 90px; 
+    height: 90px; 
     background: var(--coral); 
     border-radius: 50%;
-    top: 60%; left: 80%; 
+    top: 60%; 
+    left: 80%; 
   }
 
   .shape:nth-child(3) { 
-    width: 150px; height: 150px; 
+    width: 150px; 
+    height: 150px; 
     background: var(--grass-green); 
     border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
-    bottom: 10%; right: 10%; 
+    bottom: 10%; 
+    right: 10%; 
   }
 
   .shape:nth-child(4) { 
-    width: 100px; height: 100px; 
+    width: 100px; 
+    height: 100px; 
     background: var(--lavender); 
     border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-    top: 30%; right: 20%; 
+    top: 30%; 
+    right: 20%; 
   }
 
   .app-container {
@@ -531,16 +560,18 @@
 <script src="{{ url_for('static', filename='mediapipe/camera_utils/camera_utils.js') }}"></script>
 <script src="{{ url_for('static', filename='mediapipe/drawing_utils/drawing_utils.js') }}"></script>
 <script src="{{ url_for('static', filename='mediapipe/holistic/holistic.js') }}"></script>
-<script src="{{ url_for('static', filename='js/fsl-utils.js') }}"></script>
 
 <script>
 (() => {
+  const ENABLE_CONFETTI = false; // keep look, disable expensive confetti
+
   const videoEl=document.getElementById('cam');
   const canvasEl=document.getElementById('overlay');
   const ctx=canvasEl.getContext('2d');
-  const fpsEl=document.getElementById('fpsCounter');
-  const updateFPS=FSL.createFPSTracker(fpsEl);
-
+  const fpsCounter=document.getElementById('fpsCounter');
+  let lastFrameTime=Date.now();
+  let fpsFrameCount=0;
+  let fpsValue=0;
   const startBtn=document.getElementById('startBtn');
   const stopBtn=document.getElementById('stopBtn');
   const clearBtn=document.getElementById('clearBtn');
@@ -559,61 +590,293 @@
   const ghostBadge=document.getElementById('ghostBadge');
 
   const PREDICT_URL=location.origin+'/predict_auto';
+  const SAVE_URL=location.origin+'/api/save_result';
+  // OPTIMIZATION: Jetson Orin Nano frame skipping for auto detection
+  // Skip every 2nd frame = ~15 FPS effective (from 30 FPS camera)
+  // 5.5s capture × 15 fps = ~83 frames achievable
   const SEQ_LEN = 48;
-  const CAPTURE_MAX = 80;
-  const BASE_CAPTURE_MS = 5500;
+  const CAPTURE_MAX = 80;  // Adjusted for frameSkip=2
+  const BASE_CAPTURE_MS = 5500;  // Increased to ensure enough frames
+  let CAPTURE_MS = BASE_CAPTURE_MS;
   let buf=[],running=false,handsPresent=false,frameCount=0,showVisuals=true,showTimer=true,showResults=true;
   let frameSkip=2;
-  let autoJudge=false;
+  let autoJudge=false;  // Track auto-trigger to prevent multiple calls
   let predictInterval=null,tickInterval=null,countdown=5;
 
-  let ghostEnabled=false,ghostFrames=null,ghostIdx=0,ghostReady=false,loadingGhost=false;
-  let scaleMultiplier=1.08,yOffset=-0.08,ghostPlaybackSpeed=0.25;
+  const HAND_CONN=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20]];
+
+  let ghostEnabled=false;
+  let ghostFrames=null;
+  let ghostIdx=0;
+  let ghostReady=false;
+  let loadingGhost=false;
+  let scaleMultiplier=1.08;
+  let yOffset=-0.08;
+  let ghostPlaybackSpeed=0.25;
   let ghostTimer=null;
   const GHOST_DURATION_MS=12000;
-  const GHOST_HOLISTIC_OPTS={selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.60,minTrackingConfidence:0.60};
+
+  function flattenHand(lms){if(!lms)return new Float32Array(63);const a=[];for(let i=0;i<21;i++){const p=lms[i];a.push(p.x,p.y,p.z);}return new Float32Array(a);}
+  function lm(list,idx){if(!list||idx>=list.length)return{x:NaN,y:NaN,z:NaN};return list[idx];}
+  function dist2D(a,b){const dx=a.x-b.x,dy=a.y-b.y;return Math.hypot(dx,dy)||1e-6;}
+  function normalizeGlobal(hand63,a){
+    if(!hand63||hand63.length!==63||!a.L_SH||!a.R_SH)return new Float32Array(63);
+    const out=new Float32Array(63);
+    const Cx=(a.L_SH.x+a.R_SH.x)/2,Cy=(a.L_SH.y+a.R_SH.y)/2,Cz=(a.L_SH.z+a.R_SH.z)/2;
+    const scale=Math.max(1e-6,dist2D(a.L_SH,a.R_SH));
+    for(let i=0;i<63;i+=3){out[i]=(hand63[i]-Cx)/scale;out[i+1]=(hand63[i+1]-Cy)/scale;out[i+2]=(hand63[i+2]-Cz)/scale;}
+    return out;
+  }
+  function derivedAltitudeFeatures(L,R,a){
+    const out=[],SEL=[0,4,8,12,16,20],brow_y=0.5*(a.brow_r.y+a.brow_l.y);
+    for(const H of [L,R]){
+      for(const j of SEL){
+        const by=j*3+1,bz=j*3+2;
+        const py=H[by],pz=H[bz];
+        out.push(py-a.chin.y,py-a.lip_u.y,py-brow_y,py-a.forehead.y,pz-a.nose.z);
+      }
+    }
+    return new Float32Array(out);
+  }
+  function packFeature(res){
+    const p=res.poseLandmarks||[],f=res.faceLandmarks||[];
+    const a={L_SH:lm(p,11),R_SH:lm(p,12),nose:lm(f,1),forehead:lm(f,10),lip_u:lm(f,13),brow_r:lm(f,65),brow_l:lm(f,295),chin:lm(f,152)};
+    const Lh=res.rightHandLandmarks?flattenHand(res.rightHandLandmarks):null;
+    const Rh=res.leftHandLandmarks?flattenHand(res.leftHandLandmarks):null;
+    if(!Lh&&!Rh)return null;
+    const L=normalizeGlobal(Lh,a),R=normalizeGlobal(Rh,a);
+    const alt=derivedAltitudeFeatures(L,R,a);
+    return new Float32Array([...L,...R,...alt,Lh?1:0,Rh?1:0]);
+  }
+  function temporalFix(frames,n){
+    if(frames.length<=n){
+      const pad=Array.from({length:n-frames.length},()=>frames[frames.length-1]);
+      return frames.concat(pad);
+    }
+    const step=frames.length/n;const out=[];
+    for(let i=0;i<n;i++){const idx=Math.min(Math.floor(i*step),frames.length-1);out.push(frames[idx]);}
+    return out;
+  }
+
+  function anchorsValid(a){
+    return a&&a.L_SH&&a.R_SH&&Number.isFinite(a.L_SH.x)&&Number.isFinite(a.R_SH.x)&&Number.isFinite(a.L_SH.y)&&Number.isFinite(a.R_SH.y);
+  }
+
+  function drawGhostHand(norm63,anchors,ctx,color){
+    if(!norm63)return;
+    const baseScale=Math.max(1e-6,dist2D(anchors.L_SH,anchors.R_SH));
+    const scale=baseScale*scaleMultiplier;
+    const Cx=(anchors.L_SH.x+anchors.R_SH.x)/2;
+    const Cy=(anchors.L_SH.y+anchors.R_SH.y)/2+yOffset;
+
+    const pts=[];
+    for(let i=0;i<63;i+=3){
+      pts.push({x:norm63[i]*scale+Cx,y:norm63[i+1]*scale+Cy});
+    }
+
+    ctx.save();
+    ctx.globalCompositeOperation='screen';
+    ctx.strokeStyle=color;
+    ctx.fillStyle=color;
+    ctx.lineWidth=6;
+
+    const W=canvasEl.width,H=canvasEl.height;
+    for(const[a,b]of HAND_CONN){
+      const p=pts[a],q=pts[b];
+      ctx.beginPath();
+      ctx.moveTo(p.x*W,p.y*H);
+      ctx.lineTo(q.x*W,q.y*H);
+      ctx.stroke();
+    }
+    for(const p of pts){
+      ctx.beginPath();
+      ctx.arc(p.x*W,p.y*H,8,0,2*Math.PI);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function normLabel(s){
+    if(!s)return "";
+    let x=String(s).toLowerCase();
+    x=x.replace(/^(numbers_|colors_|color_|family_|relationship_|survival_)/,"");
+    x=x.replace(/[^a-z0-9]+/g,'');
+    const map={"1":"one","2":"two","3":"three","4":"four","5":"five","grandmother":"grandmother","grandma":"grandmother","lola":"grandmother","grandfather":"grandfather","grandpa":"grandfather","lolo":"grandfather","mom":"mother","mother":"mother","nanay":"mother","dad":"father","father":"father","tatay":"father","boy":"boy","girl":"girl","man":"man","woman":"woman","son":"son","daughter":"daughter","black":"black","blue":"blue","green":"green","orange":"orange","pink":"pink","red":"red","white":"white","yellow":"yellow","correct":"correct","dontunderstand":"dontunderstand","no":"no","understand":"understand","wrong":"wrong","yes":"yes"};
+    return map[x]||x;
+  }
+
+  function inferCategory(label){
+    const raw=String(label).toLowerCase();
+    if(raw.startsWith("numbers_"))return "numbers";
+    if(raw.startsWith("colors_")||raw.startsWith("color_"))return "colors";
+    if(raw.startsWith("family_"))return "family";
+    if(raw.startsWith("relationship_"))return "relationship";
+    if(raw.startsWith("survival_"))return "survival";
+    const l=normLabel(label);
+    const numbers=["one","two","three","four","five"];
+    const family=["daughter","father","grandfather","grandmother","mother","son"];
+    const relationship=["boy","girl","man","woman"];
+    const survival=["correct","dontunderstand","no","understand","wrong","yes"];
+    if(numbers.includes(l))return "numbers";
+    if(family.includes(l))return "family";
+    if(relationship.includes(l))return "relationship";
+    if(survival.includes(l))return "survival";
+    return "colors";
+  }
+
+  async function findDemoUrl(cat,key){
+    const STATIC_BASE=(window.location.origin+'/static/video').replace(/\/+$/,'');
+    const candidates=[];
+    for(let i=1;i<=10;i++){
+      candidates.push(`${key}_${String(i).padStart(2,'0')}.mp4`);
+    }
+    candidates.push(`${key}.mp4`);
+    for(const n of candidates){
+      const url=`${STATIC_BASE}/${cat}/${n}`;
+      try{
+        const r=await fetch(url,{method:'HEAD',cache:'no-store'});
+        if(r.ok)return url;
+      }catch(_){}
+    }
+    return null;
+  }
+
+  async function loadGhostFor(label){
+    const cat=inferCategory(label);
+    const key=normLabel(label);
+    const url=await findDemoUrl(cat,key);
+    if(!url)return false;
+
+    const v=document.createElement('video');
+    v.src=url;
+    v.muted=true;
+    v.playsInline=true;
+    v.crossOrigin='anonymous';
+
+    await new Promise((resolve,reject)=>{
+      v.onloadedmetadata=resolve;
+      v.onerror=()=>reject(new Error('Video error'));
+    });
+
+    ghostFrames=[];
+    const ghostHolistic=new Holistic({locateFile: (f) => `/static/mediapipe/holistic/${f}`});
+    // Ghost model for demo skeleton: optimized for Jetson
+    ghostHolistic.setOptions({selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.60,minTrackingConfidence:0.60});
+
+    ghostHolistic.onResults(res=>{
+      const pose=res.poseLandmarks||[];
+      const face=res.faceLandmarks||[];
+      const anchors={L_SH:lm(pose,11),R_SH:lm(pose,12),nose:lm(face,1),forehead:lm(face,10),lip_u:lm(face,13),brow_r:lm(face,65),brow_l:lm(face,295),chin:lm(face,152)};
+      const Lh=res.rightHandLandmarks?flattenHand(res.rightHandLandmarks):null;
+      const Rh=res.leftHandLandmarks?flattenHand(res.leftHandLandmarks):null;
+      if(!Lh&&!Rh)return;
+      const L=Lh?normalizeGlobal(Lh,anchors):null;
+      const R=Rh?normalizeGlobal(Rh,anchors):null;
+      ghostFrames.push({L,R});
+    });
+
+    const total=24;
+    for(let i=0;i<total;i++){
+      v.currentTime=(v.duration*i)/total;
+      await new Promise(r=>v.onseeked=r);
+      await ghostHolistic.send({image:v});
+    }
+
+    ghostReady=ghostFrames&&ghostFrames.length>0;
+    return ghostReady;
+  }
+
+  function celebrate(){
+    if(!ENABLE_CONFETTI) return;
+    for(let i=0;i<30;i++){
+      setTimeout(()=>{
+        const confetti=document.createElement('div');
+        confetti.className='confetti';
+        confetti.style.left=Math.random()*100+'%';
+        confetti.style.background=['#FFD93D','#FF6B9D','#06D6A0','#4CC9F0','#A78BFA'][Math.floor(Math.random()*5)];
+        confetti.style.animationDelay=Math.random()*0.5+'s';
+        document.body.appendChild(confetti);
+        setTimeout(()=>confetti.remove(),3000);
+      },i*50);
+    }
+  }
 
   const holistic=new Holistic({locateFile: (f) => `/static/mediapipe/holistic/${f}`});
+  // Optimized for Jetson Orin Nano: reduced complexity, higher confidence thresholds for auto mode
   holistic.setOptions({selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.70,minTrackingConfidence:0.70});
 
   holistic.onResults(res=>{
-    const W=canvasEl.width,H=canvasEl.height;
-    ctx.clearRect(0,0,W,H);
-    ctx.drawImage(res.image,0,0,W,H);
-    updateFPS();
-
+    ctx.clearRect(0,0,canvasEl.width,canvasEl.height);
+    ctx.drawImage(res.image,0,0,canvasEl.width,canvasEl.height);
+    
+    // Update FPS counter
+    fpsFrameCount++;
+    const now=Date.now();
+    const delta=now-lastFrameTime;
+    if(delta>=500){
+      fpsValue=Math.round((fpsFrameCount*1000)/delta);
+      fpsCounter.textContent='FPS: '+fpsValue;
+      fpsFrameCount=0;
+      lastFrameTime=now;
+    }
+    
     const RH=res.rightHandLandmarks,LH=res.leftHandLandmarks;
     handsPresent=!!(RH||LH);
     if(showVisuals&&handsPresent){
-      if(RH)FSL.drawHandBox(RH,ctx,W,H,'rgba(6,214,160,0.9)');
-      if(LH)FSL.drawHandBox(LH,ctx,W,H,'rgba(255,107,157,0.9)');
+      const drawBox=(h,color)=>{
+        let minX=1,minY=1,maxX=0,maxY=0;
+        h.forEach(p=>{minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y);});
+        ctx.strokeStyle=color;ctx.lineWidth=4;
+        ctx.strokeRect(minX*canvasEl.width,minY*canvasEl.height,(maxX-minX)*canvasEl.width,(maxY-minY)*canvasEl.height);
+        h.forEach(p=>{ctx.beginPath();ctx.arc(p.x*canvasEl.width,p.y*canvasEl.height,6,0,2*Math.PI);ctx.fillStyle=color;ctx.fill();});
+      };
+      if(RH)drawBox(RH,'rgba(6,214,160,0.9)');
+      if(LH)drawBox(LH,'rgba(255,107,157,0.9)');
     }
 
     const pose=res.poseLandmarks||[];
-    const anchors={L_SH:FSL.lm(pose,11),R_SH:FSL.lm(pose,12)};
+    const anchors={L_SH:lm(pose,11),R_SH:lm(pose,12)};
 
-    if(ghostEnabled&&ghostReady&&FSL.anchorsValid(anchors)&&ghostFrames&&ghostFrames.length){
+    if(ghostEnabled&&ghostReady&&anchorsValid(anchors)&&ghostFrames&&ghostFrames.length){
       ghostIdx+=ghostPlaybackSpeed;
       if(ghostIdx>=ghostFrames.length)ghostIdx=0;
-      const{L,R}=FSL.interpolateGhostFrame(ghostFrames,ghostIdx);
-      if(L)FSL.drawGhostHand(L,anchors,ctx,W,H,'rgba(167,139,250,0.85)',scaleMultiplier,yOffset);
-      if(R)FSL.drawGhostHand(R,anchors,ctx,W,H,'rgba(76,201,240,0.85)',scaleMultiplier,yOffset);
+
+      const frameA=ghostFrames[Math.floor(ghostIdx)%ghostFrames.length];
+      const frameB=ghostFrames[Math.floor(ghostIdx+1)%ghostFrames.length];
+      const t=ghostIdx%1;
+
+      const L=frameA.L&&frameB.L?new Float32Array(63):null;
+      const R=frameA.R&&frameB.R?new Float32Array(63):null;
+
+      if(L){
+        for(let i=0;i<63;i++)L[i]=(1-t)*frameA.L[i]+t*frameB.L[i];
+      }
+      if(R){
+        for(let i=0;i<63;i++)R[i]=(1-t)*frameA.R[i]+t*frameB.R[i];
+      }
+
+      if(L)drawGhostHand(L,anchors,ctx,'rgba(167,139,250,0.85)');
+      if(R)drawGhostHand(R,anchors,ctx,'rgba(76,201,240,0.85)');
       ghostBadge.style.display='inline-block';
     }else{
       ghostBadge.style.display='none';
     }
 
-    const feat=FSL.packFeature(res);
+    const feat=packFeature(res);
     if(running&&feat){
+      // OPTIMIZATION: Apply frame skipping for Jetson Orin Nano
       frameCount++;
       if(frameCount % frameSkip === 0){
+        // Keep buffer at max size
         if(buf.length<CAPTURE_MAX) buf.push(feat);
         else { buf.shift(); buf.push(feat); }
-        frameInfo.textContent='Capturing: '+buf.length+' frames';
+        frameInfo.textContent='Capturing: '+Math.floor(buf.length)+' frames';
         frameInfo.style.display='block';
+        
+        // Auto-trigger when buffer reaches 75% capacity
         const threshold = Math.ceil(CAPTURE_MAX * 0.75);
         if(buf.length >= threshold && !autoJudge){
-          autoJudge=true;
+          autoJudge=true; 
           setTimeout(()=>predict(), 200);
         }
       }
@@ -621,57 +884,108 @@
   });
 
   const camera=new Camera(videoEl,{onFrame:async()=>{await holistic.send({image:videoEl});},width:480,height:360});
+  // Camera resolution optimized for Jetson: 480x360 (28% fewer pixels)
 
-  async function predict(){
+async function predict(){
     if(buf.length < 5) return;
-    const fixed = FSL.temporalFixSimple(buf, SEQ_LEN);
+
+    const fixed = temporalFix(buf, SEQ_LEN);
     const seq = fixed.flatMap(f => Array.from(f));
+
     try{
-      const res = await fetch(PREDICT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sequence:seq})});
-      const j = await res.json();
-      if(!showResults) return;
+        const res = await fetch(PREDICT_URL,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({sequence:seq})
+        });
 
-      const now = new Date().toLocaleTimeString();
-      const histEntry = document.createElement('div');
-      histEntry.style.cssText='margin-bottom:8px;padding:8px;border-radius:8px;background:rgba(255,255,255,0.6)';
+        const j = await res.json();
+        if(!showResults) return;
 
-      if(j.prediction==='Incorrect'){
-        histEntry.innerHTML=`<strong style="color:var(--coral);">${now}</strong>: ✗ Incorrect (closest: ${j.closest_sign||'—'})`;
-        gestureOverlay.textContent=`✗ Try Again! Hint: ${j.closest_sign||'—'}`;
-        gestureOverlay.style.display='block';
-        gestureOverlay.style.background='rgba(255,107,157,0.9)';
-        detLabel.textContent=j.closest_sign||'—';
-        detStatus.textContent='Try again!';
-        if(j.closest_sign && !loadingGhost){
-          loadingGhost=true; ghostEnabled=false; ghostReady=false; ghostFrames=null; ghostIdx=0;
-          if(ghostTimer) clearTimeout(ghostTimer);
-          try{
-            ghostFrames=await FSL.loadGhostFrames(j.closest_sign,GHOST_HOLISTIC_OPTS);
-            if(ghostFrames){ghostEnabled=true;ghostReady=true;ghostTimer=setTimeout(()=>{ghostEnabled=false;ghostReady=false;ghostFrames=null;ghostBadge.style.display='none';},GHOST_DURATION_MS);}
-          }catch(e){console.error('Ghost load error',e);}finally{loadingGhost=false;}
+        const now = new Date().toLocaleTimeString();
+        const histEntry = document.createElement('div');
+        histEntry.style.marginBottom='8px';
+        histEntry.style.padding='8px';
+        histEntry.style.borderRadius='8px';
+        histEntry.style.background='rgba(255,255,255,0.6)';
+
+        if(j.prediction==='Incorrect'){
+            histEntry.innerHTML =
+                `<strong style="color:var(--coral);">${now}</strong>: ✗ Incorrect (closest: ${j.closest_sign||'—'})`;
+
+            gestureOverlay.textContent =
+                `✗ Try Again! Hint: ${j.closest_sign||'—'}`;
+            gestureOverlay.style.display='block';
+            gestureOverlay.style.background='rgba(255,107,157,0.9)';
+
+            detLabel.textContent = j.closest_sign||'—';
+            detStatus.textContent = 'Try again!';
+
+            if(j.closest_sign && !loadingGhost){
+                loadingGhost = true;
+                ghostEnabled = false;
+                ghostReady = false;
+                ghostFrames = null;
+                ghostIdx = 0;
+                if(ghostTimer) clearTimeout(ghostTimer);
+
+                try{
+                    const ok = await loadGhostFor(j.closest_sign);
+                    if(ok){
+                        ghostEnabled = true;
+                        ghostTimer = setTimeout(()=>{
+                            ghostEnabled = false;
+                            ghostReady = false;
+                            ghostFrames = null;
+                            ghostBadge.style.display='none';
+                        }, GHOST_DURATION_MS);
+                    }
+                }catch(e){
+                    console.error('Ghost load error', e);
+                }finally{
+                    loadingGhost = false;
+                }
+            }
+
+        }else{
+            histEntry.innerHTML =
+                `<strong style="color:var(--grass-green);">${now}</strong>: ✓ ${j.prediction||'—'}`;
+
+            gestureOverlay.textContent =
+                `✓ Great Job! ${j.prediction||'—'}`;
+            gestureOverlay.style.display='block';
+            gestureOverlay.style.background='rgba(6,214,160,0.9)';
+
+            detLabel.textContent = j.prediction||'—';
+            detStatus.textContent = 'Correct! Keep going!';
+            celebrate();
+
+            ghostEnabled=false;
+            ghostReady=false;
+            ghostFrames=null;
+            if(ghostTimer) clearTimeout(ghostTimer);
+            ghostBadge.style.display='none';
         }
-      }else{
-        histEntry.innerHTML=`<strong style="color:var(--grass-green);">${now}</strong>: ✓ ${j.prediction||'—'}`;
-        gestureOverlay.textContent=`✓ Great Job! ${j.prediction||'—'}`;
-        gestureOverlay.style.display='block';
-        gestureOverlay.style.background='rgba(6,214,160,0.9)';
-        detLabel.textContent=j.prediction||'—';
-        detStatus.textContent='Correct! Keep going!';
-        ghostEnabled=false;ghostReady=false;ghostFrames=null;if(ghostTimer)clearTimeout(ghostTimer);ghostBadge.style.display='none';
-      }
 
-      if(historyEl.children.length===1 && historyEl.children[0].style.color==='#999') historyEl.innerHTML='';
-      historyEl.insertBefore(histEntry, historyEl.firstChild);
-      historyEl.scrollTop = 0;
+        if(historyEl.children.length===1 && historyEl.children[0].style.color==='#999'){
+            historyEl.innerHTML='';
+        }
+        historyEl.insertBefore(histEntry, historyEl.firstChild);
+        historyEl.scrollTop = 0;
+
     }catch(e){
-      console.error(e);
-      gestureOverlay.textContent='⚠️ Oops! Try again';
-      gestureOverlay.style.display='block';
-      gestureOverlay.style.background='rgba(255,140,66,0.9)';
-      detStatus.textContent='Connection error';
+        console.error(e);
+        gestureOverlay.textContent='⚠️ Oops! Try again';
+        gestureOverlay.style.display='block';
+        gestureOverlay.style.background='rgba(255,140,66,0.9)';
+        detStatus.textContent='Connection error';
     }
-    buf=[]; frameCount=0; autoJudge=false;
-  }
+
+    // 🔥 CRITICAL RESET — TRUE WINDOW MODE
+    buf = [];
+    frameCount = 0;
+    autoJudge = false;
+}
 
   toggleVisuals.onchange=()=>{showVisuals=toggleVisuals.checked;};
   toggleTimer.onchange=()=>{showTimer=toggleTimer.checked;timerOverlay.style.display=showTimer?'block':'none';};
@@ -680,35 +994,58 @@
   startBtn.onclick=async()=>{
     document.body.classList.add('camera-running');
     if(running)return;
-    running=true;buf=[];frameCount=0;autoJudge=false;
+    running=true;
+    buf=[];
+    frameCount=0;
+    autoJudge=false;  // Reset auto-trigger flag for new capture
     recBadge.style.display='inline-block';
     stateBadge.textContent='Learning Mode ON! 🎓';
     stateBadge.style.background='linear-gradient(135deg, var(--coral), var(--orange))';
     await camera.start();
-    startBtn.style.display='none';stopBtn.style.display='inline-block';
+    startBtn.style.display='none';
+    stopBtn.style.display='inline-block';
+
     const fastMode=toggleSpeed.checked;
+    const intervalMs=fastMode?3000:5000;
     countdown=fastMode?3:5;
+
     timerOverlay.textContent=countdown;
     timerOverlay.style.display=showTimer?'block':'none';
+
     tickInterval = setInterval(() => {
       countdown--;
-      timerOverlay.textContent=countdown;
-      if(countdown<=1)timerOverlay.style.background='var(--coral)';
-      else if(countdown<=2)timerOverlay.style.background='var(--orange)';
-      else timerOverlay.style.background='var(--sunshine)';
-      if(countdown<=0){predict();countdown=fastMode?3:5;timerOverlay.textContent=countdown;}
+      timerOverlay.textContent = countdown;
+      if(countdown <= 1)
+        timerOverlay.style.background='var(--coral)';
+      else if(countdown <= 2)
+        timerOverlay.style.background='var(--orange)';
+      else
+        timerOverlay.style.background='var(--sunshine)';
+
+      if(countdown <= 0){
+        predict();
+        countdown=fastMode?3:5;
+        timerOverlay.textContent = countdown;
+      }
     }, 1000);
   };
 
   stopBtn.onclick=async()=>{
     document.body.classList.remove('camera-running');
-    running=false;recBadge.style.display='none';
+    running=false;
+    recBadge.style.display='none';
     stateBadge.textContent='Ready to Learn!';
     stateBadge.style.background='linear-gradient(135deg, var(--grass-green), var(--sky-blue))';
     clearInterval(predictInterval);clearInterval(tickInterval);
-    timerOverlay.style.display='none';gestureOverlay.style.display='none';frameInfo.style.display='none';
-    detLabel.textContent='—';detStatus.textContent='Ready to start!';
-    ghostEnabled=false;ghostReady=false;ghostFrames=null;ghostBadge.style.display='none';
+    timerOverlay.style.display='none';
+    gestureOverlay.style.display='none';
+    frameInfo.style.display='none';
+    detLabel.textContent='—';
+    detStatus.textContent='Ready to start!';
+    ghostEnabled=false;
+    ghostReady=false;
+    ghostFrames=null;
+    ghostBadge.style.display='none';
     if(ghostTimer)clearTimeout(ghostTimer);
     try{await camera.stop();}catch(_){}
     stopBtn.style.display='none';startBtn.style.display='inline-block';
@@ -722,3 +1059,4 @@
 </script>
 
 {% endblock %}
+
