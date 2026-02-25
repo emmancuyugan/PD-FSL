@@ -537,7 +537,7 @@
 (() => {
   const videoEl=document.getElementById('cam');
   const canvasEl=document.getElementById('overlay');
-  const ctx=canvasEl.getContext('2d',{desynchronized:true});
+  const ctx=canvasEl.getContext('2d');
   const fpsEl=document.getElementById('fpsCounter');
   const updateFPS=FSL.createFPSTracker(fpsEl);
 
@@ -620,12 +620,12 @@
     }
   });
 
-  const camera=new Camera(videoEl,{onFrame:async()=>{await holistic.send({image:videoEl});},width:320,height:240});
+  const camera=new Camera(videoEl,{onFrame:async()=>{await holistic.send({image:videoEl});},width:480,height:360});
 
   async function predict(){
     if(buf.length < 5) return;
     const fixed = FSL.temporalFixSimple(buf, SEQ_LEN);
-    const seq = FSL.flattenSequence(fixed);
+    const seq = fixed.flatMap(f => Array.from(f));
     try{
       const res = await fetch(PREDICT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sequence:seq})});
       const j = await res.json();

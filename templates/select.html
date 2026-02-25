@@ -850,17 +850,14 @@ window.addEventListener("load", () => {
   const SURVIVAL_SIGNS = ["Correct","Don't Understand","No","Understand","Wrong","Yes"];
 
   // Initialize display to show camera by default
-  let skeletonVisible = false;
   const showCameraDisplay = () => {
     document.getElementById("cameraDisplay").style.display = 'block';
     document.getElementById("skeletonDisplay").style.display = 'none';
-    skeletonVisible = false;
   };
 
   const showSkeletonDisplay = () => {
     document.getElementById("cameraDisplay").style.display = 'none';
     document.getElementById("skeletonDisplay").style.display = 'block';
-    skeletonVisible = true;
   };
 
   showCameraDisplay();
@@ -904,8 +901,8 @@ window.addEventListener("load", () => {
   const videoEl = document.getElementById("mainCamera");
   const canvasEl = document.getElementById("overlayCanvas");
   const skeletonCanvas = document.getElementById("skeletonCanvas");
-  const ctx = canvasEl.getContext("2d",{desynchronized:true});
-  const skeletonCtx = skeletonCanvas.getContext("2d",{desynchronized:true});
+  const ctx = canvasEl.getContext("2d");
+  const skeletonCtx = skeletonCanvas.getContext("2d");
   const fpsCounter = document.getElementById("fpsCounter");
   let lastFrameTime = Date.now();
   let fpsFrameCount = 0;
@@ -952,7 +949,7 @@ window.addEventListener("load", () => {
   const SEQ_LEN = 48, CAPTURE_MAX = 120;
   const BASE_CAPTURE_MS = 5000;
   let CAPTURE_MS = BASE_CAPTURE_MS;
-  let buf=[], running=false, frameSkip=2, frameCounter=0, autoJudge=false, captureStartMs=0;
+  let buf=[], running=false, frameSkip=1, frameCounter=0, autoJudge=false, captureStartMs=0;
 
   function updateGestureDisplay(gesture) {
     targetLabel.textContent = gesture ? gesture : 'None';
@@ -1267,6 +1264,8 @@ window.addEventListener("load", () => {
     if(frame.pose && frame.pose.length > 0){
       skeletonCtx.strokeStyle = 'rgba(167, 139, 250, 0.9)';
       skeletonCtx.lineWidth = 4;
+      skeletonCtx.shadowBlur = 12;
+      skeletonCtx.shadowColor = 'rgba(167, 139, 250, 0.6)';
       
       POSE_CONNECTIONS.forEach(([start, end]) => {
         const startPoint = frame.pose[start];
@@ -1279,8 +1278,8 @@ window.addEventListener("load", () => {
         }
       });
       
-      skeletonCtx.fillStyle = 'rgba(167, 139, 250, 1)';
       frame.pose.forEach((landmark) => {
+        skeletonCtx.fillStyle = 'rgba(167, 139, 250, 1)';
         skeletonCtx.beginPath();
         skeletonCtx.arc(landmark.x * skeletonCanvas.width, landmark.y * skeletonCanvas.height, 6, 0, 2 * Math.PI);
         skeletonCtx.fill();
@@ -1288,13 +1287,14 @@ window.addEventListener("load", () => {
     }
     
     if(frame.face && frame.face.length > 0){
-      skeletonCtx.fillStyle = 'rgba(255, 140, 66, 0.8)';
-      for(let idx=0; idx<frame.face.length; idx+=10){
-        const landmark = frame.face[idx];
-        skeletonCtx.beginPath();
-        skeletonCtx.arc(landmark.x * skeletonCanvas.width, landmark.y * skeletonCanvas.height, 3, 0, 2 * Math.PI);
-        skeletonCtx.fill();
-      }
+      frame.face.forEach((landmark, idx) => {
+        if(idx % 10 === 0){
+          skeletonCtx.fillStyle = 'rgba(255, 140, 66, 0.8)';
+          skeletonCtx.beginPath();
+          skeletonCtx.arc(landmark.x * skeletonCanvas.width, landmark.y * skeletonCanvas.height, 3, 0, 2 * Math.PI);
+          skeletonCtx.fill();
+        }
+      });
     }
     
     const drawHand = (landmarks, color) => {
@@ -1302,6 +1302,8 @@ window.addEventListener("load", () => {
       
       skeletonCtx.strokeStyle = color;
       skeletonCtx.lineWidth = 4;
+      skeletonCtx.shadowBlur = 10;
+      skeletonCtx.shadowColor = color;
       
       HAND_CONN.forEach(([start, end]) => {
         const startPoint = landmarks[start];
@@ -1314,8 +1316,8 @@ window.addEventListener("load", () => {
         }
       });
       
-      skeletonCtx.fillStyle = color;
       landmarks.forEach((landmark) => {
+        skeletonCtx.fillStyle = color;
         skeletonCtx.beginPath();
         skeletonCtx.arc(landmark.x * skeletonCanvas.width, landmark.y * skeletonCanvas.height, 5, 0, 2 * Math.PI);
         skeletonCtx.fill();
@@ -1332,17 +1334,6 @@ window.addEventListener("load", () => {
     skeletonCtx.restore();
   }
 
-  // Reusable ghost holistic — one instance, shared across all "Show me how" clicks
-  let _ghostHolistic = null;
-  const GHOST_HOLISTIC_OPTS = {selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.5,minTrackingConfidence:0.5};
-  function getGhostHolistic() {
-    if (!_ghostHolistic) {
-      _ghostHolistic = new Holistic({locateFile: (f) => `/static/mediapipe/holistic/${f}`});
-      _ghostHolistic.setOptions(GHOST_HOLISTIC_OPTS);
-    }
-    return _ghostHolistic;
-  }
-
   async function loadGhostFor(label){
     const cat=inferCategory(label);
     const key=normLabel(label);
@@ -1354,7 +1345,8 @@ window.addEventListener("load", () => {
     const v=document.createElement('video');
     v.src=url; v.muted=true; v.playsInline=true; v.crossOrigin='anonymous';
     await new Promise((resolve,reject)=>{ v.onloadedmetadata=resolve; v.onerror=()=>reject(new Error('Video error')); });
-    const ghostHolistic = getGhostHolistic();
+    const ghostHolistic = new Holistic({locateFile: (f) => `/static/mediapipe/holistic/${f}`});
+    ghostHolistic.setOptions({selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
     ghostFrames=[];
     ghostHolistic.onResults(res=>{
       ghostFrames.push({
@@ -1456,10 +1448,9 @@ window.addEventListener("load", () => {
   holistic.setOptions({selfieMode:false,modelComplexity:2,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.55,minTrackingConfidence:0.55});
 
   holistic.onResults(function(res){
-    const W = canvasEl.width, H = canvasEl.height;
     ctx.save();
-    ctx.clearRect(0, 0, W, H);
-    ctx.drawImage(res.image, 0, 0, W, H);
+    ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+    ctx.drawImage(res.image, 0, 0, canvasEl.width, canvasEl.height);
 
     // Update FPS counter
     fpsFrameCount++;
@@ -1472,91 +1463,124 @@ window.addEventListener("load", () => {
       lastFrameTime = now;
     }
 
+    const pose = res.poseLandmarks || [];
+    const face = res.faceLandmarks || [];
+    const anchors = {};
+    anchors.L_SH = lm(pose, 11);
+    anchors.R_SH = lm(pose, 12);
+    anchors.nose = lm(face, 1);
+    anchors.forehead = lm(face, 10);
+    anchors.lip_u = lm(face, 13);
+    anchors.brow_r = lm(face, 65);
+    anchors.brow_l = lm(face, 295);
+    anchors.chin = lm(face, 152);
+
     if (showVisuals) {
       const RH = res.rightHandLandmarks;
       const LH = res.leftHandLandmarks;
 
-      if (RH) {
+      const drawBox = (landmarks, color) => {
+        if (!landmarks || !landmarks.length) return;
         let minX = 1, minY = 1, maxX = 0, maxY = 0;
-        for (const p of RH) { if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x; if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y; }
-        ctx.strokeStyle = 'rgba(6,214,160,0.9)'; ctx.lineWidth = 3;
-        ctx.strokeRect(minX * W, minY * H, (maxX - minX) * W, (maxY - minY) * H);
-        ctx.fillStyle = 'rgba(6,214,160,0.9)';
-        for (const p of RH) { ctx.beginPath(); ctx.arc(p.x * W, p.y * H, 4, 0, 6.283); ctx.fill(); }
-      }
-      if (LH) {
-        let minX = 1, minY = 1, maxX = 0, maxY = 0;
-        for (const p of LH) { if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x; if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y; }
-        ctx.strokeStyle = 'rgba(255,107,157,0.9)'; ctx.lineWidth = 3;
-        ctx.strokeRect(minX * W, minY * H, (maxX - minX) * W, (maxY - minY) * H);
-        ctx.fillStyle = 'rgba(255,107,157,0.9)';
-        for (const p of LH) { ctx.beginPath(); ctx.arc(p.x * W, p.y * H, 4, 0, 6.283); ctx.fill(); }
-      }
+        landmarks.forEach(p => {
+          minX = Math.min(minX, p.x);
+          maxX = Math.max(maxX, p.x);
+          minY = Math.min(minY, p.y);
+          maxY = Math.max(maxY, p.y);
+        });
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(
+          minX * canvasEl.width,
+          minY * canvasEl.height,
+          (maxX - minX) * canvasEl.width,
+          (maxY - minY) * canvasEl.height
+        );
+        ctx.fillStyle = color;
+        landmarks.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.x * canvasEl.width, p.y * canvasEl.height, 4, 0, 2 * Math.PI);
+          ctx.fill();
+        });
+      };
+
+      if (RH) drawBox(RH, 'rgba(6,214,160,0.9)');
+      if (LH) drawBox(LH, 'rgba(255,107,157,0.9)');
     }
 
-    // Only render live skeleton when the skeleton panel is actually visible and ghost is off
-    if (!ghostEnabled && skeletonVisible) {
-      const pose = res.poseLandmarks || [];
-      const face = res.faceLandmarks || [];
-      const sW = skeletonCanvas.width, sH = skeletonCanvas.height;
+    // Only draw skeleton canvas when it's visible (during "Show me how" or for demo purposes)
+    // This reduces processing when the camera is the main display
+    const skeletonDisplayVisible = document.getElementById("skeletonDisplay").style.display !== 'none';
+    
+    if (!ghostEnabled && skeletonDisplayVisible) {
       skeletonCtx.save();
-      skeletonCtx.clearRect(0, 0, sW, sH);
+      skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
       
-      if (pose.length > 0) {
+      if (pose && pose.length > 0) {
         skeletonCtx.strokeStyle = 'rgba(59, 130, 246, 0.8)';
         skeletonCtx.lineWidth = 3;
+        skeletonCtx.shadowBlur = 8;
+        skeletonCtx.shadowColor = 'rgba(59, 130, 246, 0.4)';
         
-        for (const [start, end] of POSE_CONNECTIONS) {
-          const s = pose[start], e = pose[end];
-          if (s && e) {
+        POSE_CONNECTIONS.forEach(([start, end]) => {
+          const startPoint = pose[start];
+          const endPoint = pose[end];
+          if (startPoint && endPoint) {
             skeletonCtx.beginPath();
-            skeletonCtx.moveTo(s.x * sW, s.y * sH);
-            skeletonCtx.lineTo(e.x * sW, e.y * sH);
+            skeletonCtx.moveTo(startPoint.x * skeletonCanvas.width, startPoint.y * skeletonCanvas.height);
+            skeletonCtx.lineTo(endPoint.x * skeletonCanvas.width, endPoint.y * skeletonCanvas.height);
             skeletonCtx.stroke();
           }
-        }
+        });
         
-        skeletonCtx.fillStyle = 'rgba(59, 130, 246, 0.9)';
-        for (const lm of pose) {
+        pose.forEach((landmark) => {
+          skeletonCtx.fillStyle = 'rgba(59, 130, 246, 0.9)';
           skeletonCtx.beginPath();
-          skeletonCtx.arc(lm.x * sW, lm.y * sH, 5, 0, 6.283);
+          skeletonCtx.arc(landmark.x * skeletonCanvas.width, landmark.y * skeletonCanvas.height, 5, 0, 2 * Math.PI);
           skeletonCtx.fill();
-        }
+        });
       }
       
-      if (face.length > 0) {
-        skeletonCtx.fillStyle = 'rgba(249, 115, 22, 0.7)';
-        for (let idx = 0; idx < face.length; idx += 10) {
-          const lm = face[idx];
-          skeletonCtx.beginPath();
-          skeletonCtx.arc(lm.x * sW, lm.y * sH, 2, 0, 6.283);
-          skeletonCtx.fill();
-        }
+      if (face && face.length > 0) {
+        face.forEach((landmark, idx) => {
+          if (idx % 10 === 0) {
+            skeletonCtx.fillStyle = 'rgba(249, 115, 22, 0.7)';
+            skeletonCtx.beginPath();
+            skeletonCtx.arc(landmark.x * skeletonCanvas.width, landmark.y * skeletonCanvas.height, 2, 0, 2 * Math.PI);
+            skeletonCtx.fill();
+          }
+        });
       }
       
-      const drawHandSkel = (landmarks, color) => {
+      const drawHand = (landmarks, color) => {
         if (!landmarks || landmarks.length === 0) return;
+        
         skeletonCtx.strokeStyle = color;
         skeletonCtx.lineWidth = 3;
-        for (const [start, end] of HAND_CONN) {
-          const s = landmarks[start], e = landmarks[end];
-          if (s && e) {
+        skeletonCtx.shadowBlur = 6;
+        skeletonCtx.shadowColor = color;
+        
+        HAND_CONN.forEach(([start, end]) => {
+          const startPoint = landmarks[start];
+          const endPoint = landmarks[end];
+          if (startPoint && endPoint) {
             skeletonCtx.beginPath();
-            skeletonCtx.moveTo(s.x * sW, s.y * sH);
-            skeletonCtx.lineTo(e.x * sW, e.y * sH);
+            skeletonCtx.moveTo(startPoint.x * skeletonCanvas.width, startPoint.y * skeletonCanvas.height);
+            skeletonCtx.lineTo(endPoint.x * skeletonCanvas.width, endPoint.y * skeletonCanvas.height);
             skeletonCtx.stroke();
           }
-        }
-        skeletonCtx.fillStyle = color;
-        for (const lm of landmarks) {
+        });
+        
+        landmarks.forEach((landmark) => {
+          skeletonCtx.fillStyle = color;
           skeletonCtx.beginPath();
-          skeletonCtx.arc(lm.x * sW, lm.y * sH, 4, 0, 6.283);
+          skeletonCtx.arc(landmark.x * skeletonCanvas.width, landmark.y * skeletonCanvas.height, 4, 0, 2 * Math.PI);
           skeletonCtx.fill();
-        }
+        });
       };
       
-      if (res.rightHandLandmarks) drawHandSkel(res.rightHandLandmarks, 'rgba(76, 201, 240, 0.9)');
-      if (res.leftHandLandmarks) drawHandSkel(res.leftHandLandmarks, 'rgba(6, 214, 160, 0.9)');
+      if (res.rightHandLandmarks) drawHand(res.rightHandLandmarks, 'rgba(76, 201, 240, 0.9)');
+      if (res.leftHandLandmarks) drawHand(res.leftHandLandmarks, 'rgba(6, 214, 160, 0.9)');
       
       skeletonCtx.restore();
     }
@@ -1578,7 +1602,7 @@ window.addEventListener("load", () => {
     }
   });
 
-  const camera=new Camera(videoEl,{ onFrame:async function(){ await holistic.send({image:videoEl}); }, width:320, height:240 });
+  const camera=new Camera(videoEl,{ onFrame:async function(){ await holistic.send({image:videoEl}); }, width:640, height:480 });
 
   const originalStart = () => {
     const fastMode = toggleSpeed.checked;
