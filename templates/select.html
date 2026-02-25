@@ -239,6 +239,7 @@
     height: 100%;
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     overflow: hidden;
+    display: none;
   }
 
   .pip-label {
@@ -1367,7 +1368,7 @@ window.addEventListener("load", () => {
   }
 
   let ghostTimer=null;
-  const GHOST_DURATION_MS=12000;
+  const GHOST_DURATION_MS=60000;
   let ghostAnimationId = null;
   
   document.getElementById("btnShowHow").onclick = async () => {
@@ -1380,6 +1381,9 @@ window.addEventListener("load", () => {
       cancelAnimationFrame(ghostAnimationId);
       ghostAnimationId = null;
     }
+    
+    // Stop camera processing to free resources for skeleton rendering
+    await camera.stop();
     
     ghostEnabled=true; ghostFrames=null; ghostReady=false; ghostIdx=0;
     showSkeletonDisplay();
@@ -1401,7 +1405,7 @@ window.addEventListener("load", () => {
       animateGhost();
       
       if (ghostTimer) clearTimeout(ghostTimer);
-      ghostTimer=setTimeout(() => {
+      ghostTimer=setTimeout(async () => {
         ghostEnabled=false; 
         ghostReady=false;
         showGhostUI(false); 
@@ -1412,9 +1416,13 @@ window.addEventListener("load", () => {
         }
         skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
         showCameraDisplay();
+        // Resume camera processing after feedback
+        await camera.start();
       }, GHOST_DURATION_MS);
     }else{
       ghostEnabled=false; showGhostUI(false); showCameraDisplay();
+      // Resume camera if loading failed
+      await camera.start();
     }
   };
 
@@ -1423,6 +1431,8 @@ window.addEventListener("load", () => {
     ghostReady=false;
     showGhostUI(false);
     showCameraDisplay();
+    // Resume camera processing
+    await camera.start();
     document.getElementById("assistHint").textContent='';
     if(ghostAnimationId) {
       cancelAnimationFrame(ghostAnimationId);
@@ -1498,7 +1508,11 @@ window.addEventListener("load", () => {
       if (LH) drawBox(LH, 'rgba(255,107,157,0.9)');
     }
 
-    if (!ghostEnabled) {
+    // Only draw skeleton canvas when it's visible (during "Show me how" or for demo purposes)
+    // This reduces processing when the camera is the main display
+    const skeletonDisplayVisible = document.getElementById("skeletonDisplay").style.display !== 'none';
+    
+    if (!ghostEnabled && skeletonDisplayVisible) {
       skeletonCtx.save();
       skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
       
