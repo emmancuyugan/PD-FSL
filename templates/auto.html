@@ -696,6 +696,13 @@
     ctx.restore();
   }
 
+  function cleanLabel(s){
+    if(!s) return s;
+    let t = String(s).replace(/^(Numbers_|Colors_|Color_|Family_|Relationship_|Survival_)/i,'');
+    t = t.replace(/_/g,' ');
+    return t.split(' ').map(w => w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
+  }
+
   function normLabel(s){
     if(!s)return "";
     let x=String(s).toLowerCase();
@@ -911,14 +918,14 @@ async function predict(){
 
         if(j.prediction==='Incorrect'){
             histEntry.innerHTML =
-                `<strong style="color:var(--coral);">${now}</strong>: ✗ Incorrect (closest: ${j.closest_sign||'—'})`;
+                `<strong style="color:var(--coral);">${now}</strong>: ✗ Incorrect (closest: ${cleanLabel(j.closest_sign)||'—'})`;
 
             gestureOverlay.textContent =
-                `✗ Try Again! Hint: ${j.closest_sign||'—'}`;
+                `✗ Try Again! Hint: ${cleanLabel(j.closest_sign)||'—'}`;
             gestureOverlay.style.display='block';
             gestureOverlay.style.background='rgba(255,107,157,0.9)';
 
-            detLabel.textContent = j.closest_sign||'—';
+            detLabel.textContent = cleanLabel(j.closest_sign)||'—';
             detStatus.textContent = 'Try again!';
 
             if(j.closest_sign && !loadingGhost){
@@ -949,14 +956,14 @@ async function predict(){
 
         }else{
             histEntry.innerHTML =
-                `<strong style="color:var(--grass-green);">${now}</strong>: ✓ ${j.prediction||'—'}`;
+                `<strong style="color:var(--grass-green);">${now}</strong>: ✓ ${cleanLabel(j.prediction)||'—'}`;
 
             gestureOverlay.textContent =
-                `✓ Great Job! ${j.prediction||'—'}`;
+                `✓ Great Job! ${cleanLabel(j.prediction)||'—'}`;
             gestureOverlay.style.display='block';
             gestureOverlay.style.background='rgba(6,214,160,0.9)';
 
-            detLabel.textContent = j.prediction||'—';
+            detLabel.textContent = cleanLabel(j.prediction)||'—';
             detStatus.textContent = 'Correct! Keep going!';
             celebrate();
 
