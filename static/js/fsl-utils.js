@@ -78,19 +78,42 @@ const FSL = (() => {
     };
   }
 
+  // Shared zero-buffer for missing hands (avoids allocation per frame)
+  const _ZERO63 = new Float32Array(63);
+
   function packFeature(res) {
     const pose = res.poseLandmarks || [], face = res.faceLandmarks || [];
     const anchors = extractAnchors(pose, face);
     const Lh = res.rightHandLandmarks ? flattenHand(res.rightHandLandmarks) : null;
     const Rh = res.leftHandLandmarks  ? flattenHand(res.leftHandLandmarks)  : null;
     if (!Lh && !Rh) return null;
-    const L = normalizeGlobal(Lh, anchors);
-    const R = normalizeGlobal(Rh, anchors);
+    const L = Lh ? normalizeGlobal(Lh, anchors) : _ZERO63;
+    const R = Rh ? normalizeGlobal(Rh, anchors) : _ZERO63;
     const alt = derivedAltitudeFeatures(L, R, anchors);
-    return new Float32Array([...L, ...R, ...alt, Lh ? 1 : 0, Rh ? 1 : 0]);
+    // TypedArray.set() — avoids spread-operator intermediate array (188 elements)
+    const out = new Float32Array(188);
+    out.set(L, 0);       // [0..62]
+    out.set(R, 63);      // [63..125]
+    out.set(alt, 126);   // [126..185]
+    out[186] = Lh ? 1 : 0;
+    out[187] = Rh ? 1 : 0;
+    return out;
   }
 
   /* ========== Temporal alignment ========== */
+
+  /**
+   * Flatten an array of Float32Arrays into a single plain array for JSON.
+   * Avoids flatMap + Array.from overhead (48 intermediate arrays).
+   */
+  function flattenSequence(frames) {
+    const dim = frames[0].length;
+    const out = new Float32Array(frames.length * dim);
+    for (let i = 0; i < frames.length; i++) {
+      out.set(frames[i], i * dim);
+    }
+    return Array.from(out);           // JSON.stringify needs plain array
+  }
 
   function temporalFixSimple(frames, n) {
     if (frames.length <= n) {
@@ -337,7 +360,7 @@ const FSL = (() => {
   return {
     flattenHand, lm, dist2D, normalizeGlobal, clampNormalized,
     derivedAltitudeFeatures, extractAnchors, packFeature,
-    temporalFixSimple, temporalFixMotion,
+    flattenSequence, temporalFixSimple, temporalFixMotion,
     normLabel, inferCategory,
     findDemoUrl,
     HAND_CONN, drawHandBox, drawGhostHand, anchorsValid,
