@@ -157,6 +157,16 @@
     return String(label) !== 'Incorrect';
   };
 
+  /* Clean label: strip category prefix & underscores for display */
+  function cleanLabel(raw) {
+    if (!raw) return '—';
+    let s = String(raw);
+    s = s.replace(/^(Color|Colors|Number|Numbers|Family|Relationship|Survival|Signs?)_/i, '');
+    s = s.replace(/_/g, ' ');
+    s = s.replace(/\b\w/g, c => c.toUpperCase());
+    return s;
+  }
+
   // Build log table
   const logBody = document.getElementById('logBody');
   const dailyBody = document.getElementById('dailyBody');
@@ -190,7 +200,7 @@
       const tr = document.createElement('tr');
       const ok = isCorrect(r.label);
       const pill = ok
-        ? `<span class="pill ok">✓ ${escapeHtml(r.label||'—')}</span>`
+        ? `<span class="pill ok">✓ ${escapeHtml(cleanLabel(r.label))}</span>`
         : `<span class="pill bad">✗ Incorrect</span>`;
       tr.innerHTML = `
         <td>${fmtTime(r.created_at)}</td>
@@ -285,70 +295,213 @@
     return best;
   })();
 
-  statCommon.textContent = mostCommon ? mostCommon : '—';
+  statCommon.textContent = mostCommon ? cleanLabel(mostCommon) : '—';
   statBest.textContent = (bestConfToday===null) ? '—' : (bestConfToday*100).toFixed(1)+'%';
   todaySummary.textContent = todayAttempts
     ? `You made ${todayAttempts} attempts today. Keep going!`
     : `No entries today yet. Do a few reps in Select or Activity.`;
 
   exportBtn.onclick = () => {
-    // Load jsPDF from CDN
     const script = document.createElement('script');
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
     script.onload = () => {
+      const username = escapeHtml('{{ session.get("username","student") }}');
+      const safeUsername = username.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const genDate = new Date().toLocaleString();
+      const genDateShort = new Date().toISOString().split('T')[0];
+      const successRate = total === 0 ? '—' : (correct / total * 100).toFixed(1) + '%';
+
+      /* ── Clean label: strip category prefix & underscores ── */
+      function cleanLabel(raw) {
+        if (!raw) return '—';
+        let s = String(raw);
+        // Strip prefixes like "Color_", "Numbers_", "Family_", "Relationship_", "Survival_"
+        s = s.replace(/^(Color|Colors|Number|Numbers|Family|Relationship|Survival|Signs?)_/i, '');
+        // Replace remaining underscores with spaces
+        s = s.replace(/_/g, ' ');
+        // Title-case each word
+        s = s.replace(/\b\w/g, c => c.toUpperCase());
+        return s;
+      }
+
+      /* ── Build all-time daily activity table ── */
+      const allDailyKeys = Array.from(byDay.keys()).sort();
+      const firstDay = allDailyKeys.length ? allDailyKeys[0] : genDateShort;
+      const lastDay  = allDailyKeys.length ? allDailyKeys[allDailyKeys.length - 1] : genDateShort;
+
+      const fullDays = [];
+      if (allDailyKeys.length) {
+        const cur = new Date(firstDay + 'T00:00:00');
+        const end = new Date(lastDay  + 'T00:00:00');
+        while (cur <= end) {
+          const y = cur.getFullYear();
+          const m = String(cur.getMonth()+1).padStart(2,'0');
+          const d = String(cur.getDate()).padStart(2,'0');
+          fullDays.push(y+'-'+m+'-'+d);
+          cur.setDate(cur.getDate()+1);
+        }
+      }
+
+      const dailyRowsHtml = fullDays.map((k, i) => {
+        const a = byDay.get(k) || 0;
+        const c = byDayCorrect.get(k) || 0;
+        const ic = byDayIncorrect.get(k) || 0;
+        const rate = a > 0 ? (c/a*100).toFixed(0)+'%' : '—';
+        const bg = i % 2 === 0 ? '#FFFFFF' : '#F8FAFC';
+        const dateLabel = new Date(k+'T00:00:00').toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit',weekday:'short'});
+        return '<tr style="background:'+bg+';page-break-inside:avoid;">' +
+          '<td style="padding:6px 12px;border-bottom:1px solid #E2E8F0;font-size:11px;color:#334155;">'+dateLabel+'</td>' +
+          '<td style="padding:6px 12px;border-bottom:1px solid #E2E8F0;text-align:center;font-size:11px;">'+a+'</td>' +
+          '<td style="padding:6px 12px;border-bottom:1px solid #E2E8F0;text-align:center;font-size:11px;color:#059669;">'+c+'</td>' +
+          '<td style="padding:6px 12px;border-bottom:1px solid #E2E8F0;text-align:center;font-size:11px;color:#DC2626;">'+ic+'</td>' +
+          '<td style="padding:6px 12px;border-bottom:1px solid #E2E8F0;text-align:center;font-size:11px;font-weight:600;">'+rate+'</td>' +
+          '</tr>';
+      }).join('');
+
+      /* ── Per-sign breakdown ── */
+      const signCounts = new Map();
+      const signCorrect = new Map();
+      rows.forEach(r => {
+        if (!r.label) return;
+        const lab = cleanLabel(r.label);
+        if (String(r.label) === 'Incorrect') return;
+        signCounts.set(lab, (signCounts.get(lab)||0) + 1);
+      });
+      rows.forEach(r => {
+        if (!isCorrect(r.label)) return;
+        const lab = cleanLabel(r.label);
+        signCorrect.set(lab, (signCorrect.get(lab)||0) + 1);
+      });
+      const signKeys = Array.from(signCounts.keys()).sort((a,b) => signCounts.get(b) - signCounts.get(a));
+      const signRowsHtml = signKeys.map((lab, i) => {
+        const att = signCounts.get(lab) || 0;
+        const cor = signCorrect.get(lab) || 0;
+        const bg = i % 2 === 0 ? '#FFFFFF' : '#F8FAFC';
+        return '<tr style="background:'+bg+';page-break-inside:avoid;">' +
+          '<td style="padding:6px 12px;border-bottom:1px solid #E2E8F0;font-size:11px;font-weight:600;color:#334155;">'+escapeHtml(lab)+'</td>' +
+          '<td style="padding:6px 12px;border-bottom:1px solid #E2E8F0;text-align:center;font-size:11px;">'+att+'</td>' +
+          '<td style="padding:6px 12px;border-bottom:1px solid #E2E8F0;text-align:center;font-size:11px;color:#059669;">'+cor+'</td>' +
+          '<td style="padding:6px 12px;border-bottom:1px solid #E2E8F0;text-align:center;font-size:11px;">'+(att>0?(cor/att*100).toFixed(0)+'%':'—')+'</td>' +
+          '</tr>';
+      }).join('');
+
+      /* ── Full attempt log ── */
+      const attemptRowsHtml = rows.map((r, i) => {
+        const ok = isCorrect(r.label);
+        const label = ok ? cleanLabel(r.label) : 'Incorrect';
+        const result = ok ? '✓ ' + escapeHtml(label) : '✗ Incorrect';
+        const resultColor = ok ? '#059669' : '#DC2626';
+        const bg = i % 2 === 0 ? '#FFFFFF' : '#F8FAFC';
+        const conf = (typeof r.confidence === 'number') ? (r.confidence * 100).toFixed(1) + '%' : '—';
+        const datetime = r.created_at ? new Date(r.created_at).toLocaleString(undefined,{year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+        return '<tr style="background:'+bg+';page-break-inside:avoid;">' +
+          '<td style="padding:5px 10px;border-bottom:1px solid #E2E8F0;font-size:10px;color:#64748B;">'+datetime+'</td>' +
+          '<td style="padding:5px 10px;border-bottom:1px solid #E2E8F0;font-size:10px;font-weight:700;color:'+resultColor+';">'+result+'</td>' +
+          '<td style="padding:5px 10px;border-bottom:1px solid #E2E8F0;font-size:10px;text-align:center;color:#64748B;">'+conf+'</td>' +
+          '</tr>';
+      }).join('');
+
+      /* ── Shared table-header style ── */
+      const TH = 'padding:8px 12px;font-size:9px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #CBD5E1;';
+
+      /* ── Build final HTML document ── */
       const element = document.createElement('div');
       element.innerHTML = `
-        <div style="font-family: Arial, sans-serif; padding: 20px;">
-          <h1 style="color: #4361EE; margin-bottom: 10px;">FSL Learning Results Report</h1>
-          <p style="color: #666; margin-bottom: 20px;">User: ${escapeHtml(document.querySelector('.sub').textContent.replace('Progress & history for ', ''))} | Generated: ${new Date().toLocaleString()}</p>
-          
-          <div style="margin-bottom: 30px;">
-            <h2 style="color: #333; font-size: 16px; border-bottom: 2px solid #4361EE; padding-bottom: 8px;">Summary Statistics</h2>
-            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-              <tr style="background: #f5f5f5;">
-                <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Total Attempts</td>
-                <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Correct</td>
-                <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Incorrect</td>
-                <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Success Rate</td>
-              </tr>
+        <div style="font-family:'Segoe UI',Arial,Helvetica,sans-serif;color:#1E293B;padding:0;">
+
+          <!-- HEADER -->
+          <div style="background:linear-gradient(135deg,#4361EE,#7C3AED);padding:28px 32px;">
+            <h1 style="margin:0 0 4px 0;font-size:24px;font-weight:800;color:#FFFFFF;letter-spacing:-0.5px;">Filipino Sign Language</h1>
+            <p style="margin:0;font-size:13px;color:rgba(255,255,255,0.85);font-weight:600;">Student Progress Report</p>
+            <div style="margin-top:14px;display:flex;gap:20px;flex-wrap:wrap;">
+              <div style="font-size:11px;color:rgba(255,255,255,0.7);">Student: <strong style="color:#FFF;">${username}</strong></div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.7);">Generated: <strong style="color:#FFF;">${genDate}</strong></div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.7);">Period: <strong style="color:#FFF;">${firstDay} → ${lastDay}</strong></div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.7);">Streak: <strong style="color:#FFF;">${streak} day(s)</strong></div>
+            </div>
+          </div>
+
+          <!-- OVERALL STATISTICS -->
+          <div style="padding:22px 32px 0 32px;">
+            <h2 style="font-size:13px;font-weight:800;color:#334155;margin:0 0 12px 0;text-transform:uppercase;letter-spacing:1px;border-left:4px solid #4361EE;padding-left:10px;">Overall Statistics</h2>
+            <table style="width:100%;border-collapse:separate;border-spacing:6px 0;margin-bottom:4px;">
               <tr>
-                <td style="padding: 10px; border: 1px solid #ddd; font-size: 18px;">${total}</td>
-                <td style="padding: 10px; border: 1px solid #ddd; font-size: 18px; color: #06D6A0;">${correct}</td>
-                <td style="padding: 10px; border: 1px solid #ddd; font-size: 18px; color: #FF6B9D;">${incorrect}</td>
-                <td style="padding: 10px; border: 1px solid #ddd; font-size: 18px;">${total === 0 ? '—' : (correct / total * 100).toFixed(1) + '%'}</td>
+                <td style="width:25%;padding:14px 8px;background:#F0F4FF;border-radius:8px;text-align:center;">
+                  <div style="font-size:24px;font-weight:900;color:#4361EE;">${total}</div>
+                  <div style="font-size:9px;font-weight:700;color:#64748B;margin-top:3px;text-transform:uppercase;">Total Attempts</div>
+                </td>
+                <td style="width:25%;padding:14px 8px;background:#ECFDF5;border-radius:8px;text-align:center;">
+                  <div style="font-size:24px;font-weight:900;color:#059669;">${correct}</div>
+                  <div style="font-size:9px;font-weight:700;color:#64748B;margin-top:3px;text-transform:uppercase;">Correct</div>
+                </td>
+                <td style="width:25%;padding:14px 8px;background:#FFF1F2;border-radius:8px;text-align:center;">
+                  <div style="font-size:24px;font-weight:900;color:#DC2626;">${incorrect}</div>
+                  <div style="font-size:9px;font-weight:700;color:#64748B;margin-top:3px;text-transform:uppercase;">Incorrect</div>
+                </td>
+                <td style="width:25%;padding:14px 8px;background:#F5F3FF;border-radius:8px;text-align:center;">
+                  <div style="font-size:24px;font-weight:900;color:#7C3AED;">${successRate}</div>
+                  <div style="font-size:9px;font-weight:700;color:#64748B;margin-top:3px;text-transform:uppercase;">Success Rate</div>
+                </td>
               </tr>
             </table>
           </div>
 
-          <div style="margin-bottom: 30px;">
-            <h2 style="color: #333; font-size: 16px; border-bottom: 2px solid #06D6A0; padding-bottom: 8px;">Last 30 Attempts</h2>
-            <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px;">
-              <tr style="background: #f5f5f5;">
-                <th style="padding: 8px; border: 1px solid #ddd; text-align: left; font-weight: bold;">Time</th>
-                <th style="padding: 8px; border: 1px solid #ddd; text-align: left; font-weight: bold;">Result</th>
-              </tr>
-              ${rows.slice(0, 30).map(r => {
-                const ok = isCorrect(r.label);
-                const result = ok ? `✓ ${escapeHtml(r.label || '—')}` : '✗ Incorrect';
-                const bgColor = ok ? '#E8F9F5' : '#FFE8F0';
-                return `<tr style="background: ${bgColor};">
-                  <td style="padding: 8px; border: 1px solid #ddd;">${fmtTime(r.created_at)}</td>
-                  <td style="padding: 8px; border: 1px solid #ddd;">${result}</td>
-                </tr>`;
-              }).join('')}
+          <!-- PAGE BREAK before Daily Activity -->
+          <div style="page-break-before:always;"></div>
+
+          <!-- DAILY ACTIVITY (FULL HISTORY) -->
+          <div style="padding:22px 32px 0 32px;">
+            <h2 style="font-size:13px;font-weight:800;color:#334155;margin:0 0 10px 0;text-transform:uppercase;letter-spacing:1px;border-left:4px solid #F59E0B;padding-left:10px;">Daily Activity Log (${firstDay} — ${lastDay})</h2>
+            <table style="width:100%;border-collapse:collapse;">
+              <thead>
+                <tr style="background:#F1F5F9;">
+                  <th style="${TH}text-align:left;">Date</th>
+                  <th style="${TH}text-align:center;">Attempts</th>
+                  <th style="${TH}text-align:center;">Correct</th>
+                  <th style="${TH}text-align:center;">Incorrect</th>
+                  <th style="${TH}text-align:center;">Accuracy</th>
+                </tr>
+              </thead>
+              <tbody>${dailyRowsHtml || '<tr><td colspan="5" style="padding:10px;color:#94A3B8;font-size:11px;">No daily activity recorded yet.</td></tr>'}</tbody>
             </table>
           </div>
+
+          <!-- PAGE BREAK before Complete Attempt History -->
+          <div style="page-break-before:always;"></div>
+
+          <!-- COMPLETE ATTEMPT HISTORY -->
+          <div style="padding:22px 32px 0 32px;">
+            <h2 style="font-size:13px;font-weight:800;color:#334155;margin:0 0 10px 0;text-transform:uppercase;letter-spacing:1px;border-left:4px solid #7C3AED;padding-left:10px;">Complete Attempt History</h2>
+            <table style="width:100%;border-collapse:collapse;">
+              <thead>
+                <tr style="background:#F1F5F9;">
+                  <th style="${TH}text-align:left;">Date &amp; Time</th>
+                  <th style="${TH}text-align:left;">Result</th>
+                  <th style="${TH}text-align:center;">Confidence</th>
+                </tr>
+              </thead>
+              <tbody>${attemptRowsHtml || '<tr><td colspan="3" style="padding:10px;color:#94A3B8;font-size:11px;">No attempts recorded yet.</td></tr>'}</tbody>
+            </table>
+          </div>
+
+          <!-- FOOTER -->
+          <div style="padding:24px 32px 16px 32px;margin-top:16px;border-top:2px solid #E2E8F0;text-align:center;">
+            <p style="margin:0;font-size:9px;color:#94A3B8;font-weight:600;">FSL Learning System — Automatically generated progress report</p>
+            <p style="margin:3px 0 0 0;font-size:9px;color:#CBD5E1;">Complete activity record for <strong>${username}</strong> · ${genDate}</p>
+          </div>
+
         </div>
       `;
-      
+
       const opt = {
-        margin: 10,
-        filename: 'FSL_Results_' + new Date().toISOString().split('T')[0] + '.pdf',
+        margin: [10, 10, 12, 10],
+        filename: 'FSL_Report_' + safeUsername + '_' + genDateShort + '.pdf',
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' },
+        pagebreak: { mode: ['css'], avoid: ['tr', 'thead'] }
       };
-      
+
       html2pdf().set(opt).from(element).save();
     };
     document.head.appendChild(script);

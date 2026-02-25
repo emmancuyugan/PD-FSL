@@ -223,11 +223,10 @@ def detect():
 @app.route('/results')
 @login_required
 def results():
-    # Latest individual rows (for the detailed list/table)
+    # All individual rows (no limit – full history for PDF export)
     rows = (PracticeResult.query
             .filter_by(user_id=session['user_id'])
             .order_by(PracticeResult.created_at.desc())
-            .limit(500)
             .all())
 
     results_data = [
