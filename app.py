@@ -86,6 +86,10 @@ def save_progress(label: str, confidence=None):
 MODEL_PATH = r"run2.pt"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+print("CUDA Available:", torch.cuda.is_available())
+if torch.cuda.is_available():
+    print("GPU:", torch.cuda.get_device_name(0))
+
 checkpoint = torch.load(
     MODEL_PATH,
     map_location=device,
@@ -158,7 +162,11 @@ def prepare_sequence(data_json):
     else:
         raise ValueError("Missing 'sequence' or 'features' field in request.")
 
-    return torch.tensor(seq, dtype=torch.float32).unsqueeze(0).to(device)
+    tensor = torch.tensor(seq, dtype=torch.float32).unsqueeze(0).to(device)
+    if device.type == "cuda":
+        tensor = tensor.half()
+
+    return tensor
 
 # ======================================================
 # Helper — locate demo video automatically
