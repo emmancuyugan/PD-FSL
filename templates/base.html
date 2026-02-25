@@ -44,6 +44,8 @@
       top: 0;
       z-index: 1000;
       animation: slideDown 0.6s ease-out;
+      will-change: transform;
+      contain: layout style;
     }
 
     @keyframes slideDown {
@@ -275,7 +277,7 @@
   </style>
 </head>
 
-<body>
+<body data-endpoint="{{ request.endpoint or '' }}">
   <header class="navbar">
     <div class="container nav-inner">
       <div class="brand">
@@ -334,29 +336,36 @@
       if(el) el.scrollIntoView({behavior:"smooth"});
     }
 
-    // Scroll-triggered animations
-    const observerOptions = {
-      threshold: 0.1,
-      rootMargin: '0px 0px -50px 0px'
-    };
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if(entry.isIntersecting) {
-          entry.target.style.opacity = '1';
-          entry.target.style.transform = 'translateY(0)';
-        }
-      });
-    }, observerOptions);
+    // Scroll-triggered animations — skip entirely on camera pages for performance
+    (function(){
+      const cameraPages = ['auto_recognition', 'activity', 'detect'];
+      const endpoint = document.body.dataset.endpoint || '';
+      if (cameraPages.includes(endpoint)) return; // no observer on camera pages
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const animateElements = document.querySelectorAll('.card, .section h2, .hero-grid > *');
-      animateElements.forEach(el => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(30px)';
-        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-        observer.observe(el);
+      const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+      };
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if(entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+            observer.unobserve(entry.target); // stop observing once visible
+          }
+        });
+      }, observerOptions);
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const animateElements = document.querySelectorAll('.card, .section h2, .hero-grid > *');
+        animateElements.forEach(el => {
+          el.style.opacity = '0';
+          el.style.transform = 'translateY(30px)';
+          el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+          observer.observe(el);
+        });
       });
-    });
+    })();
   </script>
 </body>
 </html>
