@@ -139,31 +139,6 @@ if device.type == "cuda":
 
 model.eval()
 
-# ---- Jetson / CUDA performance tuning ----
-torch.backends.cudnn.benchmark = True          # auto-tune convs & RNNs for fixed shapes
-if device.type == "cuda":
-    torch.backends.cuda.matmul.allow_tf32 = True
-    torch.backends.cudnn.allow_tf32 = True
-
-# JIT-trace for fused kernels and zero Python overhead at inference
-_jit_dtype = torch.float16 if device.type == "cuda" else torch.float32
-_jit_dummy = torch.zeros(1, SEQ_LEN, INPUT_SIZE, dtype=_jit_dtype, device=device)
-try:
-    model = torch.jit.trace(model, _jit_dummy)
-    print("[APP] Model JIT-traced ✔")
-except Exception as e:
-    print(f"[APP] JIT trace skipped (eager mode): {e}")
-
-# CUDA warmup — eliminates cold-start latency on first request
-if device.type == "cuda":
-    with torch.inference_mode():
-        for _ in range(5):
-            model(_jit_dummy)
-    torch.cuda.synchronize()
-    del _jit_dummy
-    torch.cuda.empty_cache()
-    print("[APP] CUDA warmup complete ✔")
-
 print("Loaded Config:")
 print("Hidden:", HIDDEN_SIZE)
 print("Layers:", NUM_LAYERS)
@@ -204,12 +179,10 @@ def prepare_sequence(data_json):
     else:
         raise ValueError("Missing 'sequence' or 'features' field in request.")
 
-    # from_numpy is zero-copy; single fused copy+convert+transfer via .to()
-    tensor = torch.from_numpy(seq).unsqueeze(0)
+    tensor = torch.tensor(seq, dtype=torch.float32).unsqueeze(0).to(device)
     if device.type == "cuda":
-        tensor = tensor.to(device=device, dtype=torch.float16, non_blocking=True)
-    else:
-        tensor = tensor.to(device)
+        tensor = tensor.half()
+
     return tensor
 
 # ======================================================

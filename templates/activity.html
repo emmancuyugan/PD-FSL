@@ -772,7 +772,7 @@ window.addEventListener("load", () => {
 
   const videoEl = document.getElementById("mainCamera");
   const canvasEl = document.getElementById("overlayCanvas");
-  const ctx = canvasEl.getContext("2d",{desynchronized:true});
+  const ctx = canvasEl.getContext("2d");
   const fpsEl = document.getElementById("fpsCounter");
   const updateFPS = FSL.createFPSTracker(fpsEl);
 
@@ -818,7 +818,7 @@ window.addEventListener("load", () => {
   const SEQ_LEN = 48, CAPTURE_MAX = 120;
   const BASE_CAPTURE_MS = 5000;
   let CAPTURE_MS = BASE_CAPTURE_MS;
-  let buf=[], running=false, frameSkip=2, frameCounter=0, autoJudge=false, captureStartMs=0;
+  let buf=[], running=false, frameSkip=1, frameCounter=0, autoJudge=false, captureStartMs=0;
 
   function updateGestureDisplay(gesture) {
     targetLabel.textContent = gesture ? gesture : 'None';
@@ -880,7 +880,7 @@ window.addEventListener("load", () => {
       return { predicted: null, raw: null };
     }
     const fixed = FSL.temporalFixMotion(buf, SEQ_LEN);
-    const seq = FSL.flattenSequence(fixed);
+    const seq = fixed.flatMap(f => Array.from(f));
 
     try {
       const j = await callPredict(seq);
@@ -1186,7 +1186,7 @@ window.addEventListener("load", () => {
     }
   });
 
-  const camera=new Camera(videoEl,{ onFrame:async function(){ await holistic.send({image:videoEl}); }, width:320, height:240 });
+  const camera=new Camera(videoEl,{ onFrame:async function(){ await holistic.send({image:videoEl}); }, width:480, height:360 });
 
   const originalStart = () => {
     const diff = difficultySelect.value;
