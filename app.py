@@ -111,6 +111,11 @@ model = ModifiedLSTM(
 ).to(device)
 
 model.load_state_dict(checkpoint["model_state_dict"])
+model.to(device)
+
+if device.type == "cuda":
+    model.half()
+
 model.eval()
 
 print("Loaded Config:")
