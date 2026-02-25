@@ -328,6 +328,23 @@
     transition: width 0.1s linear;
   }
 
+  .fps-counter {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    color: var(--grass-green);
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    z-index: 20;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    min-width: 60px;
+    text-align: center;
+  }
+
   .sidebar {
     flex: 1;
     display: flex;
@@ -686,6 +703,7 @@
           <span class="pip-label">[Cam] Your Camera</span>
           <video id="mainCamera" autoplay playsinline muted></video>
           <canvas id="overlayCanvas"></canvas>
+          <div class="fps-counter" id="fpsCounter">FPS: 0</div>
         </div>
 
         <div class="prep-overlay" id="prepOverlay">Get Ready…</div>
@@ -857,6 +875,10 @@ window.addEventListener("load", () => {
   const skeletonCanvas = document.getElementById("skeletonCanvas");
   const ctx = canvasEl.getContext("2d");
   const skeletonCtx = skeletonCanvas.getContext("2d");
+  const fpsCounter = document.getElementById("fpsCounter");
+  let lastFrameTime = Date.now();
+  let fpsFrameCount = 0;
+  let fpsValue = 0;
 
   const startBtn = document.getElementById("startBtn");
   const resetBtn = document.getElementById("resetBtn");
@@ -1389,6 +1411,17 @@ window.addEventListener("load", () => {
     ctx.save();
     ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
     ctx.drawImage(res.image, 0, 0, canvasEl.width, canvasEl.height);
+
+    // Update FPS counter
+    fpsFrameCount++;
+    const now = Date.now();
+    const delta = now - lastFrameTime;
+    if (delta >= 500) {
+      fpsValue = Math.round((fpsFrameCount * 1000) / delta);
+      fpsCounter.textContent = 'FPS: ' + fpsValue;
+      fpsFrameCount = 0;
+      lastFrameTime = now;
+    }
 
     const pose = res.poseLandmarks || [];
     const face = res.faceLandmarks || [];
