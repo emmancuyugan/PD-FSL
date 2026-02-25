@@ -218,27 +218,38 @@
 
   .pip-camera {
     position: absolute;
-    top: 20px;
-    right: 20px;
-    width: 300px;
-    height: 225px;
+    width: 100%;
+    height: 100%;
     border-radius: 20px;
     overflow: hidden;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    border: 4px solid var(--white);
-    z-index: 15;
     background: #000;
+  }
+
+  .camera-display {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    overflow: hidden;
+  }
+
+  .skeleton-display {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    overflow: hidden;
   }
 
   .pip-label {
     position: absolute;
-    top: 10px;
-    left: 10px;
+    top: 20px;
+    left: 20px;
     background: rgba(76, 201, 240, 0.9);
     color: var(--white);
-    padding: 6px 12px;
-    border-radius: 10px;
-    font-size: 12px;
+    padding: 10px 20px;
+    border-radius: 15px;
+    font-size: 14px;
     font-weight: 700;
     z-index: 16;
     box-shadow: 0 2px 8px rgba(76, 201, 240, 0.5);
@@ -695,15 +706,18 @@
   <div class="main-content">
     <div class="video-section">
       <div class="skeleton-container">
-        <span class="skeleton-label">Skeleton AI</span>
-        <canvas id="skeletonCanvas"></canvas>
-
-        <!-- Picture-in-Picture Camera (Top Right) -->
-        <div class="pip-camera">
+        <!-- Main camera display (default view) -->
+        <div class="camera-display" id="cameraDisplay">
           <span class="pip-label">Camera</span>
           <video id="mainCamera" autoplay playsinline muted></video>
           <canvas id="overlayCanvas"></canvas>
           <div class="fps-counter" id="fpsCounter">FPS: 0</div>
+        </div>
+
+        <!-- Skeleton AI display (shown only for corrective feedback) -->
+        <div class="skeleton-display" id="skeletonDisplay" style="display: none;">
+          <span class="skeleton-label">Skeleton AI</span>
+          <canvas id="skeletonCanvas"></canvas>
         </div>
 
         <div class="prep-overlay" id="prepOverlay">Get Ready…</div>
@@ -794,8 +808,8 @@
 
         <div class="assist-section" id="assistRow">
           <div class="assist-buttons">
-            <button class="assist-btn show-how-btn" id="btnShowHow">[Guide] Show me how</button>
-            <button class="assist-btn try-again-btn" id="btnTryAgain">↻ Try again</button>
+            <button class="assist-btn show-how-btn" id="btnShowHow">Show me how</button>
+            <button class="assist-btn try-again-btn" id="btnTryAgain">Try again</button>
           </div>
           <div class="assist-hint" id="assistHint"></div>
         </div>
@@ -833,6 +847,19 @@ window.addEventListener("load", () => {
   const FAMILY_SIGNS = ["Daughter","Father","Grandfather","Grandmother","Mother","Son"];
   const RELATIONSHIP_SIGNS = ["Boy","Girl","Man","Woman"];
   const SURVIVAL_SIGNS = ["Correct","Don't Understand","No","Understand","Wrong","Yes"];
+
+  // Initialize display to show camera by default
+  const showCameraDisplay = () => {
+    document.getElementById("cameraDisplay").style.display = 'block';
+    document.getElementById("skeletonDisplay").style.display = 'none';
+  };
+
+  const showSkeletonDisplay = () => {
+    document.getElementById("cameraDisplay").style.display = 'none';
+    document.getElementById("skeletonDisplay").style.display = 'block';
+  };
+
+  showCameraDisplay();
 
   const categorySelect = document.getElementById("categorySelect");
   const gestureSelect  = document.getElementById("gestureSelect");
@@ -1355,6 +1382,7 @@ window.addEventListener("load", () => {
     }
     
     ghostEnabled=true; ghostFrames=null; ghostReady=false; ghostIdx=0;
+    showSkeletonDisplay();
     const ok = await loadGhostFor(targetGesture);
     if (ok){
       showGhostUI(true);
@@ -1383,16 +1411,18 @@ window.addEventListener("load", () => {
           ghostAnimationId = null;
         }
         skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
+        showCameraDisplay();
       }, GHOST_DURATION_MS);
     }else{
-      ghostEnabled=false; showGhostUI(false);
+      ghostEnabled=false; showGhostUI(false); showCameraDisplay();
     }
   };
 
   document.getElementById("btnTryAgain").onclick = async () => {
     ghostEnabled=false; 
     ghostReady=false;
-    showGhostUI(false); 
+    showGhostUI(false);
+    showCameraDisplay();
     document.getElementById("assistHint").textContent='';
     if(ghostAnimationId) {
       cancelAnimationFrame(ghostAnimationId);
@@ -1612,6 +1642,7 @@ window.addEventListener("load", () => {
       ghostAnimationId = null;
     }
     skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
+    showCameraDisplay();
     if (ghostTimer) clearTimeout(ghostTimer);
     buf=[]; frameCounter=0; frameCountEl.textContent='0'; progressBar.style.width='0%'; timerBar.style.width='0%';
     capturePhase.textContent='Idle'; setState(STATE_READY);
