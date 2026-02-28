@@ -104,7 +104,7 @@ CLASSES = config["CLASSES"]
 INPUT_SIZE = config["FEATURE_DIM"]
 HIDDEN_SIZE = config["HIDDEN_SIZE"]
 NUM_LAYERS = config["NUM_LAYERS"]
-DROPOUT = config["DROPOUT"]
+DROPOUT = config["DROPOUT"] 
 SEQ_LEN = config["SEQUENCE_LENGTH"]
 print("Runtime SEQ_LEN:", SEQ_LEN)
 
@@ -128,7 +128,7 @@ use_trt = False
 
 if os.path.exists(TRT_ENGINE_PATH):
     print("Loading TensorRT engine...")
-    use_trt = True
+    use_trt = False
 
     TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
 
