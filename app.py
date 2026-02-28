@@ -4,7 +4,9 @@ from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
-
+import tensorrt as trt
+import pycuda.driver as cuda
+import pycuda.autoinit
 import torch
 import torch.nn as nn
 import numpy as np
@@ -121,6 +123,35 @@ if device.type == "cuda":
     model.half()
 
 model.eval()
+TRT_ENGINE_PATH = "model.engine"
+use_trt = False
+
+if os.path.exists(TRT_ENGINE_PATH):
+    print("⚡ Loading TensorRT engine...")
+    use_trt = True
+
+    TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
+
+    with open(TRT_ENGINE_PATH, "rb") as f:
+        runtime = trt.Runtime(TRT_LOGGER)
+        engine = runtime.deserialize_cuda_engine(f.read())
+
+    context = engine.create_execution_context()
+
+    input_shape = (1, SEQ_LEN, INPUT_SIZE)
+    input_size = int(np.prod(input_shape) * np.float16().nbytes)
+    output_size = int(len(CLASSES) * np.float16().nbytes)
+
+    d_input = cuda.mem_alloc(input_size)
+    d_output = cuda.mem_alloc(output_size)
+    stream = cuda.Stream()
+
+    input_name = engine.get_tensor_name(0)
+    output_name = engine.get_tensor_name(1)
+
+    print("✅ TensorRT engine loaded.")
+else:
+    print("TensorRT engine not found. Using PyTorch.")
 
 print("Loaded Config:")
 print("Hidden:", HIDDEN_SIZE)
@@ -430,12 +461,29 @@ def predict_auto():
         else:
             x = prepare_sequence({"features": data["features"]})
 
-        with torch.no_grad():
-            logits = model(x)
-            probs = torch.softmax(logits, dim=1).cpu().numpy()[0]
-            conf = float(np.max(probs))
-            pred_idx = int(np.argmax(probs))
-            label = CLASSES[pred_idx]
+        if trt_engine:
+            # TensorRT inference
+            input_data = x.cpu().numpy().astype(np.float16)
+            cuda.memcpy_htod_async(trt_input, input_data, trt_stream)
+
+            trt_context.execute_async_v3(stream_handle=trt_stream.handle)
+
+            output_data = np.empty((1, len(CLASSES)), dtype=np.float16)
+            cuda.memcpy_dtoh_async(output_data, trt_output, trt_stream)
+            trt_stream.synchronize()
+
+            probs = torch.softmax(
+                torch.tensor(output_data.astype(np.float32)),
+                dim=1
+            ).numpy()[0]
+        else:
+            with torch.no_grad():
+                logits = model(x)
+                probs = torch.softmax(logits, dim=1).cpu().numpy()[0]
+
+        conf = float(np.max(probs))
+        pred_idx = int(np.argmax(probs))
+        label = CLASSES[pred_idx]
 
         THRESHOLD = 0.8
 
