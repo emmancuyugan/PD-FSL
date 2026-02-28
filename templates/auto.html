@@ -559,7 +559,6 @@
 
 <script src="{{ url_for('static', filename='mediapipe/camera_utils/camera_utils.js') }}"></script>
 <script src="{{ url_for('static', filename='mediapipe/drawing_utils/drawing_utils.js') }}"></script>
-<script src="{{ url_for('static', filename='mediapipe/holistic/holistic.js') }}"></script>
 
 <script>
 (() => {
@@ -754,41 +753,26 @@
     const key=normLabel(label);
     const url=await findDemoUrl(cat,key);
     if(!url)return false;
-
-    const v=document.createElement('video');
-    v.src=url;
-    v.muted=true;
-    v.playsInline=true;
-    v.crossOrigin='anonymous';
-
-    await new Promise((resolve,reject)=>{
-      v.onloadedmetadata=resolve;
-      v.onerror=()=>reject(new Error('Video error'));
+    // Process video server-side
+    const videoPath = url.replace(window.location.origin + '/', '');
+    const resp = await fetch('/api/ghost_landmarks', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({video_path: videoPath, total_frames: 24})
     });
-
+    const data = await resp.json();
     ghostFrames=[];
-    // Reuse main holistic instance — swap in ghost handler
-    holistic.onResults(res=>{
-      const pose=res.poseLandmarks||[];
-      const face=res.faceLandmarks||[];
+    for(const frame of (data.frames||[])){
+      const pose=frame.poseLandmarks||[];
+      const face=frame.faceLandmarks||[];
       const anchors={L_SH:lm(pose,11),R_SH:lm(pose,12),nose:lm(face,1),forehead:lm(face,10),lip_u:lm(face,13),brow_r:lm(face,65),brow_l:lm(face,295),chin:lm(face,152)};
-      const Lh=res.rightHandLandmarks?flattenHand(res.rightHandLandmarks):null;
-      const Rh=res.leftHandLandmarks?flattenHand(res.leftHandLandmarks):null;
-      if(!Lh&&!Rh)return;
+      const Lh=frame.rightHandLandmarks?flattenHand(frame.rightHandLandmarks):null;
+      const Rh=frame.leftHandLandmarks?flattenHand(frame.leftHandLandmarks):null;
+      if(!Lh&&!Rh)continue;
       const L=Lh?normalizeGlobal(Lh,anchors):null;
       const R=Rh?normalizeGlobal(Rh,anchors):null;
       ghostFrames.push({L,R});
-    });
-
-    const total=24;
-    for(let i=0;i<total;i++){
-      v.currentTime=(v.duration*i)/total;
-      await new Promise(r=>v.onseeked=r);
-      await holistic.send({image:v});
     }
-    // Restore original callback
-    holistic.onResults(mainOnResults);
-
     ghostReady=ghostFrames&&ghostFrames.length>0;
     return ghostReady;
   }
@@ -808,13 +792,9 @@
     }
   }
 
-  const holistic=new Holistic({locateFile: (f) => `/static/mediapipe/holistic/${f}`});
-  // Optimized for Jetson Orin Nano: reduced complexity, higher confidence thresholds for auto mode
-  holistic.setOptions({selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.70,minTrackingConfidence:0.70});
-
   function mainOnResults(res){
     ctx.clearRect(0,0,canvasEl.width,canvasEl.height);
-    ctx.drawImage(res.image,0,0,canvasEl.width,canvasEl.height);
+    ctx.drawImage(videoEl,0,0,canvasEl.width,canvasEl.height);
     
     // Update FPS counter
     fpsFrameCount++;
@@ -889,10 +869,33 @@
       }
     }
   }
-  holistic.onResults(mainOnResults);
+  // Async server-side MediaPipe: camera renders at full speed,
+  // landmarks update in background whenever the server responds.
+  const _offCvs = document.createElement('canvas');
+  _offCvs.width = 320; _offCvs.height = 240;
+  const _offCtx = _offCvs.getContext('2d');
+  let _latestLM = {};
+  let _mpBusy = false;
 
-  const camera=new Camera(videoEl,{onFrame:async()=>{await holistic.send({image:videoEl});},width:480,height:360});
-  // Camera resolution optimized for Jetson: 480x360 (28% fewer pixels)
+  const camera=new Camera(videoEl,{onFrame:async()=>{
+    mainOnResults({
+      poseLandmarks:      _latestLM.poseLandmarks,
+      faceLandmarks:      _latestLM.faceLandmarks,
+      rightHandLandmarks: _latestLM.rightHandLandmarks,
+      leftHandLandmarks:  _latestLM.leftHandLandmarks
+    });
+    if(!_mpBusy){
+      _mpBusy=true;
+      _offCtx.drawImage(videoEl,0,0,320,240);
+      _offCvs.toBlob(function(blob){
+        fetch('/api/landmarks',{method:'POST',body:blob})
+          .then(function(r){return r.json();})
+          .then(function(lm){_latestLM=lm;})
+          .catch(function(){})
+          .finally(function(){_mpBusy=false;});
+      },'image/jpeg',0.6);
+    }
+  },width:480,height:360});
 
 async function predict(){
     if(buf.length < 5) return;

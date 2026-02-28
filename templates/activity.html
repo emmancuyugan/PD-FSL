@@ -804,7 +804,6 @@
 
 <script src="{{ url_for('static', filename='mediapipe/camera_utils/camera_utils.js') }}"></script>
 <script src="{{ url_for('static', filename='mediapipe/drawing_utils/drawing_utils.js') }}"></script>
-<script src="{{ url_for('static', filename='mediapipe/holistic/holistic.js') }}"></script>
 
 <script>
 window.addEventListener("load", () => {
@@ -1331,33 +1330,35 @@ window.addEventListener("load", () => {
     showGhostUI(false);
     const url=await findDemoUrl(cat,key);
     if(!url){ assistHint.textContent='No demo found for '+cat+'/'+key; ghostReady=false; return false; }
+    // Get video duration for frame count calculation
     const v=document.createElement('video');
-    v.src=url; v.muted=true; v.playsInline=true; v.crossOrigin='anonymous';
+    v.src=url; v.muted=true; v.playsInline=true;
     await new Promise((resolve,reject)=>{ v.onloadedmetadata=resolve; v.onerror=()=>reject(new Error('Video error')); });
-    // Reuse main holistic instance — save original callback, swap in ghost handler
+    const total=Math.min(24, Math.max(12, Math.floor(v.duration*6)));
+    v.src=''; // release
+    // Process video server-side
+    const videoPath = url.replace(window.location.origin + '/', '');
+    const resp = await fetch('/api/ghost_landmarks', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({video_path: videoPath, total_frames: total})
+    });
+    const data = await resp.json();
     ghostFrames=[];
-    holistic.onResults(res=>{
-      const pose=res.poseLandmarks||[], face=res.faceLandmarks||[];
+    for(const frame of (data.frames||[])){
+      const pose=frame.poseLandmarks||[], face=frame.faceLandmarks||[];
       const anchors={};
       anchors.L_SH=lm(pose,11); anchors.R_SH=lm(pose,12);
       anchors.nose=lm(face,1); anchors.forehead=lm(face,10);
       anchors.lip_u=lm(face,13); anchors.brow_r=lm(face,65); anchors.brow_l=lm(face,295);
       anchors.chin=lm(face,152);
-      const Lh=res.rightHandLandmarks?flattenHand(res.rightHandLandmarks):null;
-      const Rh=res.leftHandLandmarks?flattenHand(res.leftHandLandmarks):null;
-      if(!Lh && !Rh) return;
+      const Lh=frame.rightHandLandmarks?flattenHand(frame.rightHandLandmarks):null;
+      const Rh=frame.leftHandLandmarks?flattenHand(frame.leftHandLandmarks):null;
+      if(!Lh && !Rh) continue;
       const L=Lh?normalizeGlobal(Lh,anchors):new Float32Array(63);
       const R=Rh?normalizeGlobal(Rh,anchors):new Float32Array(63);
       ghostFrames.push({L:L, R:R});
-    });
-    const total=Math.min(24, Math.max(12, Math.floor(v.duration*6)));
-    for(let i=0;i<total;i++){
-      v.currentTime = (v.duration * i)/total;
-      await new Promise(function(r){ v.onseeked=r; });
-      await holistic.send({image:v});
     }
-    // Restore original callback
-    holistic.onResults(mainOnResults);
     ghostReady = ghostFrames.length>0;
     assistHint.textContent = ghostReady ? 'Overlay loaded. Use Size/Align controls if needed.' : 'No hands detected in demo video.';
     return ghostReady;
@@ -1404,13 +1405,10 @@ window.addEventListener("load", () => {
     startBtn.click();
   };
 
-  const holistic=new Holistic({locateFile: (f) => `/static/mediapipe/holistic/${f}`});
-  holistic.setOptions({selfieMode:false,modelComplexity:2,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.55,minTrackingConfidence:0.55});
-
   function mainOnResults(res){
     ctx.save();
     ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
-    ctx.drawImage(res.image, 0, 0, canvasEl.width, canvasEl.height);
+    ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
 
     // Update FPS counter
     fpsFrameCount++;
@@ -1510,9 +1508,38 @@ window.addEventListener("load", () => {
       }
     }
   }
-  holistic.onResults(mainOnResults);
+  // Async server-side MediaPipe: camera renders at full speed,
+  // landmarks update in background whenever the server responds.
+  const _offCvs = document.createElement('canvas');
+  _offCvs.width = 320; _offCvs.height = 240;
+  const _offCtx = _offCvs.getContext('2d');
+  let _latestLM = {};
+  let _mpBusy = false;
 
-  const camera=new Camera(videoEl,{ onFrame:async function(){ await holistic.send({image:videoEl}); }, width:480, height:360 });
+  const camera = new Camera(videoEl, {
+    onFrame: async function() {
+      // Always render immediately with latest available landmarks
+      mainOnResults({
+        poseLandmarks:      _latestLM.poseLandmarks,
+        faceLandmarks:      _latestLM.faceLandmarks,
+        rightHandLandmarks: _latestLM.rightHandLandmarks,
+        leftHandLandmarks:  _latestLM.leftHandLandmarks
+      });
+      // Fire async landmark request if idle
+      if (!_mpBusy) {
+        _mpBusy = true;
+        _offCtx.drawImage(videoEl, 0, 0, 320, 240);
+        _offCvs.toBlob(function(blob) {
+          fetch('/api/landmarks', { method: 'POST', body: blob })
+            .then(function(r){ return r.json(); })
+            .then(function(lm){ _latestLM = lm; })
+            .catch(function(){})
+            .finally(function(){ _mpBusy = false; });
+        }, 'image/jpeg', 0.6);
+      }
+    },
+    width: 480, height: 360
+  });
 
   const originalStart = () => {
     const diff = difficultySelect.value;

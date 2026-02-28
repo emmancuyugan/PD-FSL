@@ -12,6 +12,9 @@ import os
 import random
 import json
 import datetime
+import threading
+import cv2
+import mediapipe as mp
 
 # ── TensorRT (optional – only used when model.engine exists) ──
 try:
@@ -194,6 +197,33 @@ print("Dropout:", DROPOUT)
 print("Classes:", len(CLASSES))
 print("SEQ_LEN from config:", SEQ_LEN)
 print(f"[APP] Loaded model → hidden={HIDDEN_SIZE}, layers={NUM_LAYERS}, dropout={DROPOUT}")
+
+# ── Server-side MediaPipe Holistic (replaces browser WASM) ──
+_mp_holistic_mod = mp.solutions.holistic
+
+server_holistic = _mp_holistic_mod.Holistic(
+    static_image_mode=False,
+    model_complexity=2,
+    smooth_landmarks=True,
+    refine_face_landmarks=False,
+    min_detection_confidence=0.55,
+    min_tracking_confidence=0.55,
+)
+
+_mp_lock = threading.Lock()          # guard for single Holistic instance
+
+
+def _serialize_landmarks(landmark_list):
+    """Convert a MediaPipe NormalizedLandmarkList → list of dicts."""
+    if landmark_list is None:
+        return None
+    return [
+        {"x": l.x, "y": l.y, "z": l.z,
+         "visibility": getattr(l, "visibility", 0.0)}
+        for l in landmark_list.landmark
+    ]
+
+print("[APP] Server-side MediaPipe Holistic initialised")
 
 def prepare_sequence(data_json):
     seq_len = SEQ_LEN
@@ -463,6 +493,71 @@ def api_save_result():
 @app.route("/ping", methods=["GET"])
 def ping():
     return jsonify({"message": "Backend is reachable ✅"})
+
+# ── Server-side MediaPipe endpoints ──
+@app.route("/api/landmarks", methods=["POST"])
+def api_landmarks():
+    """Accept a raw JPEG frame, run MediaPipe Holistic, return landmarks."""
+    img_bytes = request.get_data()
+    nparr = np.frombuffer(img_bytes, np.uint8)
+    frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    if frame is None:
+        return jsonify({"error": "Invalid image"}), 400
+
+    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    with _mp_lock:
+        results = server_holistic.process(frame_rgb)
+
+    return jsonify({
+        "poseLandmarks":     _serialize_landmarks(results.pose_landmarks),
+        "faceLandmarks":     _serialize_landmarks(results.face_landmarks),
+        "rightHandLandmarks": _serialize_landmarks(results.right_hand_landmarks),
+        "leftHandLandmarks":  _serialize_landmarks(results.left_hand_landmarks),
+    })
+
+
+@app.route("/api/ghost_landmarks", methods=["POST"])
+def api_ghost_landmarks():
+    """Process a demo video server-side and return landmark frames."""
+    data = request.get_json(force=True)
+    video_path = data.get("video_path", "")
+    total_frames = int(data.get("total_frames", 24))
+
+    # Resolve to absolute path
+    abs_path = resource_path(video_path)
+    if not os.path.exists(abs_path):
+        return jsonify({"error": "Video not found", "path": abs_path}), 404
+
+    cap = cv2.VideoCapture(abs_path)
+    if not cap.isOpened():
+        return jsonify({"error": "Cannot open video"}), 400
+
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30
+    frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+    duration = frame_count / fps if fps else 0
+
+    frames = []
+    with _mp_lock:
+        for i in range(total_frames):
+            ts_ms = (duration * i / total_frames) * 1000
+            cap.set(cv2.CAP_PROP_POS_MSEC, ts_ms)
+            ret, frame = cap.read()
+            if not ret:
+                continue
+
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            results = server_holistic.process(frame_rgb)
+
+            frames.append({
+                "poseLandmarks":     _serialize_landmarks(results.pose_landmarks),
+                "faceLandmarks":     _serialize_landmarks(results.face_landmarks),
+                "rightHandLandmarks": _serialize_landmarks(results.right_hand_landmarks),
+                "leftHandLandmarks":  _serialize_landmarks(results.left_hand_landmarks),
+            })
+
+    cap.release()
+    return jsonify({"frames": frames})
+
 
 # Activity Section
 @app.route("/predict", methods=["POST"])

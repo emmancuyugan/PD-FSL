@@ -865,7 +865,6 @@
 
 <script src="{{ url_for('static', filename='mediapipe/camera_utils/camera_utils.js') }}"></script>
 <script src="{{ url_for('static', filename='mediapipe/drawing_utils/drawing_utils.js') }}"></script>
-<script src="{{ url_for('static', filename='mediapipe/holistic/holistic.js') }}"></script>
 
 <script>
 window.addEventListener("load", () => {
@@ -1383,27 +1382,29 @@ window.addEventListener("load", () => {
     showGhostUI(false);
     const url=await findDemoUrl(cat,key);
     if(!url){ assistHint.textContent='No demo found for '+cat+'/'+key; ghostReady=false; return false; }
+    // Get video duration for frame count calculation
     const v=document.createElement('video');
-    v.src=url; v.muted=true; v.playsInline=true; v.crossOrigin='anonymous';
+    v.src=url; v.muted=true; v.playsInline=true;
     await new Promise((resolve,reject)=>{ v.onloadedmetadata=resolve; v.onerror=()=>reject(new Error('Video error')); });
-    // Reuse main holistic instance — swap in ghost handler
-    ghostFrames=[];
-    holistic.onResults(res=>{
-      ghostFrames.push({
-        pose: res.poseLandmarks || [],
-        face: res.faceLandmarks || [],
-        rightHand: res.rightHandLandmarks || [],
-        leftHand: res.leftHandLandmarks || []
-      });
-    });
     const total=Math.min(30, Math.max(15, Math.floor(v.duration*10)));
-    for(let i=0;i<total;i++){
-      v.currentTime = (v.duration * i)/total;
-      await new Promise(function(r){ v.onseeked=r; });
-      await holistic.send({image:v});
+    v.src=''; // release
+    // Process video server-side
+    const videoPath = url.replace(window.location.origin + '/', '');
+    const resp = await fetch('/api/ghost_landmarks', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({video_path: videoPath, total_frames: total})
+    });
+    const data = await resp.json();
+    ghostFrames=[];
+    for(const frame of (data.frames||[])){
+      ghostFrames.push({
+        pose: frame.poseLandmarks || [],
+        face: frame.faceLandmarks || [],
+        rightHand: frame.rightHandLandmarks || [],
+        leftHand: frame.leftHandLandmarks || []
+      });
     }
-    // Restore original callback
-    holistic.onResults(mainOnResults);
     ghostReady = ghostFrames.length>0;
     assistHint.textContent = ghostReady ? 'Skeleton guide loaded! Watch the big screen.' : 'No skeleton found in demo.';
     return ghostReady;
@@ -1486,13 +1487,10 @@ window.addEventListener("load", () => {
     startBtn.click();
   };
 
-  const holistic = new Holistic({locateFile: (f) => `/static/mediapipe/holistic/${f}`});
-  holistic.setOptions({selfieMode:false,modelComplexity:2,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.55,minTrackingConfidence:0.55});
-
   function mainOnResults(res){
     ctx.save();
     ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
-    ctx.drawImage(res.image, 0, 0, canvasEl.width, canvasEl.height);
+    ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
 
     // Update FPS counter
     fpsFrameCount++;
@@ -1643,9 +1641,36 @@ window.addEventListener("load", () => {
       }
     }
   }
-  holistic.onResults(mainOnResults);
+  // Async server-side MediaPipe: camera renders at full speed,
+  // landmarks update in background whenever the server responds.
+  const _offCvs = document.createElement('canvas');
+  _offCvs.width = 320; _offCvs.height = 240;
+  const _offCtx = _offCvs.getContext('2d');
+  let _latestLM = {};
+  let _mpBusy = false;
 
-  const camera=new Camera(videoEl,{ onFrame:async function(){ await holistic.send({image:videoEl}); }, width:480, height:360 });
+  const camera = new Camera(videoEl, {
+    onFrame: async function() {
+      mainOnResults({
+        poseLandmarks:      _latestLM.poseLandmarks,
+        faceLandmarks:      _latestLM.faceLandmarks,
+        rightHandLandmarks: _latestLM.rightHandLandmarks,
+        leftHandLandmarks:  _latestLM.leftHandLandmarks
+      });
+      if (!_mpBusy) {
+        _mpBusy = true;
+        _offCtx.drawImage(videoEl, 0, 0, 320, 240);
+        _offCvs.toBlob(function(blob) {
+          fetch('/api/landmarks', { method: 'POST', body: blob })
+            .then(function(r){ return r.json(); })
+            .then(function(lm){ _latestLM = lm; })
+            .catch(function(){})
+            .finally(function(){ _mpBusy = false; });
+        }, 'image/jpeg', 0.6);
+      }
+    },
+    width: 480, height: 360
+  });
 
   const originalStart = () => {
     const fastMode = toggleSpeed.checked;
