@@ -168,9 +168,6 @@ def prepare_sequence(data_json):
 
     return tensor
 
-# ======================================================
-# Helper — locate demo video automatically
-# ======================================================
 def get_demo_video_path(label):
     parts = label.split("_")
     if len(parts) != 2:
@@ -375,9 +372,7 @@ def api_save_result():
 def ping():
     return jsonify({"message": "Backend is reachable ✅"})
 
-# --------------------------
-# Normal /predict (Activity)
-# --------------------------
+# Activity Section
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
@@ -411,20 +406,29 @@ def predict():
         print(f"[ERROR] Prediction failed: {e}")
         return jsonify({"error": f"Prediction failed: {str(e)}"}), 400
 
-# --------------------------
-# New /predict_auto (Auto Recognition Only)
-# --------------------------
+# Auto section
 @app.route("/predict_auto", methods=["POST"])
 def predict_auto():
     try:
-        data = request.get_json(force=True)
+        data = request.get_json(force=True) or {}
+        # For error handling of no hand detected
+        if (
+            ("sequence" not in data and "features" not in data) or
+            ("sequence" in data and not data["sequence"]) or
+            ("features" in data and not data["features"])
+        ):
+            return jsonify({
+                "prediction": "No hands detected",
+                "message": "No hands detected"
+            })
 
+        # -----------------------------
+        # 2. NORMAL PROCESSING
+        # -----------------------------
         if "sequence" in data:
             x = prepare_sequence({"sequence": data["sequence"]})
-        elif "features" in data:
-            x = prepare_sequence({"features": data["features"]})
         else:
-            raise ValueError("Missing 'sequence' or 'features'")
+            x = prepare_sequence({"features": data["features"]})
 
         with torch.no_grad():
             logits = model(x)
@@ -434,39 +438,38 @@ def predict_auto():
             label = CLASSES[pred_idx]
 
         THRESHOLD = 0.8
+
         if conf < THRESHOLD:
             sorted_indices = np.argsort(probs)[::-1]
             top_idx = sorted_indices[0]
             closest_label = CLASSES[top_idx]
             closest_conf = float(probs[top_idx])
 
-            # Save "Incorrect" to record that child did gesture incorrectly
-            save_progress("Incorrect", conf)
+            save_progress(closest_label, closest_conf)
 
-            response = {
+            return jsonify({
                 "prediction": "Incorrect",
                 "closest_sign": closest_label,
                 "closest_confidence": round(closest_conf, 4),
                 "confidence": conf,
-                "message": f"❌ Incorrect — closest sign you performed is {closest_label.replace('_', ' ')}"
-            }
-            print(f"[AUTO] Incorrect (conf={conf:.4f}) → Closest: {closest_label} ({closest_conf:.4f})")
+                "message": f"❌ Incorrect — closest sign is {closest_label.replace('_', ' ')}"
+            })
+
         else:
-            # Save correct sign
             save_progress(label, conf)
 
-            response = {
+            return jsonify({
                 "prediction": label,
                 "confidence": conf,
                 "message": f"✅ Correct — {label.replace('_', ' ')}"
-            }
-            print(f"[AUTO] {label} (conf={conf:.4f}) [threshold={THRESHOLD}]")
-
-        return jsonify(response)
+            })
 
     except Exception as e:
         print(f"[ERROR] Auto Prediction failed: {e}")
-        return jsonify({"error": f"Auto Prediction failed: {str(e)}"}), 400
+        return jsonify({
+            "prediction": "Error",
+            "message": "Prediction error"
+        }), 400
 
 # --------------------------
 # /api/assess

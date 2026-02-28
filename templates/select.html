@@ -1062,6 +1062,7 @@ window.addEventListener("load", () => {
   }
 
   function updateBuffer(f){
+    if(!f) return;
     if(buf.length<CAPTURE_MAX) buf.push(f);
     else { buf.shift(); buf.push(f); }
     frameCountEl.textContent=Math.min(buf.length,SEQ_LEN);
@@ -1113,9 +1114,15 @@ window.addEventListener("load", () => {
 
   async function predictOnce(silent=false){
     if (buf.length < 20) {
-      if (!silent) alert('Not enough data.');
+      if (!silent && state === STATE_CAPTURE) {
+        resultText.textContent = 'No hands detected';
+        resultText.className = 'result-text';
+        incorrectCount++;
+        incorrectCountEl.textContent = String(incorrectCount);
+      }
       return { predicted: null, raw: null };
     }
+    
     const fixed = temporalFix(buf, SEQ_LEN);
     const seq = fixed.flatMap(f => Array.from(f));
 

@@ -648,6 +648,7 @@
     const alt=derivedAltitudeFeatures(L,R,a);
     return new Float32Array([...L,...R,...alt,Lh?1:0,Rh?1:0]);
   }
+  
   function temporalFix(frames,n){
     if(frames.length<=n){
       const pad=Array.from({length:n-frames.length},()=>frames[frames.length-1]);
