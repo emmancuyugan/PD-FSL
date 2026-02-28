@@ -140,7 +140,8 @@ if os.path.exists(TRT_ENGINE_PATH):
 
     input_shape = (1, SEQ_LEN, INPUT_SIZE)
     input_size = int(np.prod(input_shape) * np.float16().nbytes)
-    output_size = int(len(CLASSES) * np.float16().nbytes)
+    output_shape = (1, len(CLASSES))
+    output_size = int(np.prod(output_shape) * np.float16().nbytes)
 
     d_input = cuda.mem_alloc(input_size)
     d_output = cuda.mem_alloc(output_size)
@@ -219,10 +220,34 @@ def get_demo_video_path(label):
     chosen = random.choice(candidates)
     return f"static/video/{category}/{chosen}"
 
-# ======================================================
-# ROUTES — Frontend Pages
-# ======================================================
-@app.route('/')
+def run_inference(x):
+
+    if use_trt:
+        input_data = x.cpu().numpy().astype(np.float16)
+
+        cuda.memcpy_htod_async(d_input, input_data, stream)
+
+        context.set_tensor_address(input_name, int(d_input))
+        context.set_tensor_address(output_name, int(d_output))
+
+        context.execute_async_v3(stream_handle=stream.handle)
+
+        output_data = np.empty((1, len(CLASSES)), dtype=np.float16)
+        cuda.memcpy_dtoh_async(output_data, d_output, stream)
+        stream.synchronize()
+
+        probs = torch.softmax(
+            torch.tensor(output_data.astype(np.float32)),
+            dim=1
+        ).numpy()[0]
+
+    else:
+        with torch.no_grad():
+            logits = model(x)
+            probs = torch.softmax(logits, dim=1).cpu().numpy()[0]
+
+    return probs
+
 def home():
     return render_template("index.html")
 
@@ -415,12 +440,11 @@ def predict():
         else:
             raise ValueError("Missing 'sequence' or 'features'")
 
-        with torch.no_grad():
-            logits = model(x)
-            probs = torch.softmax(logits, dim=1).cpu().numpy()[0]
-            pred_idx = int(np.argmax(probs))
-            label = CLASSES[pred_idx]
-
+        
+        probs = run_inference(x)
+        pred_idx = int(np.argmax(probs))
+        label = CLASSES[pred_idx]
+        
         conf = float(np.max(probs))
         save_progress(label, conf)
 
@@ -461,27 +485,9 @@ def predict_auto():
         else:
             x = prepare_sequence({"features": data["features"]})
 
-        if trt_engine:
-            # TensorRT inference
-            input_data = x.cpu().numpy().astype(np.float16)
-            cuda.memcpy_htod_async(trt_input, input_data, trt_stream)
-
-            trt_context.execute_async_v3(stream_handle=trt_stream.handle)
-
-            output_data = np.empty((1, len(CLASSES)), dtype=np.float16)
-            cuda.memcpy_dtoh_async(output_data, trt_output, trt_stream)
-            trt_stream.synchronize()
-
-            probs = torch.softmax(
-                torch.tensor(output_data.astype(np.float32)),
-                dim=1
-            ).numpy()[0]
-        else:
-            with torch.no_grad():
-                logits = model(x)
-                probs = torch.softmax(logits, dim=1).cpu().numpy()[0]
-
-        conf = float(np.max(probs))
+        probs = run_inference(x)
+        
+        conf = float(np.max(probs)) 
         pred_idx = int(np.argmax(probs))
         label = CLASSES[pred_idx]
 
