@@ -1281,7 +1281,13 @@ window.addEventListener("load", () => {
     }
   }
 
+  // ── Cache for skeleton frames so re-showing is instant ──
+  const ghostCache = {};
+  const demoUrlCache = {};
+
   async function findDemoUrl(cat, key){
+    const cacheKey = cat + '/' + key;
+    if (demoUrlCache[cacheKey] !== undefined) return demoUrlCache[cacheKey];
     const STATIC_BASE = (window.location.origin + '/static/video').replace(/\/+$/, '');
     const names=[];
     for(let i=1;i<=10;i++) names.push(key + '_' + String(i).padStart(2,'0') + '.mp4');
@@ -1289,10 +1295,11 @@ window.addEventListener("load", () => {
     for(const n of names){
       const url = STATIC_BASE + '/' + cat + '/' + n;
       try{
-        const r=await fetch(url,{method:'HEAD',cache:'no-store'});
-        if(r.ok) return url;
+        const r=await fetch(url,{method:'HEAD'});
+        if(r.ok) { demoUrlCache[cacheKey] = url; return url; }
       }catch(_){}
     }
+    demoUrlCache[cacheKey] = null;
     return null;
   }
 
@@ -1378,7 +1385,17 @@ window.addEventListener("load", () => {
   async function loadGhostFor(label){
     const cat=inferCategory(label);
     const key=normLabel(label);
+    const cacheKey = cat + '/' + key;
     const assistHint = document.getElementById("assistHint");
+
+    // Use cache if available — instant feedback
+    if (ghostCache[cacheKey] && ghostCache[cacheKey].length > 0) {
+      ghostFrames = ghostCache[cacheKey];
+      ghostReady = true;
+      assistHint.textContent = 'Skeleton guide ready!';
+      return true;
+    }
+
     assistHint.textContent='Loading skeleton guide…';
     showGhostUI(false);
     const url=await findDemoUrl(cat,key);
@@ -1397,15 +1414,52 @@ window.addEventListener("load", () => {
         leftHand: res.leftHandLandmarks || []
       });
     });
-    const total=Math.min(30, Math.max(15, Math.floor(v.duration*10)));
+    const total=Math.min(20, Math.max(10, Math.floor(v.duration*8)));
     for(let i=0;i<total;i++){
       v.currentTime = (v.duration * i)/total;
       await new Promise(function(r){ v.onseeked=r; });
       await ghostHolistic.send({image:v});
     }
     ghostReady = ghostFrames.length>0;
+    if (ghostReady) {
+      ghostCache[cacheKey] = ghostFrames; // persist for instant re-use
+    }
     assistHint.textContent = ghostReady ? 'Skeleton guide loaded! Watch the big screen.' : 'No skeleton found in demo.';
     return ghostReady;
+  }
+
+  // Pre-load skeleton data during capture so it's ready when result comes
+  async function preloadGhostFor(label) {
+    if (!label) return;
+    const cat = inferCategory(label);
+    const key = normLabel(label);
+    const cacheKey = cat + '/' + key;
+    if (ghostCache[cacheKey]) return; // already cached
+    try {
+      const url = await findDemoUrl(cat, key);
+      if (!url) return;
+      const v = document.createElement('video');
+      v.src = url; v.muted = true; v.playsInline = true; v.crossOrigin = 'anonymous';
+      await new Promise((resolve, reject) => { v.onloadedmetadata = resolve; v.onerror = () => reject(new Error('Video error')); });
+      const gh = new Holistic({ locateFile: (f) => `/static/mediapipe/holistic/${f}` });
+      gh.setOptions({ selfieMode: false, modelComplexity: 1, smoothLandmarks: true, refineFaceLandmarks: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+      const frames = [];
+      gh.onResults(res => {
+        frames.push({
+          pose: res.poseLandmarks || [],
+          face: res.faceLandmarks || [],
+          rightHand: res.rightHandLandmarks || [],
+          leftHand: res.leftHandLandmarks || []
+        });
+      });
+      const total = Math.min(20, Math.max(10, Math.floor(v.duration * 8)));
+      for (let i = 0; i < total; i++) {
+        v.currentTime = (v.duration * i) / total;
+        await new Promise(function(r) { v.onseeked = r; });
+        await gh.send({ image: v });
+      }
+      if (frames.length > 0) ghostCache[cacheKey] = frames;
+    } catch (_) { /* silent preload failure */ }
   }
 
   let ghostTimer=null;
@@ -1423,12 +1477,13 @@ window.addEventListener("load", () => {
     // Stop camera processing to free resources for skeleton rendering
     await camera.stop();
     
-    ghostEnabled=true; ghostFrames=null; ghostReady=false; ghostIdx=0;
+    ghostEnabled=true; ghostIdx=0;
     showSkeletonDisplay();
     document.getElementById("feedbackCloseBtn").style.display = 'flex';
     const ok = await loadGhostFor(targetGesture);
     if (ok){
       showGhostUI(true);
+      ghostReady = true;
       const animateGhost = () => {
         if(ghostEnabled && ghostReady && ghostFrames && ghostFrames.length){
           const total=ghostFrames.length;
@@ -1656,6 +1711,9 @@ window.addEventListener("load", () => {
     }
     targetGesture = chosen;
     updateGestureDisplay(targetGesture);
+
+    // Pre-load skeleton data during capture for instant feedback
+    preloadGhostFor(targetGesture);
 
     buf = [];
     frameCounter = 0;
