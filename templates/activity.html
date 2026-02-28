@@ -1334,10 +1334,9 @@ window.addEventListener("load", () => {
     const v=document.createElement('video');
     v.src=url; v.muted=true; v.playsInline=true; v.crossOrigin='anonymous';
     await new Promise((resolve,reject)=>{ v.onloadedmetadata=resolve; v.onerror=()=>reject(new Error('Video error')); });
-    const ghostHolistic=new Holistic({locateFile: (f) => `/static/mediapipe/holistic/${f}`});
-    ghostHolistic.setOptions({selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
+    // Reuse main holistic instance — save original callback, swap in ghost handler
     ghostFrames=[];
-    ghostHolistic.onResults(res=>{
+    holistic.onResults(res=>{
       const pose=res.poseLandmarks||[], face=res.faceLandmarks||[];
       const anchors={};
       anchors.L_SH=lm(pose,11); anchors.R_SH=lm(pose,12);
@@ -1355,8 +1354,10 @@ window.addEventListener("load", () => {
     for(let i=0;i<total;i++){
       v.currentTime = (v.duration * i)/total;
       await new Promise(function(r){ v.onseeked=r; });
-      await ghostHolistic.send({image:v});
+      await holistic.send({image:v});
     }
+    // Restore original callback
+    holistic.onResults(mainOnResults);
     ghostReady = ghostFrames.length>0;
     assistHint.textContent = ghostReady ? 'Overlay loaded. Use Size/Align controls if needed.' : 'No hands detected in demo video.';
     return ghostReady;
@@ -1406,7 +1407,7 @@ window.addEventListener("load", () => {
   const holistic=new Holistic({locateFile: (f) => `/static/mediapipe/holistic/${f}`});
   holistic.setOptions({selfieMode:false,modelComplexity:2,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.55,minTrackingConfidence:0.55});
 
-  holistic.onResults(function(res){
+  function mainOnResults(res){
     ctx.save();
     ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
     ctx.drawImage(res.image, 0, 0, canvasEl.width, canvasEl.height);
@@ -1508,9 +1509,10 @@ window.addEventListener("load", () => {
         setTimeout(() => stopAndPredict(), 80);
       }
     }
-  });
+  }
+  holistic.onResults(mainOnResults);
 
-  const camera=new Camera(videoEl,{ onFrame:async function(){ await holistic.send({image:videoEl}); }, width:640, height:480 });
+  const camera=new Camera(videoEl,{ onFrame:async function(){ await holistic.send({image:videoEl}); }, width:480, height:360 });
 
   const originalStart = () => {
     const diff = difficultySelect.value;

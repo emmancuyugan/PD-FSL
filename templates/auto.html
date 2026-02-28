@@ -767,11 +767,8 @@
     });
 
     ghostFrames=[];
-    const ghostHolistic=new Holistic({locateFile: (f) => `/static/mediapipe/holistic/${f}`});
-    // Ghost model for demo skeleton: optimized for Jetson
-    ghostHolistic.setOptions({selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.60,minTrackingConfidence:0.60});
-
-    ghostHolistic.onResults(res=>{
+    // Reuse main holistic instance — swap in ghost handler
+    holistic.onResults(res=>{
       const pose=res.poseLandmarks||[];
       const face=res.faceLandmarks||[];
       const anchors={L_SH:lm(pose,11),R_SH:lm(pose,12),nose:lm(face,1),forehead:lm(face,10),lip_u:lm(face,13),brow_r:lm(face,65),brow_l:lm(face,295),chin:lm(face,152)};
@@ -787,8 +784,10 @@
     for(let i=0;i<total;i++){
       v.currentTime=(v.duration*i)/total;
       await new Promise(r=>v.onseeked=r);
-      await ghostHolistic.send({image:v});
+      await holistic.send({image:v});
     }
+    // Restore original callback
+    holistic.onResults(mainOnResults);
 
     ghostReady=ghostFrames&&ghostFrames.length>0;
     return ghostReady;
@@ -813,7 +812,7 @@
   // Optimized for Jetson Orin Nano: reduced complexity, higher confidence thresholds for auto mode
   holistic.setOptions({selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.70,minTrackingConfidence:0.70});
 
-  holistic.onResults(res=>{
+  function mainOnResults(res){
     ctx.clearRect(0,0,canvasEl.width,canvasEl.height);
     ctx.drawImage(res.image,0,0,canvasEl.width,canvasEl.height);
     
@@ -889,7 +888,8 @@
         }
       }
     }
-  });
+  }
+  holistic.onResults(mainOnResults);
 
   const camera=new Camera(videoEl,{onFrame:async()=>{await holistic.send({image:videoEl});},width:480,height:360});
   // Camera resolution optimized for Jetson: 480x360 (28% fewer pixels)

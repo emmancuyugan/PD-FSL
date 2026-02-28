@@ -1386,10 +1386,9 @@ window.addEventListener("load", () => {
     const v=document.createElement('video');
     v.src=url; v.muted=true; v.playsInline=true; v.crossOrigin='anonymous';
     await new Promise((resolve,reject)=>{ v.onloadedmetadata=resolve; v.onerror=()=>reject(new Error('Video error')); });
-    const ghostHolistic = new Holistic({locateFile: (f) => `/static/mediapipe/holistic/${f}`});
-    ghostHolistic.setOptions({selfieMode:false,modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
+    // Reuse main holistic instance — swap in ghost handler
     ghostFrames=[];
-    ghostHolistic.onResults(res=>{
+    holistic.onResults(res=>{
       ghostFrames.push({
         pose: res.poseLandmarks || [],
         face: res.faceLandmarks || [],
@@ -1401,8 +1400,10 @@ window.addEventListener("load", () => {
     for(let i=0;i<total;i++){
       v.currentTime = (v.duration * i)/total;
       await new Promise(function(r){ v.onseeked=r; });
-      await ghostHolistic.send({image:v});
+      await holistic.send({image:v});
     }
+    // Restore original callback
+    holistic.onResults(mainOnResults);
     ghostReady = ghostFrames.length>0;
     assistHint.textContent = ghostReady ? 'Skeleton guide loaded! Watch the big screen.' : 'No skeleton found in demo.';
     return ghostReady;
@@ -1488,7 +1489,7 @@ window.addEventListener("load", () => {
   const holistic = new Holistic({locateFile: (f) => `/static/mediapipe/holistic/${f}`});
   holistic.setOptions({selfieMode:false,modelComplexity:2,smoothLandmarks:true,refineFaceLandmarks:false,minDetectionConfidence:0.55,minTrackingConfidence:0.55});
 
-  holistic.onResults(function(res){
+  function mainOnResults(res){
     ctx.save();
     ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
     ctx.drawImage(res.image, 0, 0, canvasEl.width, canvasEl.height);
@@ -1641,9 +1642,10 @@ window.addEventListener("load", () => {
         setTimeout(() => stopAndPredict(), 80);
       }
     }
-  });
+  }
+  holistic.onResults(mainOnResults);
 
-  const camera=new Camera(videoEl,{ onFrame:async function(){ await holistic.send({image:videoEl}); }, width:640, height:480 });
+  const camera=new Camera(videoEl,{ onFrame:async function(){ await holistic.send({image:videoEl}); }, width:480, height:360 });
 
   const originalStart = () => {
     const fastMode = toggleSpeed.checked;
