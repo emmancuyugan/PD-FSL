@@ -138,6 +138,17 @@ model.eval()
 TRT_ENGINE_PATH = os.path.join(os.path.dirname(__file__), "model.engine")
 use_trt = False
 
+# Helper: map TensorRT dtype enum → numpy dtype
+def _trt_dtype_to_np(trt_dtype):
+    """Convert a TensorRT DataType to the corresponding numpy dtype."""
+    _map = {
+        trt.float32: np.float32,
+        trt.float16: np.float16,
+        trt.int8:    np.int8,
+        trt.int32:   np.int32,
+    }
+    return _map.get(trt_dtype, np.float32)
+
 if HAS_TRT and os.path.exists(TRT_ENGINE_PATH):
     print(f"Loading TensorRT engine from {TRT_ENGINE_PATH} ...")
 
@@ -149,21 +160,28 @@ if HAS_TRT and os.path.exists(TRT_ENGINE_PATH):
 
     trt_context = engine.create_execution_context()
 
-    input_shape = (1, SEQ_LEN, INPUT_SIZE)
-    input_nbytes = int(np.prod(input_shape) * np.float16().nbytes)
-    output_shape = (1, len(CLASSES))
-    output_nbytes = int(np.prod(output_shape) * np.float16().nbytes)
+    trt_input_name  = engine.get_tensor_name(0)
+    trt_output_name = engine.get_tensor_name(1)
 
-    d_input = cuda.mem_alloc(input_nbytes)
+    # ── Auto-detect I/O dtypes from the engine (FP32 or FP16) ──
+    trt_input_dtype  = _trt_dtype_to_np(engine.get_tensor_dtype(trt_input_name))
+    trt_output_dtype = _trt_dtype_to_np(engine.get_tensor_dtype(trt_output_name))
+
+    input_shape  = (1, SEQ_LEN, INPUT_SIZE)
+    output_shape = (1, len(CLASSES))
+
+    input_nbytes  = int(np.prod(input_shape)  * np.dtype(trt_input_dtype).itemsize)
+    output_nbytes = int(np.prod(output_shape) * np.dtype(trt_output_dtype).itemsize)
+
+    d_input  = cuda.mem_alloc(input_nbytes)
     d_output = cuda.mem_alloc(output_nbytes)
     trt_stream = cuda.Stream()
 
-    trt_input_name = engine.get_tensor_name(0)
-    trt_output_name = engine.get_tensor_name(1)
-
-    use_trt = False   # DO NOT USE TENSORFLOW
-    print("TensorRT engine loaded successfully.")
+    use_trt = True
+    print(f"TensorRT engine loaded — input dtype={trt_input_dtype}, output dtype={trt_output_dtype}")
 else:
+    trt_input_dtype  = np.float32
+    trt_output_dtype = np.float32
     if not HAS_TRT:
         print("TensorRT / PyCUDA not installed — using PyTorch.")
     else:
@@ -238,7 +256,8 @@ def get_demo_video_path(label):
 def run_inference(x):
     """Run inference via TensorRT (if available) or PyTorch."""
     if use_trt:
-        input_data = x.cpu().numpy().astype(np.float16)
+        # Cast input to whatever dtype the engine actually expects
+        input_data = x.cpu().numpy().astype(trt_input_dtype)
 
         cuda.memcpy_htod_async(d_input, input_data, trt_stream)
 
@@ -247,10 +266,11 @@ def run_inference(x):
 
         trt_context.execute_async_v3(stream_handle=trt_stream.handle)
 
-        output_data = np.empty((1, len(CLASSES)), dtype=np.float16)
+        output_data = np.empty((1, len(CLASSES)), dtype=trt_output_dtype)
         cuda.memcpy_dtoh_async(output_data, d_output, trt_stream)
         trt_stream.synchronize()
 
+        # Engine outputs raw logits → softmax in FP32
         probs = torch.softmax(
             torch.tensor(output_data.astype(np.float32)),
             dim=1
