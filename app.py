@@ -236,7 +236,14 @@ def get_demo_video_path(label):
     return f"static/video/{category}/{chosen}"
 
 def run_inference(x):
-    """Run inference via TensorRT (if available) or PyTorch."""
+
+    if use_trt:
+        print("Using TensorRT")
+        ...
+    else:
+        print("Using PyTorch")
+        ...
+        
     if use_trt:
         input_data = x.cpu().numpy().astype(np.float16)
 
@@ -445,6 +452,7 @@ def ping():
     return jsonify({"message": "Backend is reachable ✅"})
 
 # Activity Section
+print("/predict CALLED")
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
@@ -478,6 +486,7 @@ def predict():
         return jsonify({"error": f"Prediction failed: {str(e)}"}), 400
 
 # Auto section
+print("/predict_auto CALLED")
 @app.route("/predict_auto", methods=["POST"])
 def predict_auto():
     try:
@@ -541,9 +550,7 @@ def predict_auto():
             "message": "Prediction error"
         }), 400
 
-# --------------------------
-# /api/assess
-# --------------------------
+print("/api/assess CALLED")
 @app.route("/api/assess", methods=["POST"])
 def assess():
     try:
