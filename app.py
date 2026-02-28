@@ -105,7 +105,8 @@ INPUT_SIZE = config["FEATURE_DIM"]
 HIDDEN_SIZE = config["HIDDEN_SIZE"]
 NUM_LAYERS = config["NUM_LAYERS"]
 DROPOUT = config["DROPOUT"]
-SEQ_LEN = config.get("SEQ_LEN", 48)
+SEQ_LEN = config["SEQUENCE_LENGTH"]
+print("Runtime SEQ_LEN:", SEQ_LEN)
 
 model = ModifiedLSTM(
     INPUT_SIZE,
