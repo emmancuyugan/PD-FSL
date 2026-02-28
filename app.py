@@ -220,6 +220,13 @@ def get_demo_video_path(label):
 def run_inference(x):
 
     if use_trt:
+        print("Using TensorRT")
+        ...
+    else:
+        print("Using PyTorch")
+        ...
+        
+    if use_trt:
         input_data = x.cpu().numpy().astype(np.float16)
 
         cuda.memcpy_htod_async(d_input, input_data, stream)
