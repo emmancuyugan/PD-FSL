@@ -527,7 +527,7 @@ def predict_auto():
         pred_idx = int(np.argmax(probs))
         label = CLASSES[pred_idx]
 
-        THRESHOLD = 0.8
+        THRESHOLD = 0.92
 
         if conf < THRESHOLD:
             sorted_indices = np.argsort(probs)[::-1]
