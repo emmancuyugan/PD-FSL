@@ -161,7 +161,7 @@ if HAS_TRT and os.path.exists(TRT_ENGINE_PATH):
     trt_input_name = engine.get_tensor_name(0)
     trt_output_name = engine.get_tensor_name(1)
 
-    use_trt = False                      # ← enable TensorRT path
+    use_trt = False   # DO NOT USE TENSORFLOW
     print("TensorRT engine loaded successfully.")
 else:
     if not HAS_TRT:
