@@ -129,7 +129,7 @@ print("Engine exists?", os.path.exists(TRT_ENGINE_PATH))
 use_trt = False
 
 if os.path.exists(TRT_ENGINE_PATH):
-    print("⚡ Loading TensorRT engine...")
+    print("Loading TensorRT engine...")
     use_trt = True
 
     TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
@@ -152,7 +152,7 @@ if os.path.exists(TRT_ENGINE_PATH):
     input_name = engine.get_tensor_name(0)
     output_name = engine.get_tensor_name(1)
 
-    print("✅ TensorRT engine loaded.")
+    print("TensorRT engine loaded.")
 else:
     print("TensorRT engine not found. Using PyTorch.")
 
@@ -250,12 +250,9 @@ def run_inference(x):
 
     return probs
 
+@app.route("/")
 def home():
     return render_template("index.html")
-
-@app.route("/vrm-live")
-def vrm_live():
-    return render_template("vrm-live.html")
 
 @app.route('/auto')
 @login_required
