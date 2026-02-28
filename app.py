@@ -119,9 +119,6 @@ model = ModifiedLSTM(
 model.load_state_dict(checkpoint["model_state_dict"])
 model.to(device)
 
-if device.type == "cuda":
-    model.half()
-
 model.eval()
 TRT_ENGINE_PATH = os.path.join(os.path.dirname(__file__), "model.engine")
 print("Looking for engine at:", TRT_ENGINE_PATH)
@@ -197,9 +194,6 @@ def prepare_sequence(data_json):
         raise ValueError("Missing 'sequence' or 'features' field in request.")
 
     tensor = torch.tensor(seq, dtype=torch.float32).unsqueeze(0).to(device)
-    if device.type == "cuda":
-        tensor = tensor.half()
-
     return tensor
 
 def get_demo_video_path(label):
