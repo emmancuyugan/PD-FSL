@@ -4,9 +4,7 @@ from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
-import tensorrt as trt
-import pycuda.driver as cuda
-import pycuda.autoinit
+
 import torch
 import torch.nn as nn
 import numpy as np
@@ -14,6 +12,15 @@ import os
 import random
 import json
 import datetime
+
+# ── TensorRT (optional – only used when model.engine exists) ──
+try:
+    import tensorrt as trt
+    import pycuda.driver as cuda
+    import pycuda.autoinit          # initialises CUDA context
+    HAS_TRT = True
+except ImportError:
+    HAS_TRT = False
 
 from model import ModifiedLSTM
 from pathutils import resource_path
@@ -85,6 +92,9 @@ def save_progress(label: str, confidence=None):
     db.session.add(row)
     db.session.commit()
 
+# ======================================================
+# Model loading
+# ======================================================
 MODEL_PATH = r"run2.pt"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -104,9 +114,8 @@ CLASSES = config["CLASSES"]
 INPUT_SIZE = config["FEATURE_DIM"]
 HIDDEN_SIZE = config["HIDDEN_SIZE"]
 NUM_LAYERS = config["NUM_LAYERS"]
-DROPOUT = config["DROPOUT"] 
-SEQ_LEN = config["SEQUENCE_LENGTH"]
-print("Runtime SEQ_LEN:", SEQ_LEN)
+DROPOUT = config["DROPOUT"]
+SEQ_LEN = config.get("SEQ_LEN", config.get("SEQUENCE_LENGTH", 48))
 
 model = ModifiedLSTM(
     INPUT_SIZE,
@@ -120,15 +129,17 @@ model = ModifiedLSTM(
 model.load_state_dict(checkpoint["model_state_dict"])
 model.to(device)
 
+if device.type == "cuda":
+    model.half()
+
 model.eval()
+
+# ── TensorRT engine (optional) ──
 TRT_ENGINE_PATH = os.path.join(os.path.dirname(__file__), "model.engine")
-print("Looking for engine at:", TRT_ENGINE_PATH)
-print("Engine exists?", os.path.exists(TRT_ENGINE_PATH))
 use_trt = False
 
-if os.path.exists(TRT_ENGINE_PATH):
-    print("Loading TensorRT engine...")
-    use_trt = False
+if HAS_TRT and os.path.exists(TRT_ENGINE_PATH):
+    print(f"Loading TensorRT engine from {TRT_ENGINE_PATH} ...")
 
     TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
 
@@ -136,23 +147,27 @@ if os.path.exists(TRT_ENGINE_PATH):
         runtime = trt.Runtime(TRT_LOGGER)
         engine = runtime.deserialize_cuda_engine(f.read())
 
-    context = engine.create_execution_context()
+    trt_context = engine.create_execution_context()
 
     input_shape = (1, SEQ_LEN, INPUT_SIZE)
-    input_size = int(np.prod(input_shape) * np.float16().nbytes)
+    input_nbytes = int(np.prod(input_shape) * np.float16().nbytes)
     output_shape = (1, len(CLASSES))
-    output_size = int(np.prod(output_shape) * np.float16().nbytes)
+    output_nbytes = int(np.prod(output_shape) * np.float16().nbytes)
 
-    d_input = cuda.mem_alloc(input_size)
-    d_output = cuda.mem_alloc(output_size)
-    stream = cuda.Stream()
+    d_input = cuda.mem_alloc(input_nbytes)
+    d_output = cuda.mem_alloc(output_nbytes)
+    trt_stream = cuda.Stream()
 
-    input_name = engine.get_tensor_name(0)
-    output_name = engine.get_tensor_name(1)
+    trt_input_name = engine.get_tensor_name(0)
+    trt_output_name = engine.get_tensor_name(1)
 
-    print("TensorRT engine loaded.")
+    use_trt = True                      # ← enable TensorRT path
+    print("TensorRT engine loaded successfully.")
 else:
-    print("TensorRT engine not found. Using PyTorch.")
+    if not HAS_TRT:
+        print("TensorRT / PyCUDA not installed — using PyTorch.")
+    else:
+        print("TensorRT engine not found. Using PyTorch.")
 
 print("Loaded Config:")
 print("Hidden:", HIDDEN_SIZE)
@@ -195,6 +210,9 @@ def prepare_sequence(data_json):
         raise ValueError("Missing 'sequence' or 'features' field in request.")
 
     tensor = torch.tensor(seq, dtype=torch.float32).unsqueeze(0).to(device)
+    if device.type == "cuda":
+        tensor = tensor.half()
+
     return tensor
 
 def get_demo_video_path(label):
@@ -218,27 +236,20 @@ def get_demo_video_path(label):
     return f"static/video/{category}/{chosen}"
 
 def run_inference(x):
-
-    if use_trt:
-        print("Using TensorRT")
-        ...
-    else:
-        print("Using PyTorch")
-        ...
-        
+    """Run inference via TensorRT (if available) or PyTorch."""
     if use_trt:
         input_data = x.cpu().numpy().astype(np.float16)
 
-        cuda.memcpy_htod_async(d_input, input_data, stream)
+        cuda.memcpy_htod_async(d_input, input_data, trt_stream)
 
-        context.set_tensor_address(input_name, int(d_input))
-        context.set_tensor_address(output_name, int(d_output))
+        trt_context.set_tensor_address(trt_input_name, int(d_input))
+        trt_context.set_tensor_address(trt_output_name, int(d_output))
 
-        context.execute_async_v3(stream_handle=stream.handle)
+        trt_context.execute_async_v3(stream_handle=trt_stream.handle)
 
         output_data = np.empty((1, len(CLASSES)), dtype=np.float16)
-        cuda.memcpy_dtoh_async(output_data, d_output, stream)
-        stream.synchronize()
+        cuda.memcpy_dtoh_async(output_data, d_output, trt_stream)
+        trt_stream.synchronize()
 
         probs = torch.softmax(
             torch.tensor(output_data.astype(np.float32)),
@@ -255,6 +266,10 @@ def run_inference(x):
 @app.route("/")
 def home():
     return render_template("index.html")
+
+@app.route("/vrm-live")
+def vrm_live():
+    return render_template("vrm-live.html")
 
 @app.route('/auto')
 @login_required
@@ -534,11 +549,10 @@ def assess():
     try:
         data = request.get_json(force=True)
         x = prepare_sequence(data)
-        with torch.no_grad():
-            logits = model(x)
-            probs = torch.softmax(logits, dim=1).cpu().numpy()[0]
-            pred_idx = int(np.argmax(probs))
-            label = CLASSES[pred_idx]
+
+        probs = run_inference(x)
+        pred_idx = int(np.argmax(probs))
+        label = CLASSES[pred_idx]
 
         save_progress(label, float(np.max(probs)))
 
