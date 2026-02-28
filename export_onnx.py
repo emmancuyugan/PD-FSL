@@ -8,7 +8,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using device:", device)
 
 # Load checkpoint
-checkpoint = torch.load(MODEL_PATH, map_location=device)
+checkpoint = torch.load(MODEL_PATH, map_location=device, weights_only=False)
 
 config = checkpoint["config"]
 
@@ -46,7 +46,7 @@ torch.onnx.export(
     "model.onnx",
     input_names=["input"],
     output_names=["output"],
-    opset_version=17,
+    opset_version=18,
     dynamic_axes={
         "input": {0: "batch_size"},
         "output": {0: "batch_size"}
