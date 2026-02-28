@@ -123,7 +123,9 @@ if device.type == "cuda":
     model.half()
 
 model.eval()
-TRT_ENGINE_PATH = "model.engine"
+TRT_ENGINE_PATH = os.path.join(os.path.dirname(__file__), "model.engine")
+print("Looking for engine at:", TRT_ENGINE_PATH)
+print("Engine exists?", os.path.exists(TRT_ENGINE_PATH))
 use_trt = False
 
 if os.path.exists(TRT_ENGINE_PATH):
@@ -486,7 +488,7 @@ def predict_auto():
             x = prepare_sequence({"features": data["features"]})
 
         probs = run_inference(x)
-        
+
         conf = float(np.max(probs)) 
         pred_idx = int(np.argmax(probs))
         label = CLASSES[pred_idx]
