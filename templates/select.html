@@ -321,6 +321,32 @@
     box-shadow: 0 2px 8px var(--shadow);
   }
 
+  .feedback-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 107, 157, 0.9);
+    color: var(--white);
+    font-size: 22px;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 30;
+    box-shadow: 0 4px 16px rgba(255, 107, 157, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s, background 0.15s;
+  }
+
+  .feedback-close-btn:hover {
+    transform: scale(1.1);
+    background: rgba(255, 60, 120, 1);
+  }
+
   .timer-bar-container {
     position: absolute;
     bottom: 0;
@@ -718,6 +744,7 @@
         <!-- Skeleton AI display (shown only for corrective feedback) -->
         <div class="skeleton-display" id="skeletonDisplay" style="display: none;">
           <span class="skeleton-label">Skeleton AI</span>
+          <button class="feedback-close-btn" id="feedbackCloseBtn" title="Close feedback" style="display: none;">✕</button>
           <canvas id="skeletonCanvas"></canvas>
         </div>
 
@@ -809,8 +836,8 @@
 
         <div class="assist-section" id="assistRow">
           <div class="assist-buttons">
-            <button class="assist-btn show-how-btn" id="btnShowHow">Show me how</button>
-            <button class="assist-btn try-again-btn" id="btnTryAgain">Try again</button>
+            <button class="assist-btn show-how-btn" id="btnShowHow">Show again</button>
+            <button class="assist-btn try-again-btn" id="btnTryAgain">↻ Try again</button>
           </div>
           <div class="assist-hint" id="assistHint"></div>
         </div>
@@ -1175,12 +1202,19 @@ window.addEventListener("load", () => {
     if (state !== STATE_CAPTURE && state !== STATE_PREP) return;
     running = false;
     recBadge.style.display = "none";
-    await predictOnce(false);
+    const result = await predictOnce(false);
     setState(STATE_READY);
     capturePhase.textContent = "Idle";
     startBtn.style.display = "inline-block";
     timerBar.style.width = "0%";
     stopNumericTimer();
+
+    // Auto-show skeleton feedback on incorrect result
+    const target = normLabel(targetGesture || '');
+    const predicted = normLabel(result?.predicted);
+    if (target && predicted && predicted !== target) {
+      triggerShowHow();
+    }
   }
 
   const HAND_CONN = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20]];
@@ -1378,11 +1412,8 @@ window.addEventListener("load", () => {
   const GHOST_DURATION_MS=60000;
   let ghostAnimationId = null;
   
-  document.getElementById("btnShowHow").onclick = async () => {
-    if(!targetGesture) {
-      alert('Please select a gesture first.');
-      return;
-    }
+  async function triggerShowHow() {
+    if(!targetGesture) return;
     
     if(ghostAnimationId) {
       cancelAnimationFrame(ghostAnimationId);
@@ -1394,6 +1425,7 @@ window.addEventListener("load", () => {
     
     ghostEnabled=true; ghostFrames=null; ghostReady=false; ghostIdx=0;
     showSkeletonDisplay();
+    document.getElementById("feedbackCloseBtn").style.display = 'flex';
     const ok = await loadGhostFor(targetGesture);
     if (ok){
       showGhostUI(true);
@@ -1413,41 +1445,43 @@ window.addEventListener("load", () => {
       
       if (ghostTimer) clearTimeout(ghostTimer);
       ghostTimer=setTimeout(async () => {
-        ghostEnabled=false; 
-        ghostReady=false;
-        showGhostUI(false); 
-        document.getElementById("assistHint").textContent='';
-        if(ghostAnimationId) {
-          cancelAnimationFrame(ghostAnimationId);
-          ghostAnimationId = null;
-        }
-        skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
-        showCameraDisplay();
-        // Resume camera processing after feedback
+        dismissFeedback();
         await camera.start();
       }, GHOST_DURATION_MS);
     }else{
       ghostEnabled=false; showGhostUI(false); showCameraDisplay();
+      document.getElementById("feedbackCloseBtn").style.display = 'none';
       // Resume camera if loading failed
       await camera.start();
     }
-  };
+  }
 
-  document.getElementById("btnTryAgain").onclick = async () => {
-    ghostEnabled=false; 
-    ghostReady=false;
+  function dismissFeedback() {
+    ghostEnabled = false;
+    ghostReady = false;
     showGhostUI(false);
-    showCameraDisplay();
-    // Resume camera processing
-    await camera.start();
-    document.getElementById("assistHint").textContent='';
-    if(ghostAnimationId) {
+    document.getElementById("assistHint").textContent = '';
+    document.getElementById("feedbackCloseBtn").style.display = 'none';
+    if (ghostAnimationId) {
       cancelAnimationFrame(ghostAnimationId);
       ghostAnimationId = null;
     }
+    if (ghostTimer) { clearTimeout(ghostTimer); ghostTimer = null; }
     skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
-    await stopPreviewIfAny();
-    resultText.textContent='—';
+    showCameraDisplay();
+  }
+
+  document.getElementById("btnShowHow").onclick = triggerShowHow;
+
+  document.getElementById("feedbackCloseBtn").onclick = async () => {
+    dismissFeedback();
+    await camera.start();
+  };
+
+  document.getElementById("btnTryAgain").onclick = () => {
+    dismissFeedback();
+    resultText.textContent = '—';
+    document.getElementById("assistRow").style.display = 'none';
     startBtn.click();
   };
 
@@ -1649,6 +1683,7 @@ window.addEventListener("load", () => {
   };
 
   startBtn.onclick = async () => {
+    dismissFeedback();
     document.body.classList.add('camera-running'); await stopPreviewIfAny(); originalStart(); };
 
   const originalReset = () => {

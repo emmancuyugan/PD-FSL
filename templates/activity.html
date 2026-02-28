@@ -360,6 +360,32 @@
     box-shadow: 0 2px 8px var(--shadow);
   }
 
+  .feedback-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 107, 157, 0.9);
+    color: var(--white);
+    font-size: 22px;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 30;
+    box-shadow: 0 4px 16px rgba(255, 107, 157, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s, background 0.15s;
+  }
+
+  .feedback-close-btn:hover {
+    transform: scale(1.1);
+    background: rgba(255, 60, 120, 1);
+  }
+
   .control-buttons {
     position: absolute;
     bottom: 20px;
@@ -716,6 +742,8 @@
           <button class="ghost-btn" id="btnNudgeDown">Align ↓</button>
         </div>
 
+        <button class="feedback-close-btn" id="feedbackCloseBtn" title="Close feedback" style="display: none;">✕</button>
+
         <div class="timer-bar-container">
           <div class="timer-bar" id="timerBar"></div>
         </div>
@@ -750,7 +778,7 @@
 
         <div class="assist-section" id="assistRow">
           <div class="assist-buttons">
-            <button class="assist-btn show-how-btn" id="btnShowHow">[Guide] Show me how</button>
+            <button class="assist-btn show-how-btn" id="btnShowHow">Show again</button>
             <button class="assist-btn try-again-btn" id="btnTryAgain">↻ Try again</button>
           </div>
           <div class="assist-hint" id="assistHint"></div>
@@ -1181,11 +1209,18 @@ window.addEventListener("load", () => {
 
     running = false;
     recBadge.style.display = "none";
-    await predictOnce(false);
+    const result = await predictOnce(false);
     setState(STATE_READY);
     capturePhase.textContent = "Idle";
     startBtn.style.display = "inline-block";
     timerBar.style.width = "0%";
+
+    // Auto-show ghost feedback on incorrect result
+    const target = normLabel(targetGesture || '');
+    const predicted = normLabel(result?.predicted);
+    if (target && predicted && predicted !== target) {
+      triggerShowHow();
+    }
   }
 
   const HAND_CONN = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20]];
@@ -1330,24 +1365,39 @@ window.addEventListener("load", () => {
   let ghostTimer=null;
   const GHOST_DURATION_MS=12000;
 
-  document.getElementById("btnShowHow").onclick = async () => {
+  async function triggerShowHow() {
     if(!targetGesture) return;
     ghostEnabled=true; ghostFrames=null; ghostReady=false; ghostIdx=0;
+    document.getElementById("feedbackCloseBtn").style.display = 'flex';
     await startPreviewIfNeeded();
     const ok = await loadGhostFor(targetGesture);
     if (ok){
       showGhostUI(true);
       if (ghostTimer) clearTimeout(ghostTimer);
       ghostTimer=setTimeout(() => {
-        ghostEnabled=false; showGhostUI(false); document.getElementById("assistHint").textContent='';
+        dismissFeedback();
       }, GHOST_DURATION_MS);
     }else{
       ghostEnabled=false; showGhostUI(false);
+      document.getElementById("feedbackCloseBtn").style.display = 'none';
     }
-  };
+  }
+
+  function dismissFeedback() {
+    ghostEnabled = false;
+    ghostReady = false;
+    showGhostUI(false);
+    document.getElementById("assistHint").textContent = '';
+    document.getElementById("feedbackCloseBtn").style.display = 'none';
+    if (ghostTimer) { clearTimeout(ghostTimer); ghostTimer = null; }
+  }
+
+  document.getElementById("btnShowHow").onclick = triggerShowHow;
+
+  document.getElementById("feedbackCloseBtn").onclick = dismissFeedback;
 
   document.getElementById("btnTryAgain").onclick = async () => {
-    ghostEnabled=false; showGhostUI(false); document.getElementById("assistHint").textContent='';
+    dismissFeedback();
     await stopPreviewIfAny();
     resultText.textContent='—';
     startBtn.click();
@@ -1501,6 +1551,7 @@ window.addEventListener("load", () => {
   };
 
   startBtn.onclick = async () => {
+    dismissFeedback();
     document.body.classList.add('camera-running'); await stopPreviewIfAny(); originalStart(); };
 
   const originalReset = () => {
