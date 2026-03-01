@@ -11,22 +11,6 @@
 const Tutorial = (() => {
   // ── Step definitions keyed by Flask endpoint name ──────────────────
   const STEPS = {
-    home: [
-      {
-        title: "Welcome to Senyasalin!",
-        body:  "Senyasalin is an offline Filipino Sign Language recognition system. " +
-               "It uses AI to recognize your hand gestures in real time and helps you learn FSL interactively.",
-      },
-      {
-        title: "Navigation Bar",
-        body:  "Use the navigation bar at the top to move between pages. " +
-               "After logging in you'll see <b>Learn</b>, <b>Select</b>, <b>Activity</b>, <b>Auto</b>, and <b>Results</b>.",
-      },
-      {
-        title: "Getting Started",
-        body:  "Click <b>Start Learning</b> to sign up or log in, then head to the <b>Learn</b> page to watch demonstration videos of each sign.",
-      },
-    ],
     tutor: [
       {
         title: "Learn Mode",
@@ -103,12 +87,6 @@ const Tutorial = (() => {
       {
         title: "Export Options",
         body:  "Download your results as a <b>PDF report</b> for record-keeping or to share your progress.",
-      },
-    ],
-    about: [
-      {
-        title: "About Senyasalin",
-        body:  "Learn about the team behind the project and the technology powering the system.",
       },
     ],
   };
