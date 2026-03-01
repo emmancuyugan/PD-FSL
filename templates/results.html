@@ -152,28 +152,27 @@
 (function(){
   const raw = {{ (db_results_json or '[]')|safe }};
 
+  const PH_TZ = 'Asia/Manila';
   const fmtTime = (iso) => {
     if(!iso) return '—';
     try{
       const d = new Date(iso);
-      return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', timeZone:PH_TZ});
     }catch(e){return '—';}
   };
   const fmtDate = (iso) => {
     if(!iso) return '—';
     try{
       const d = new Date(iso);
-      return d.toLocaleDateString(undefined, {year:'numeric', month:'short', day:'2-digit'});
+      return d.toLocaleDateString(undefined, {year:'numeric', month:'short', day:'2-digit', timeZone:PH_TZ});
     }catch(e){return '—';}
   };
   const dateKey = (iso) => {
     if(!iso) return null;
     const d = new Date(iso);
     if(isNaN(d)) return null;
-    const y = d.getFullYear();
-    const m = String(d.getMonth()+1).padStart(2,'0');
-    const day = String(d.getDate()).padStart(2,'0');
-    return `${y}-${m}-${day}`;
+    const parts = new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:PH_TZ}).format(d);
+    return parts;
   };
   const isCorrect = (label) => {
     if(!label) return false;
@@ -238,11 +237,7 @@
   const byDayCorrect = new Map();
   const byDayIncorrect = new Map();
   const todayK = (() => {
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth()+1).padStart(2,'0');
-    const day = String(d.getDate()).padStart(2,'0');
-    return `${y}-${m}-${day}`;
+    return new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:PH_TZ}).format(new Date());
   })();
 
   const labelCountsToday = new Map();
@@ -268,11 +263,9 @@
   for(let i=13;i>=0;i--){
     const d = new Date();
     d.setDate(d.getDate()-i);
-    const y = d.getFullYear();
-    const m = String(d.getMonth()+1).padStart(2,'0');
-    const day = String(d.getDate()).padStart(2,'0');
-    const k = `${y}-${m}-${day}`;
-    days.push({k, label: d.toLocaleDateString(undefined,{month:'short',day:'2-digit'})});
+    const k = new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:PH_TZ}).format(d);
+    const label = d.toLocaleDateString(undefined,{month:'short',day:'2-digit',timeZone:PH_TZ});
+    days.push({k, label});
   }
 
   dailyBody.innerHTML = '';
@@ -290,10 +283,7 @@
   for(let i=0;i<365;i++){
     const d = new Date();
     d.setDate(d.getDate()-i);
-    const y = d.getFullYear();
-    const m = String(d.getMonth()+1).padStart(2,'0');
-    const day = String(d.getDate()).padStart(2,'0');
-    const k = `${y}-${m}-${day}`;
+    const k = new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:PH_TZ}).format(d);
     if((byDay.get(k)||0) > 0) streak++;
     else break;
   }
@@ -336,7 +326,7 @@
       const dataRows = mode === 'today' ? rows.filter(r => dateKey(r.created_at) === todayK) : rows;
       const username = escapeHtml('{{ session.get("username","student") }}');
       const safeUsername = username.replace(/[^a-zA-Z0-9_-]/g, '_');
-      const genDate = new Date().toLocaleString();
+      const genDate = new Date().toLocaleString(undefined,{timeZone:PH_TZ});
       const genDateShort = new Date().toISOString().split('T')[0];
 
       const pdfTotal = dataRows.length;
@@ -391,7 +381,7 @@
         const ic = pdfByDayIncorrect.get(k) || 0;
         const rate = a > 0 ? (c/a*100).toFixed(0)+'%' : '—';
         const bg = i % 2 === 0 ? '#FFFFFF' : '#F8FAFC';
-        const dateLabel = new Date(k+'T00:00:00').toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit',weekday:'short'});
+        const dateLabel = new Date(k+'T00:00:00').toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit',weekday:'short',timeZone:PH_TZ});
         return '<tr style="background:'+bg+';page-break-inside:avoid;">' +
           '<td style="padding:6px 12px;border-bottom:1px solid #E2E8F0;font-size:11px;color:#334155;">'+dateLabel+'</td>' +
           '<td style="padding:6px 12px;border-bottom:1px solid #E2E8F0;text-align:center;font-size:11px;">'+a+'</td>' +
@@ -435,7 +425,7 @@
         const result = ok ? '✓ ' + escapeHtml(label) : '✗ Incorrect';
         const resultColor = ok ? '#059669' : '#DC2626';
         const bg = i % 2 === 0 ? '#FFFFFF' : '#F8FAFC';
-        const datetime = r.created_at ? new Date(r.created_at).toLocaleString(undefined,{year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+        const datetime = r.created_at ? new Date(r.created_at).toLocaleString(undefined,{year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit',timeZone:PH_TZ}) : '—';
         return '<tr style="background:'+bg+';page-break-inside:avoid;">' +
           '<td style="padding:5px 10px;border-bottom:1px solid #E2E8F0;font-size:10px;color:#64748B;">'+datetime+'</td>' +
           '<td style="padding:5px 10px;border-bottom:1px solid #E2E8F0;font-size:10px;font-weight:700;color:'+resultColor+';">'+result+'</td>' +
