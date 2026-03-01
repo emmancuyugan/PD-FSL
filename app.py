@@ -308,10 +308,6 @@ def run_inference(x):
 def home():
     return render_template("index.html")
 
-@app.route("/vrm-live")
-def vrm_live():
-    return render_template("vrm-live.html")
-
 @app.route('/auto')
 @login_required
 def auto_recognition():
