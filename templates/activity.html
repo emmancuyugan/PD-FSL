@@ -186,43 +186,6 @@
     overflow: hidden;
   }
 
-  .camera-display {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    background: #000;
-    overflow: hidden;
-  }
-
-  .skeleton-display {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    overflow: hidden;
-    display: none;
-  }
-
-  .skeleton-label {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    background: rgba(59, 130, 246, 0.9);
-    color: var(--white);
-    padding: 10px 20px;
-    border-radius: 15px;
-    font-size: 16px;
-    font-weight: 700;
-    z-index: 10;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
-  }
-
-  #skeletonCanvas {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
-
   #mainCamera {
     width: 100%;
     height: 100%;
@@ -737,19 +700,9 @@
   <div class="main-content">
     <div class="video-section">
       <div class="skeleton-container">
-        <!-- Main camera display (default view) -->
-        <div class="camera-display" id="cameraDisplay">
-          <video id="mainCamera" autoplay playsinline muted></video>
-          <canvas id="overlayCanvas"></canvas>
-          <div class="fps-counter" id="fpsCounter">FPS: 0</div>
-        </div>
-
-        <!-- Skeleton AI display (shown only for corrective feedback) -->
-        <div class="skeleton-display" id="skeletonDisplay" style="display: none;">
-          <span class="skeleton-label">Skeleton AI</span>
-          <button class="feedback-close-btn" id="feedbackCloseBtn" title="Close feedback" style="display: none;">✕</button>
-          <canvas id="skeletonCanvas"></canvas>
-        </div>
+        <video id="mainCamera" autoplay playsinline muted></video>
+        <canvas id="overlayCanvas"></canvas>
+        <div class="fps-counter" id="fpsCounter">FPS: 0</div>
 
         <div class="prep-overlay" id="prepOverlay">Get Ready…</div>
 
@@ -788,6 +741,8 @@
           <button class="ghost-btn" id="btnNudgeUp">Align ↑</button>
           <button class="ghost-btn" id="btnNudgeDown">Align ↓</button>
         </div>
+
+        <button class="feedback-close-btn" id="feedbackCloseBtn" title="Close feedback" style="display: none;">✕</button>
 
         <div class="timer-bar-container">
           <div class="timer-bar" id="timerBar"></div>
@@ -886,24 +841,9 @@ window.addEventListener("load", () => {
     }
   }
 
-  // Initialize display to show camera by default
-  const showCameraDisplay = () => {
-    document.getElementById("cameraDisplay").style.display = 'block';
-    document.getElementById("skeletonDisplay").style.display = 'none';
-  };
-
-  const showSkeletonDisplay = () => {
-    document.getElementById("cameraDisplay").style.display = 'none';
-    document.getElementById("skeletonDisplay").style.display = 'block';
-  };
-
-  showCameraDisplay();
-
   const videoEl = document.getElementById("mainCamera");
   const canvasEl = document.getElementById("overlayCanvas");
-  const skeletonCanvas = document.getElementById("skeletonCanvas");
   const ctx = canvasEl.getContext("2d");
-  const skeletonCtx = skeletonCanvas.getContext("2d");
   const fpsCounter = document.getElementById("fpsCounter");
   let lastFrameTime = Date.now();
   let fpsFrameCount = 0;
@@ -1113,12 +1053,7 @@ window.addEventListener("load", () => {
 
   async function predictOnce(silent=false){
     if (buf.length < 20) {
-      if (!silent && state === STATE_CAPTURE) {
-        resultText.textContent = 'No hands detected';
-        resultText.className = 'result-text';
-        incorrectCount++;
-        incorrectCountEl.textContent = String(incorrectCount);
-      }
+      if (!silent) alert('Not enough data.');
       return { predicted: null, raw: null };
     }
     const fixed = temporalFix(buf, SEQ_LEN);
@@ -1149,7 +1084,7 @@ window.addEventListener("load", () => {
           const assistRow = document.getElementById("assistRow");
           const assistHint = document.getElementById("assistHint");
           assistRow.style.display = 'block';
-          assistHint.textContent = 'Watch the skeleton guide, then try again!';
+          assistHint.textContent = 'Watch the overlay, then try again.';
           // Save incorrect result
           await saveResult("Incorrect", j?.confidence || null);
         }
@@ -1215,8 +1150,6 @@ window.addEventListener("load", () => {
       running = false;
       recBadge.style.display = "none";
       capturePhase.textContent = "Processing results...";
-      resultText.textContent = 'Loading...';
-      resultText.className = 'result-text';
       try { await camera.stop(); } catch(_) {}
 
       const secondResult = await predictOnce(true);
@@ -1275,16 +1208,13 @@ window.addEventListener("load", () => {
 
     running = false;
     recBadge.style.display = "none";
-    resultText.textContent = 'Loading...';
-    resultText.className = 'result-text';
     const result = await predictOnce(false);
     setState(STATE_READY);
     capturePhase.textContent = "Idle";
     startBtn.style.display = "inline-block";
     timerBar.style.width = "0%";
-    stopNumericTimer();
 
-    // Auto-show skeleton feedback on incorrect result
+    // Auto-show ghost feedback on incorrect result
     const target = normLabel(targetGesture || '');
     const predicted = normLabel(result?.predicted);
     if (target && predicted && predicted !== target) {
@@ -1293,18 +1223,11 @@ window.addEventListener("load", () => {
   }
 
   const HAND_CONN = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20]];
-  const POSE_CONNECTIONS = [
-    [11, 12], [11, 13], [13, 15], [15, 17], [15, 19], [15, 21], [17, 19],
-    [12, 14], [14, 16], [16, 18], [16, 20], [16, 22], [18, 20],
-    [11, 23], [12, 24], [23, 24],
-    [23, 25], [24, 26], [25, 27], [26, 28], [27, 29], [28, 30], [29, 31], [30, 32]
-  ];
   let ghostEnabled=false, ghostFrames=null, ghostIdx=0, ghostReady=false;
   let previewMode=false;
-  let scaleMultiplier = 1.0;
-  let yOffset = 0;
-  let ghostPlaybackSpeed = 0.3;
-  let ghostAnimationId = null;
+  let scaleMultiplier = 1.08;
+  let yOffset = -0.08;
+  let ghostPlaybackSpeed = 0.25;
 
   const ghostBadge = document.getElementById("ghostBadge");
   const ghostControls = document.getElementById("ghostControls");
@@ -1368,90 +1291,42 @@ window.addEventListener("load", () => {
     return null;
   }
 
-  function drawGhostSkeleton(frame){
-    if(!frame || !ghostReady) return;
-    
-    skeletonCtx.save();
-    skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
-    
-    if(frame.pose && frame.pose.length > 0){
-      skeletonCtx.strokeStyle = 'rgba(167, 139, 250, 0.9)';
-      skeletonCtx.lineWidth = 4;
-      skeletonCtx.shadowBlur = 12;
-      skeletonCtx.shadowColor = 'rgba(167, 139, 250, 0.6)';
-      
-      POSE_CONNECTIONS.forEach(([start, end]) => {
-        const startPoint = frame.pose[start];
-        const endPoint = frame.pose[end];
-        if(startPoint && endPoint){
-          skeletonCtx.beginPath();
-          skeletonCtx.moveTo(startPoint.x * skeletonCanvas.width, startPoint.y * skeletonCanvas.height);
-          skeletonCtx.lineTo(endPoint.x * skeletonCanvas.width, endPoint.y * skeletonCanvas.height);
-          skeletonCtx.stroke();
-        }
-      });
-      
-      frame.pose.forEach((landmark) => {
-        skeletonCtx.fillStyle = 'rgba(167, 139, 250, 1)';
-        skeletonCtx.beginPath();
-        skeletonCtx.arc(landmark.x * skeletonCanvas.width, landmark.y * skeletonCanvas.height, 6, 0, 2 * Math.PI);
-        skeletonCtx.fill();
-      });
+  function drawGhostHand(norm63, anchors, ctx, color){
+    if (!norm63) return;
+    const baseScale=Math.max(1e-6, dist2D(anchors.L_SH, anchors.R_SH));
+    const scale = baseScale * scaleMultiplier;
+    const Cx=(anchors.L_SH.x+anchors.R_SH.x)/2;
+    const Cy=(anchors.L_SH.y+anchors.R_SH.y)/2 + yOffset;
+    const pts=[];
+    for (let i=0;i<63;i+=3){
+      const x = norm63[i  ]*scale + Cx;
+      const y = norm63[i+1]*scale + Cy;
+      pts.push({x:x, y:y});
     }
-    
-    if(frame.face && frame.face.length > 0){
-      frame.face.forEach((landmark, idx) => {
-        if(idx % 10 === 0){
-          skeletonCtx.fillStyle = 'rgba(255, 140, 66, 0.8)';
-          skeletonCtx.beginPath();
-          skeletonCtx.arc(landmark.x * skeletonCanvas.width, landmark.y * skeletonCanvas.height, 3, 0, 2 * Math.PI);
-          skeletonCtx.fill();
-        }
-      });
+    ctx.save();
+    ctx.globalCompositeOperation='screen';
+    ctx.strokeStyle=color;
+    ctx.lineWidth=6;
+    ctx.fillStyle=color;
+    ctx.shadowBlur=18;
+    ctx.shadowColor=color;
+    const W=canvasEl.width, H=canvasEl.height;
+    for (let k=0;k<HAND_CONN.length;k++){
+      const a=HAND_CONN[k][0], b=HAND_CONN[k][1];
+      const p=pts[a], q=pts[b];
+      ctx.beginPath(); ctx.moveTo(p.x*W, p.y*H); ctx.lineTo(q.x*W, q.y*H); ctx.stroke();
     }
-    
-    const drawHand = (landmarks, color) => {
-      if(!landmarks || landmarks.length === 0) return;
-      
-      skeletonCtx.strokeStyle = color;
-      skeletonCtx.lineWidth = 4;
-      skeletonCtx.shadowBlur = 10;
-      skeletonCtx.shadowColor = color;
-      
-      HAND_CONN.forEach(([start, end]) => {
-        const startPoint = landmarks[start];
-        const endPoint = landmarks[end];
-        if(startPoint && endPoint){
-          skeletonCtx.beginPath();
-          skeletonCtx.moveTo(startPoint.x * skeletonCanvas.width, startPoint.y * skeletonCanvas.height);
-          skeletonCtx.lineTo(endPoint.x * skeletonCanvas.width, endPoint.y * skeletonCanvas.height);
-          skeletonCtx.stroke();
-        }
-      });
-      
-      landmarks.forEach((landmark) => {
-        skeletonCtx.fillStyle = color;
-        skeletonCtx.beginPath();
-        skeletonCtx.arc(landmark.x * skeletonCanvas.width, landmark.y * skeletonCanvas.height, 5, 0, 2 * Math.PI);
-        skeletonCtx.fill();
-      });
-    };
-    
-    if(frame.rightHand && frame.rightHand.length > 0){
-      drawHand(frame.rightHand, 'rgba(76, 201, 240, 0.95)');
+    for (let i=0;i<pts.length;i++){
+      const p=pts[i]; ctx.beginPath(); ctx.arc(p.x*W, p.y*H, 8, 0, Math.PI*2); ctx.fill();
     }
-    if(frame.leftHand && frame.leftHand.length > 0){
-      drawHand(frame.leftHand, 'rgba(6, 214, 160, 0.95)');
-    }
-    
-    skeletonCtx.restore();
+    ctx.restore();
   }
 
   async function loadGhostFor(label){
     const cat=inferCategory(label);
     const key=normLabel(label);
     const assistHint = document.getElementById("assistHint");
-    assistHint.textContent='Loading skeleton guide…';
+    assistHint.textContent='Loading demo overlay…';
     showGhostUI(false);
     const url=await findDemoUrl(cat,key);
     if(!url){ assistHint.textContent='No demo found for '+cat+'/'+key; ghostReady=false; return false; }
@@ -1459,7 +1334,7 @@ window.addEventListener("load", () => {
     const v=document.createElement('video');
     v.src=url; v.muted=true; v.playsInline=true;
     await new Promise((resolve,reject)=>{ v.onloadedmetadata=resolve; v.onerror=()=>reject(new Error('Video error')); });
-    const total=Math.min(30, Math.max(15, Math.floor(v.duration*10)));
+    const total=Math.min(24, Math.max(12, Math.floor(v.duration*6)));
     v.src=''; // release
     // Process video server-side
     const videoPath = url.replace(window.location.origin + '/', '');
@@ -1471,62 +1346,42 @@ window.addEventListener("load", () => {
     const data = await resp.json();
     ghostFrames=[];
     for(const frame of (data.frames||[])){
-      ghostFrames.push({
-        pose: frame.poseLandmarks || [],
-        face: frame.faceLandmarks || [],
-        rightHand: frame.rightHandLandmarks || [],
-        leftHand: frame.leftHandLandmarks || []
-      });
+      const pose=frame.poseLandmarks||[], face=frame.faceLandmarks||[];
+      const anchors={};
+      anchors.L_SH=lm(pose,11); anchors.R_SH=lm(pose,12);
+      anchors.nose=lm(face,1); anchors.forehead=lm(face,10);
+      anchors.lip_u=lm(face,13); anchors.brow_r=lm(face,65); anchors.brow_l=lm(face,295);
+      anchors.chin=lm(face,152);
+      const Lh=frame.rightHandLandmarks?flattenHand(frame.rightHandLandmarks):null;
+      const Rh=frame.leftHandLandmarks?flattenHand(frame.leftHandLandmarks):null;
+      if(!Lh && !Rh) continue;
+      const L=Lh?normalizeGlobal(Lh,anchors):new Float32Array(63);
+      const R=Rh?normalizeGlobal(Rh,anchors):new Float32Array(63);
+      ghostFrames.push({L:L, R:R});
     }
     ghostReady = ghostFrames.length>0;
-    assistHint.textContent = ghostReady ? 'Skeleton guide loaded! Watch the big screen.' : 'No skeleton found in demo.';
+    assistHint.textContent = ghostReady ? 'Overlay loaded. Use Size/Align controls if needed.' : 'No hands detected in demo video.';
     return ghostReady;
   }
 
   let ghostTimer=null;
-  const GHOST_DURATION_MS=60000;
+  const GHOST_DURATION_MS=12000;
 
   async function triggerShowHow() {
     if(!targetGesture) return;
-    
-    if(ghostAnimationId) {
-      cancelAnimationFrame(ghostAnimationId);
-      ghostAnimationId = null;
-    }
-    
-    // Stop camera processing to free resources for skeleton rendering
-    await camera.stop();
-    
     ghostEnabled=true; ghostFrames=null; ghostReady=false; ghostIdx=0;
-    showSkeletonDisplay();
     document.getElementById("feedbackCloseBtn").style.display = 'flex';
+    await startPreviewIfNeeded();
     const ok = await loadGhostFor(targetGesture);
     if (ok){
       showGhostUI(true);
-      const animateGhost = () => {
-        if(ghostEnabled && ghostReady && ghostFrames && ghostFrames.length){
-          const total=ghostFrames.length;
-          ghostIdx+=ghostPlaybackSpeed; 
-          if(ghostIdx>=total) ghostIdx=0;
-          const frameIdx = Math.floor(ghostIdx) % total;
-          drawGhostSkeleton(ghostFrames[frameIdx]);
-          ghostAnimationId = requestAnimationFrame(animateGhost);
-        } else {
-          ghostAnimationId = null;
-        }
-      };
-      animateGhost();
-      
       if (ghostTimer) clearTimeout(ghostTimer);
-      ghostTimer=setTimeout(async () => {
+      ghostTimer=setTimeout(() => {
         dismissFeedback();
-        await camera.start();
       }, GHOST_DURATION_MS);
     }else{
-      ghostEnabled=false; showGhostUI(false); showCameraDisplay();
+      ghostEnabled=false; showGhostUI(false);
       document.getElementById("feedbackCloseBtn").style.display = 'none';
-      // Resume camera if loading failed
-      await camera.start();
     }
   }
 
@@ -1536,26 +1391,17 @@ window.addEventListener("load", () => {
     showGhostUI(false);
     document.getElementById("assistHint").textContent = '';
     document.getElementById("feedbackCloseBtn").style.display = 'none';
-    if (ghostAnimationId) {
-      cancelAnimationFrame(ghostAnimationId);
-      ghostAnimationId = null;
-    }
     if (ghostTimer) { clearTimeout(ghostTimer); ghostTimer = null; }
-    skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
-    showCameraDisplay();
   }
 
   document.getElementById("btnShowHow").onclick = triggerShowHow;
 
-  document.getElementById("feedbackCloseBtn").onclick = async () => {
-    dismissFeedback();
-    await camera.start();
-  };
+  document.getElementById("feedbackCloseBtn").onclick = dismissFeedback;
 
-  document.getElementById("btnTryAgain").onclick = () => {
+  document.getElementById("btnTryAgain").onclick = async () => {
     dismissFeedback();
-    resultText.textContent = '—';
-    document.getElementById("assistRow").style.display = 'none';
+    await stopPreviewIfAny();
+    resultText.textContent='—';
     startBtn.click();
   };
 
@@ -1618,6 +1464,25 @@ window.addEventListener("load", () => {
 
       if (RH) drawBox(RH, 'rgba(6,214,160,0.9)');
       if (LH) drawBox(LH, 'rgba(255,107,157,0.9)');
+    }
+
+    if (ghostEnabled && ghostReady && anchorsValid(anchors) && ghostFrames && ghostFrames.length){
+      const total=ghostFrames.length;
+      ghostIdx+=ghostPlaybackSpeed; if(ghostIdx>=total) ghostIdx=0;
+      const frameA=ghostFrames[Math.floor(ghostIdx)%total];
+      const frameB=ghostFrames[Math.floor(ghostIdx+1)%total];
+      const t=ghostIdx%1;
+      const L=new Float32Array(63); const R=new Float32Array(63);
+      for(let i=0;i<63;i++){L[i]=(1-t)*frameA.L[i]+t*frameB.L[i]; R[i]=(1-t)*frameA.R[i]+t*frameB.R[i];}
+      drawGhostHand(L, anchors, ctx, 'rgba(167,139,250,0.85)');
+      drawGhostHand(R, anchors, ctx, 'rgba(76,201,240,0.85)');
+      showGhostUI(true);
+    } else if (ghostEnabled && !anchorsValid(anchors)) {
+      const assistHint = document.getElementById("assistHint");
+      assistHint.textContent = 'Step back so both shoulders are visible.';
+      showGhostUI(false);
+    } else {
+      showGhostUI(false);
     }
 
     ctx.restore();
@@ -1725,18 +1590,11 @@ window.addEventListener("load", () => {
     document.getElementById("assistRow").style.display='none';
     document.getElementById("assistHint").textContent='';
     ghostEnabled=false; ghostFrames=null; ghostIdx=0; ghostReady=false; showGhostUI(false);
-    if(ghostAnimationId) {
-      cancelAnimationFrame(ghostAnimationId);
-      ghostAnimationId = null;
-    }
-    skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
-    showCameraDisplay();
-    if (ghostTimer) clearTimeout(ghostTimer);
     buf=[]; frameCounter=0; frameCountEl.textContent='0'; progressBar.style.width='0%'; timerBar.style.width='0%';
     capturePhase.textContent='Idle'; setState(STATE_READY);
     stopNumericTimer();
     startBtn.style.display='inline-block';
-    scaleMultiplier=1.0; yOffset=0; ghostPlaybackSpeed=0.3;
+    scaleMultiplier=1.08; yOffset=-0.02; ghostPlaybackSpeed=0.5;
   };
   resetBtn.onclick = async () => {
     document.body.classList.remove('camera-running'); await stopPreviewIfAny(); originalReset(); };
@@ -1777,15 +1635,9 @@ window.addEventListener("load", () => {
   function resize(){
     canvasEl.width = videoEl.clientWidth;
     canvasEl.height = videoEl.clientHeight;
-    
-    const skeletonContainer = skeletonCanvas.parentElement;
-    skeletonCanvas.width = skeletonContainer.clientWidth;
-    skeletonCanvas.height = skeletonContainer.clientHeight;
   }
   new ResizeObserver(resize).observe(videoEl);
-  new ResizeObserver(resize).observe(skeletonCanvas.parentElement);
   resize();
-  window.addEventListener('resize', resize);
 });
 </script>
 

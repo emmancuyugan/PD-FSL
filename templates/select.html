@@ -1201,8 +1201,6 @@ window.addEventListener("load", () => {
     if (state !== STATE_CAPTURE && state !== STATE_PREP) return;
     running = false;
     recBadge.style.display = "none";
-    resultText.textContent = 'Loading...';
-    resultText.className = 'result-text';
     const result = await predictOnce(false);
     setState(STATE_READY);
     capturePhase.textContent = "Idle";
