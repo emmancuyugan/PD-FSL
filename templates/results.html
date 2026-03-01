@@ -50,10 +50,34 @@
   .btn{appearance:none;border:none;cursor:pointer;padding:10px 14px;border-radius:12px;font-weight:800;font-size:13px;color:var(--white);box-shadow:0 2px 6px var(--shadow)}
   .btn.primary{background:linear-gradient(135deg,var(--deep-blue),var(--lavender))}
   .btn.secondary{background:linear-gradient(135deg,var(--orange),var(--sunshine))}
+
+  /* PDF Export Modal */
+  .pdf-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);backdrop-filter:blur(4px);z-index:9999;justify-content:center;align-items:center}
+  .pdf-modal-overlay.active{display:flex}
+  .pdf-modal{background:var(--white);border-radius:20px;padding:28px 32px;box-shadow:0 12px 40px rgba(0,0,0,0.2);text-align:center;max-width:360px;width:90%;animation:modalPop .25s ease}
+  @keyframes modalPop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+  .pdf-modal h3{font-size:18px;font-weight:800;color:#1E293B;margin-bottom:4px}
+  .pdf-modal p{font-size:13px;color:#64748B;font-weight:600;margin-bottom:18px}
+  .pdf-modal .modal-btn{display:block;width:100%;padding:13px;border:none;border-radius:14px;font-weight:800;font-size:14px;color:var(--white);cursor:pointer;margin-bottom:10px;box-shadow:0 3px 10px var(--shadow)}
+  .pdf-modal .modal-btn.today{background:linear-gradient(135deg,var(--deep-blue),var(--lavender))}
+  .pdf-modal .modal-btn.history{background:linear-gradient(135deg,var(--orange),var(--sunshine))}
+  .pdf-modal .modal-cancel{display:inline-block;margin-top:4px;font-size:13px;color:#94A3B8;font-weight:700;cursor:pointer;border:none;background:none}
+  .pdf-modal .modal-cancel:hover{color:#64748B}
 </style>
 
 <div class="bg-shapes">
   <div class="shape"></div><div class="shape"></div><div class="shape"></div><div class="shape"></div>
+</div>
+
+<!-- PDF Export Modal -->
+<div class="pdf-modal-overlay" id="pdfModal">
+  <div class="pdf-modal">
+    <h3>Export PDF</h3>
+    <p>Choose the data range to include:</p>
+    <button class="modal-btn today" id="pdfToday">Today only</button>
+    <button class="modal-btn history" id="pdfHistory">Full history</button>
+    <button class="modal-cancel" id="pdfCancel">Cancel</button>
+  </div>
 </div>
 
 <div class="app-container">
@@ -104,9 +128,8 @@
         <div class="card-title">Today summary</div>
         <div class="mini" id="todaySummary">—</div>
         <div style="height:8px"></div>
-        <div class="stats-row" style="grid-template-columns:repeat(2,minmax(0,1fr));">
+        <div class="stats-row" style="grid-template-columns:1fr;">
           <div class="stat"><div class="k">Most common</div><div class="v" id="statCommon" style="font-size:16px;">—</div></div>
-          <div class="stat"><div class="k">Best confidence</div><div class="v" id="statBest" style="font-size:16px;">—</div></div>
         </div>
       </div>
 
@@ -223,8 +246,6 @@
   })();
 
   const labelCountsToday = new Map();
-  let bestConfToday = null;
-
   rows.forEach(r => {
     const k = dateKey(r.created_at);
     if(!k) return;
@@ -239,9 +260,6 @@
     if(k===todayK){
       const lab = String(r.label||'—');
       labelCountsToday.set(lab, (labelCountsToday.get(lab)||0)+1);
-      if(typeof r.confidence==='number'){
-        bestConfToday = (bestConfToday===null) ? r.confidence : Math.max(bestConfToday, r.confidence);
-      }
     }
   });
 
@@ -296,20 +314,36 @@
   })();
 
   statCommon.textContent = mostCommon ? cleanLabel(mostCommon) : '—';
-  statBest.textContent = (bestConfToday===null) ? '—' : (bestConfToday*100).toFixed(1)+'%';
   todaySummary.textContent = todayAttempts
     ? `You made ${todayAttempts} attempts today. Keep going!`
     : `No entries today yet. Do a few reps in Select or Activity.`;
 
-  exportBtn.onclick = () => {
+  /* ── PDF Modal Logic ── */
+  const pdfModal = document.getElementById('pdfModal');
+  const pdfToday = document.getElementById('pdfToday');
+  const pdfHistory = document.getElementById('pdfHistory');
+  const pdfCancel = document.getElementById('pdfCancel');
+
+  exportBtn.onclick = () => { pdfModal.classList.add('active'); };
+  pdfCancel.onclick = () => { pdfModal.classList.remove('active'); };
+  pdfModal.onclick = (e) => { if(e.target===pdfModal) pdfModal.classList.remove('active'); };
+
+  function generatePDF(mode) {
+    pdfModal.classList.remove('active');
     const script = document.createElement('script');
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
     script.onload = () => {
+      const dataRows = mode === 'today' ? rows.filter(r => dateKey(r.created_at) === todayK) : rows;
       const username = escapeHtml('{{ session.get("username","student") }}');
       const safeUsername = username.replace(/[^a-zA-Z0-9_-]/g, '_');
       const genDate = new Date().toLocaleString();
       const genDateShort = new Date().toISOString().split('T')[0];
-      const successRate = total === 0 ? '—' : (correct / total * 100).toFixed(1) + '%';
+
+      const pdfTotal = dataRows.length;
+      const pdfCorrect = dataRows.filter(r => isCorrect(r.label)).length;
+      const pdfIncorrect = pdfTotal - pdfCorrect;
+      const successRate = pdfTotal === 0 ? '—' : (pdfCorrect / pdfTotal * 100).toFixed(1) + '%';
+      const modeLabel = mode === 'today' ? 'Today Only' : 'Full History';
 
       /* ── Clean label: strip category prefix & underscores ── */
       function cleanLabel(raw) {
@@ -324,8 +358,17 @@
         return s;
       }
 
-      /* ── Build all-time daily activity table ── */
-      const allDailyKeys = Array.from(byDay.keys()).sort();
+      /* ── Build daily activity table (scoped to mode) ── */
+      const pdfByDay = new Map();
+      const pdfByDayCorrect = new Map();
+      const pdfByDayIncorrect = new Map();
+      dataRows.forEach(r => {
+        const k = dateKey(r.created_at); if(!k) return;
+        pdfByDay.set(k, (pdfByDay.get(k)||0)+1);
+        if(isCorrect(r.label)) pdfByDayCorrect.set(k, (pdfByDayCorrect.get(k)||0)+1);
+        else pdfByDayIncorrect.set(k, (pdfByDayIncorrect.get(k)||0)+1);
+      });
+      const allDailyKeys = Array.from(pdfByDay.keys()).sort();
       const firstDay = allDailyKeys.length ? allDailyKeys[0] : genDateShort;
       const lastDay  = allDailyKeys.length ? allDailyKeys[allDailyKeys.length - 1] : genDateShort;
 
@@ -343,9 +386,9 @@
       }
 
       const dailyRowsHtml = fullDays.map((k, i) => {
-        const a = byDay.get(k) || 0;
-        const c = byDayCorrect.get(k) || 0;
-        const ic = byDayIncorrect.get(k) || 0;
+        const a = pdfByDay.get(k) || 0;
+        const c = pdfByDayCorrect.get(k) || 0;
+        const ic = pdfByDayIncorrect.get(k) || 0;
         const rate = a > 0 ? (c/a*100).toFixed(0)+'%' : '—';
         const bg = i % 2 === 0 ? '#FFFFFF' : '#F8FAFC';
         const dateLabel = new Date(k+'T00:00:00').toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit',weekday:'short'});
@@ -361,13 +404,13 @@
       /* ── Per-sign breakdown ── */
       const signCounts = new Map();
       const signCorrect = new Map();
-      rows.forEach(r => {
+      dataRows.forEach(r => {
         if (!r.label) return;
         const lab = cleanLabel(r.label);
         if (String(r.label) === 'Incorrect') return;
         signCounts.set(lab, (signCounts.get(lab)||0) + 1);
       });
-      rows.forEach(r => {
+      dataRows.forEach(r => {
         if (!isCorrect(r.label)) return;
         const lab = cleanLabel(r.label);
         signCorrect.set(lab, (signCorrect.get(lab)||0) + 1);
@@ -386,18 +429,16 @@
       }).join('');
 
       /* ── Full attempt log ── */
-      const attemptRowsHtml = rows.map((r, i) => {
+      const attemptRowsHtml = dataRows.map((r, i) => {
         const ok = isCorrect(r.label);
         const label = ok ? cleanLabel(r.label) : 'Incorrect';
         const result = ok ? '✓ ' + escapeHtml(label) : '✗ Incorrect';
         const resultColor = ok ? '#059669' : '#DC2626';
         const bg = i % 2 === 0 ? '#FFFFFF' : '#F8FAFC';
-        const conf = (typeof r.confidence === 'number') ? (r.confidence * 100).toFixed(1) + '%' : '—';
         const datetime = r.created_at ? new Date(r.created_at).toLocaleString(undefined,{year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
         return '<tr style="background:'+bg+';page-break-inside:avoid;">' +
           '<td style="padding:5px 10px;border-bottom:1px solid #E2E8F0;font-size:10px;color:#64748B;">'+datetime+'</td>' +
           '<td style="padding:5px 10px;border-bottom:1px solid #E2E8F0;font-size:10px;font-weight:700;color:'+resultColor+';">'+result+'</td>' +
-          '<td style="padding:5px 10px;border-bottom:1px solid #E2E8F0;font-size:10px;text-align:center;color:#64748B;">'+conf+'</td>' +
           '</tr>';
       }).join('');
 
@@ -412,7 +453,7 @@
           <!-- HEADER -->
           <div style="background:linear-gradient(135deg,#4361EE,#7C3AED);padding:28px 32px;">
             <h1 style="margin:0 0 4px 0;font-size:24px;font-weight:800;color:#FFFFFF;letter-spacing:-0.5px;">Filipino Sign Language</h1>
-            <p style="margin:0;font-size:13px;color:rgba(255,255,255,0.85);font-weight:600;">Student Progress Report</p>
+            <p style="margin:0;font-size:13px;color:rgba(255,255,255,0.85);font-weight:600;">Student Progress Report — ${modeLabel}</p>
             <div style="margin-top:14px;display:flex;gap:20px;flex-wrap:wrap;">
               <div style="font-size:11px;color:rgba(255,255,255,0.7);">Student: <strong style="color:#FFF;">${username}</strong></div>
               <div style="font-size:11px;color:rgba(255,255,255,0.7);">Generated: <strong style="color:#FFF;">${genDate}</strong></div>
@@ -427,15 +468,15 @@
             <table style="width:100%;border-collapse:separate;border-spacing:6px 0;margin-bottom:4px;">
               <tr>
                 <td style="width:25%;padding:14px 8px;background:#F0F4FF;border-radius:8px;text-align:center;">
-                  <div style="font-size:24px;font-weight:900;color:#4361EE;">${total}</div>
+                  <div style="font-size:24px;font-weight:900;color:#4361EE;">${pdfTotal}</div>
                   <div style="font-size:9px;font-weight:700;color:#64748B;margin-top:3px;text-transform:uppercase;">Total Attempts</div>
                 </td>
                 <td style="width:25%;padding:14px 8px;background:#ECFDF5;border-radius:8px;text-align:center;">
-                  <div style="font-size:24px;font-weight:900;color:#059669;">${correct}</div>
+                  <div style="font-size:24px;font-weight:900;color:#059669;">${pdfCorrect}</div>
                   <div style="font-size:9px;font-weight:700;color:#64748B;margin-top:3px;text-transform:uppercase;">Correct</div>
                 </td>
                 <td style="width:25%;padding:14px 8px;background:#FFF1F2;border-radius:8px;text-align:center;">
-                  <div style="font-size:24px;font-weight:900;color:#DC2626;">${incorrect}</div>
+                  <div style="font-size:24px;font-weight:900;color:#DC2626;">${pdfIncorrect}</div>
                   <div style="font-size:9px;font-weight:700;color:#64748B;margin-top:3px;text-transform:uppercase;">Incorrect</div>
                 </td>
                 <td style="width:25%;padding:14px 8px;background:#F5F3FF;border-radius:8px;text-align:center;">
@@ -477,10 +518,9 @@
                 <tr style="background:#F1F5F9;">
                   <th style="${TH}text-align:left;">Date &amp; Time</th>
                   <th style="${TH}text-align:left;">Result</th>
-                  <th style="${TH}text-align:center;">Confidence</th>
                 </tr>
               </thead>
-              <tbody>${attemptRowsHtml || '<tr><td colspan="3" style="padding:10px;color:#94A3B8;font-size:11px;">No attempts recorded yet.</td></tr>'}</tbody>
+              <tbody>${attemptRowsHtml || '<tr><td colspan="2" style="padding:10px;color:#94A3B8;font-size:11px;">No attempts recorded yet.</td></tr>'}</tbody>
             </table>
           </div>
 
@@ -505,7 +545,10 @@
       html2pdf().set(opt).from(element).save();
     };
     document.head.appendChild(script);
-  };
+  }
+
+  pdfToday.onclick = () => generatePDF('today');
+  pdfHistory.onclick = () => generatePDF('all');
 
   function escapeHtml(str){
     return String(str)
