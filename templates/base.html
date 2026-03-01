@@ -302,7 +302,6 @@
         {% endif %}
 
         <a href="{{ url_for('about') }}" class="{% if request.endpoint == 'about' %}active{% endif %}">ABOUT</a>
-        <a href="{{ url_for('manual') }}" class="{% if request.endpoint == 'manual' %}active{% endif %}">📖 MANUAL</a>
 
         {% if session.get('user_id') %}
           <a href="{{ url_for('logout') }}">LOGOUT{% if session.get('username') %} ({{ session.get('username') }}){% endif %}</a>
@@ -322,6 +321,8 @@
     <div class="container">
       <div class="footer-bottom">
         © <span id="year"></span> Senyasalin
+        <span style="margin:0 8px;">·</span>
+        <a href="{{ url_for('manual') }}" style="color:rgba(255,255,255,0.95);text-decoration:none;font-weight:700;">User Manual</a>
       </div>
     </div>
   </footer>

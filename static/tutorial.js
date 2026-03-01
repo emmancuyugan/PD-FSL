@@ -13,7 +13,7 @@ const Tutorial = (() => {
   const STEPS = {
     home: [
       {
-        title: "Welcome to Senyasalin! 👋",
+        title: "Welcome to Senyasalin!",
         body:  "Senyasalin is an offline Filipino Sign Language recognition system. " +
                "It uses AI to recognize your hand gestures in real time and helps you learn FSL interactively.",
       },
@@ -29,7 +29,7 @@ const Tutorial = (() => {
     ],
     tutor: [
       {
-        title: "Learn Mode 📖",
+        title: "Learn Mode",
         body:  "This page plays <b>demonstration videos</b> for each Filipino Sign Language sign. " +
                "Watch closely and try to imitate the hand movements shown.",
       },
@@ -45,7 +45,7 @@ const Tutorial = (() => {
     ],
     select: [
       {
-        title: "Select & Practice Mode 🎯",
+        title: "Select & Practice Mode",
         body:  "Choose a specific sign you want to practice. The system will ask you to perform it in front of your camera.",
       },
       {
@@ -64,7 +64,7 @@ const Tutorial = (() => {
     ],
     activity: [
       {
-        title: "Activity Mode 🏆",
+        title: "Activity Mode",
         body:  "Test your skills! The system presents a sign for you to perform, then evaluates your attempt.",
       },
       {
@@ -78,7 +78,7 @@ const Tutorial = (() => {
     ],
     auto_recognition: [
       {
-        title: "Auto Recognition Mode 🤖",
+        title: "Auto Recognition Mode",
         body:  "Continuous, real-time sign language recognition. Just sign naturally and the AI identifies each gesture as you go.",
       },
       {
@@ -93,7 +93,7 @@ const Tutorial = (() => {
     ],
     results: [
       {
-        title: "Your Results 📊",
+        title: "Your Results",
         body:  "View your complete practice history — every sign you've practiced, with confidence scores and timestamps.",
       },
       {
@@ -107,7 +107,7 @@ const Tutorial = (() => {
     ],
     about: [
       {
-        title: "About Senyasalin ℹ️",
+        title: "About Senyasalin",
         body:  "Learn about the team behind the project and the technology powering the system.",
       },
     ],
@@ -197,7 +197,7 @@ const Tutorial = (() => {
     backBtn.style.visibility = stepIndex === 0 ? "hidden" : "visible";
 
     if (stepIndex === currentSteps.length - 1) {
-      nextBtn.textContent = "Finish ✓";
+      nextBtn.textContent = "Finish";
     } else {
       nextBtn.textContent = "Next →";
     }
