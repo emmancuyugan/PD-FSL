@@ -1,0 +1,514 @@
+{% extends "base.html" %}
+{% block title %}User Manual – Senyasalin{% endblock %}
+{% block content %}
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --sunshine: #FFD93D;
+    --sky-blue: #4CC9F0;
+    --grass-green: #06D6A0;
+    --coral: #FF6B9D;
+    --lavender: #A78BFA;
+    --orange: #FF8C42;
+    --deep-blue: #4361EE;
+    --white: #FFFFFF;
+    --off-white: #FFF8F0;
+    --shadow: rgba(0, 0, 0, 0.15);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-weight: 600;
+    background: linear-gradient(135deg, #E0F4FF 0%, #FFE5EC 50%, #FFF4E0 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  /* ── Manual Layout ─────────────────────────────────── */
+  .manual-wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  .manual-header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .manual-header h1 {
+    font-size: 42px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--deep-blue), var(--lavender), var(--coral));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+  }
+  .manual-header p {
+    font-size: 16px;
+    color: #666;
+    line-height: 1.6;
+  }
+  .manual-header .version {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 4px 14px;
+    background: var(--white);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--deep-blue);
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+
+  .btn-row-manual {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+  .btn-manual {
+    padding: 12px 28px;
+    border-radius: 16px;
+    font-weight: 800;
+    font-size: 14px;
+    border: none;
+    cursor: pointer;
+    color: var(--white);
+    box-shadow: 0 4px 14px var(--shadow);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .btn-manual:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px var(--shadow);
+  }
+  .btn-print {
+    background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
+  }
+  .btn-back {
+    background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
+  }
+
+  /* ── TOC ────────────────────────────────────────────── */
+  .manual-toc {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 24px 28px;
+    margin-bottom: 32px;
+    box-shadow: 0 4px 16px var(--shadow);
+  }
+  .manual-toc h2 {
+    font-size: 18px;
+    font-weight: 900;
+    color: #333;
+    margin-bottom: 12px;
+  }
+  .manual-toc ol {
+    padding-left: 24px;
+  }
+  .manual-toc li {
+    margin-bottom: 8px;
+  }
+  .manual-toc a {
+    color: var(--deep-blue);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .manual-toc a:hover {
+    text-decoration: underline;
+  }
+
+  /* ── Section Cards ──────────────────────────────────── */
+  .manual-section {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 28px 28px 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 16px var(--shadow);
+  }
+  .manual-section h2 {
+    font-size: 24px;
+    font-weight: 900;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid var(--off-white);
+  }
+  .manual-section h2 .sec-icon {
+    margin-right: 8px;
+  }
+  .manual-section h3 {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--deep-blue);
+    margin: 18px 0 8px;
+  }
+  .manual-section p,
+  .manual-section li {
+    font-size: 14px;
+    font-weight: 600;
+    color: #555;
+    line-height: 1.75;
+  }
+  .manual-section ul, .manual-section ol {
+    padding-left: 24px;
+    margin-bottom: 12px;
+  }
+  .manual-section li {
+    margin-bottom: 6px;
+  }
+
+  .key {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #f0f0f0;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #333;
+    border: 1px solid #ddd;
+  }
+
+  .tip-box {
+    background: linear-gradient(135deg, rgba(6,214,160,0.08), rgba(76,201,240,0.08));
+    border-left: 4px solid var(--grass-green);
+    border-radius: 0 12px 12px 0;
+    padding: 14px 18px;
+    margin: 14px 0;
+    font-size: 13px;
+    color: #444;
+    line-height: 1.6;
+  }
+  .tip-box strong { color: var(--grass-green); }
+
+  .warn-box {
+    background: linear-gradient(135deg, rgba(255,107,157,0.08), rgba(255,140,66,0.08));
+    border-left: 4px solid var(--coral);
+    border-radius: 0 12px 12px 0;
+    padding: 14px 18px;
+    margin: 14px 0;
+    font-size: 13px;
+    color: #444;
+    line-height: 1.6;
+  }
+  .warn-box strong { color: var(--coral); }
+
+  /* ── Print styles ───────────────────────────────────── */
+  @media print {
+    body { background: #fff !important; }
+    .navbar, .footer, .btn-row-manual, #tutorial-overlay, .tut-help-btn { display: none !important; }
+    .manual-wrap { padding: 0; max-width: 100%; }
+    .manual-section, .manual-toc { box-shadow: none; break-inside: avoid; border: 1px solid #eee; }
+    .manual-header h1 { -webkit-text-fill-color: #4361EE; color: #4361EE; }
+  }
+
+  /* ── Responsive ─────────────────────────────────────── */
+  @media (max-width: 640px) {
+    .manual-wrap { padding: 20px 14px 60px; }
+    .manual-header h1 { font-size: 28px; }
+    .manual-section { padding: 18px 16px; }
+    .manual-section h2 { font-size: 20px; }
+  }
+</style>
+
+<div class="manual-wrap">
+
+  <!-- Header -->
+  <div class="manual-header">
+    <h1>Senyasalin User Manual</h1>
+    <p>A complete guide to the Offline Filipino Sign Language Recognition System</p>
+    <span class="version">v1.0 — March 2026</span>
+
+    <div class="btn-row-manual">
+      <button class="btn-manual btn-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      <a class="btn-manual btn-back" href="{{ url_for('home') }}">← Back to App</a>
+    </div>
+  </div>
+
+  <!-- Table of Contents -->
+  <div class="manual-toc">
+    <h2>Table of Contents</h2>
+    <ol>
+      <li><a href="#sec-overview">Overview</a></li>
+      <li><a href="#sec-getting-started">Getting Started</a></li>
+      <li><a href="#sec-learn">Learn Mode</a></li>
+      <li><a href="#sec-select">Select & Practice Mode</a></li>
+      <li><a href="#sec-activity">Activity Mode</a></li>
+      <li><a href="#sec-auto">Auto Recognition Mode</a></li>
+      <li><a href="#sec-results">Results & Progress Tracking</a></li>
+      <li><a href="#sec-camera">Camera & Environment Tips</a></li>
+      <li><a href="#sec-troubleshooting">Troubleshooting</a></li>
+      <li><a href="#sec-faq">FAQ</a></li>
+    </ol>
+  </div>
+
+  <!-- 1. Overview -->
+  <div class="manual-section" id="sec-overview">
+    <h2><span class="sec-icon">📋</span>1. Overview</h2>
+    <p>
+      <strong>Senyasalin</strong> is an AI-powered, offline Filipino Sign Language (FSL) learning platform.
+      It uses an LSTM neural network with MediaPipe body/hand tracking to recognize sign language gestures
+      in real time through your webcam — no internet connection required after initial setup.
+    </p>
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Real-time gesture recognition</strong> using deep learning (LSTM) and MediaPipe landmarks</li>
+      <li><strong>Multiple learning modes</strong> — Learn, Select, Activity, and Auto</li>
+      <li><strong>Demonstration videos</strong> for each sign across 5 categories</li>
+      <li><strong>Ghost overlay</strong> for visual movement guidance</li>
+      <li><strong>Instant feedback</strong> with confidence scoring</li>
+      <li><strong>Progress tracking</strong> with daily stats, streaks, and exportable reports</li>
+      <li><strong>Fully offline</strong> — works without internet once installed</li>
+    </ul>
+    <h3>Supported Sign Categories</h3>
+    <ul>
+      <li>🎨 <strong>Colors</strong></li>
+      <li>👨‍👩‍👧 <strong>Family</strong></li>
+      <li>🔢 <strong>Numbers</strong></li>
+      <li>💑 <strong>Relationships</strong></li>
+      <li>🆘 <strong>Survival</strong></li>
+    </ul>
+  </div>
+
+  <!-- 2. Getting Started -->
+  <div class="manual-section" id="sec-getting-started">
+    <h2><span class="sec-icon">🚀</span>2. Getting Started</h2>
+
+    <h3>Creating an Account</h3>
+    <ol>
+      <li>Click <strong>SIGN UP</strong> in the navigation bar.</li>
+      <li>Enter a username and password, then confirm your password.</li>
+      <li>Click <strong>Create Account</strong>. You'll be redirected to the login page.</li>
+    </ol>
+
+    <h3>Logging In</h3>
+    <ol>
+      <li>Click <strong>LOGIN</strong> in the navigation bar.</li>
+      <li>Enter your username and password.</li>
+      <li>Click <strong>Log In</strong>. After logging in, you'll see all learning modes in the navbar.</li>
+    </ol>
+
+    <div class="tip-box">
+      <strong>Tip:</strong> The first time you visit each page, an interactive tutorial will appear automatically.
+      You can check <em>"Don't show again"</em> once you're comfortable, or click the
+      <strong>?</strong> help button in the navbar to replay it anytime.
+    </div>
+
+    <h3>System Requirements</h3>
+    <ul>
+      <li>A device with a <strong>webcam</strong> (laptop, desktop with external camera, or tablet)</li>
+      <li>A modern web browser (Chrome, Edge, or Firefox recommended)</li>
+      <li>Allow camera permissions when prompted</li>
+    </ul>
+  </div>
+
+  <!-- 3. Learn Mode -->
+  <div class="manual-section" id="sec-learn">
+    <h2><span class="sec-icon">📖</span>3. Learn Mode</h2>
+    <p>
+      The Learn page is your starting point for studying FSL signs. It provides demonstration videos
+      for every supported sign.
+    </p>
+    <h3>How to Use</h3>
+    <ol>
+      <li>Navigate to <strong>LEARN</strong> from the navbar.</li>
+      <li>Browse the available sign categories.</li>
+      <li>Click on a sign to play its demonstration video.</li>
+      <li>Use video controls to pause, replay, or slow down playback.</li>
+      <li>Study the hand movements carefully before moving on to practice modes.</li>
+    </ol>
+    <div class="tip-box">
+      <strong>Tip:</strong> Watch each video multiple times. Pay attention to hand shape, orientation,
+      movement direction, and facial expressions — they all contribute to the meaning of the sign.
+    </div>
+  </div>
+
+  <!-- 4. Select & Practice -->
+  <div class="manual-section" id="sec-select">
+    <h2><span class="sec-icon">🎯</span>4. Select & Practice Mode</h2>
+    <p>
+      Choose a specific sign, then practice it in front of your camera. The AI evaluates your gesture
+      and provides instant feedback.
+    </p>
+    <h3>How to Use</h3>
+    <ol>
+      <li>Navigate to <strong>SELECT</strong> from the navbar.</li>
+      <li>Pick a category and a specific sign you want to practice.</li>
+      <li>The camera will show your live feed with a <strong>ghost overlay</strong> displaying the correct pose.</li>
+      <li>Perform the sign, matching your movements to the ghost landmarks.</li>
+      <li>The system will display the AI's prediction and a confidence score.</li>
+    </ol>
+    <h3>Ghost Overlay</h3>
+    <p>
+      The translucent landmark overlay shows the ideal body and hand positions for the selected sign.
+      Try to align your own pose landmarks with the ghost for the best accuracy.
+    </p>
+    <div class="warn-box">
+      <strong>Note:</strong> The ghost overlay is a guide, not a rigid requirement. Natural variation
+      in your body proportions is expected — focus on matching the general shape and movement.
+    </div>
+  </div>
+
+  <!-- 5. Activity Mode -->
+  <div class="manual-section" id="sec-activity">
+    <h2><span class="sec-icon">🏆</span>5. Activity Mode</h2>
+    <p>
+      Test your skills in a structured exercise. The system presents signs for you to perform and
+      evaluates your accuracy.
+    </p>
+    <h3>How to Use</h3>
+    <ol>
+      <li>Navigate to <strong>ACTIVITY</strong> from the navbar.</li>
+      <li>Select a difficulty level (if available).</li>
+      <li>The system will prompt you with a sign to perform.</li>
+      <li>Perform the sign within the allotted time.</li>
+      <li>Receive feedback — your results are saved automatically for progress tracking.</li>
+    </ol>
+    <div class="tip-box">
+      <strong>Tip:</strong> Start with easier categories (like Numbers) and gradually move to more complex
+      ones (like Survival phrases) as your confidence grows.
+    </div>
+  </div>
+
+  <!-- 6. Auto Recognition -->
+  <div class="manual-section" id="sec-auto">
+    <h2><span class="sec-icon">🤖</span>6. Auto Recognition Mode</h2>
+    <p>
+      Continuous, real-time sign language recognition. Simply sign naturally and the AI identifies
+      each gesture as you go — no need to select a specific sign first.
+    </p>
+    <h3>How to Use</h3>
+    <ol>
+      <li>Navigate to <strong>AUTO</strong> from the navbar.</li>
+      <li>Allow camera access if prompted.</li>
+      <li>Start signing. The AI continuously collects pose data and runs predictions.</li>
+      <li>Recognized signs and confidence levels appear on screen in real time.</li>
+    </ol>
+    <h3>Best Practices</h3>
+    <ul>
+      <li>Sign at a <strong>natural pace</strong> — don't rush or go too slowly.</li>
+      <li>Keep your <strong>hands visible</strong> within the camera frame at all times.</li>
+      <li>Ensure consistent <strong>lighting</strong> — avoid backlighting or very dim environments.</li>
+      <li>Results above <strong>92% confidence</strong> are marked as correct.</li>
+    </ul>
+  </div>
+
+  <!-- 7. Results & Progress -->
+  <div class="manual-section" id="sec-results">
+    <h2><span class="sec-icon">📊</span>7. Results & Progress Tracking</h2>
+    <p>
+      The Results page gives you a comprehensive view of your learning journey.
+    </p>
+    <h3>Summary Dashboard</h3>
+    <ul>
+      <li><strong>Today's Count</strong> — how many signs you've practiced today</li>
+      <li><strong>Last 7 Days</strong> — total practice in the past week</li>
+      <li><strong>Current Streak</strong> — consecutive days of practice</li>
+      <li><strong>Most Practiced</strong> — your most frequently practiced sign</li>
+    </ul>
+    <h3>Practice History Table</h3>
+    <p>
+      A scrollable table showing every sign you've practiced, including label, confidence score,
+      and timestamp.
+    </p>
+    <h3>Exporting Your Data</h3>
+    <p>
+      Use the export buttons on the Results page to download your practice history for record-keeping
+      or to share your progress with instructors.
+    </p>
+  </div>
+
+  <!-- 8. Camera Tips -->
+  <div class="manual-section" id="sec-camera">
+    <h2><span class="sec-icon">📷</span>8. Camera & Environment Tips</h2>
+    <ul>
+      <li><strong>Lighting:</strong> Face a light source (e.g., a window or lamp). Avoid having bright light behind you.</li>
+      <li><strong>Background:</strong> A plain, uncluttered background helps the AI focus on your body.</li>
+      <li><strong>Distance:</strong> Position yourself so your head, torso, and hands are all visible in the frame.</li>
+      <li><strong>Clothing:</strong> Wear clothes that contrast with your skin tone for better hand detection.</li>
+      <li><strong>Stability:</strong> Keep the camera steady. A tripod or stable surface is ideal.</li>
+    </ul>
+    <div class="warn-box">
+      <strong>Important:</strong> When the browser asks for camera permission, click <em>Allow</em>.
+      If you accidentally deny it, go to your browser's site settings to re-enable camera access.
+    </div>
+  </div>
+
+  <!-- 9. Troubleshooting -->
+  <div class="manual-section" id="sec-troubleshooting">
+    <h2><span class="sec-icon">🔧</span>9. Troubleshooting</h2>
+
+    <h3>Camera not working</h3>
+    <ul>
+      <li>Check that your browser has camera permission for this site.</li>
+      <li>Make sure no other application is using the camera at the same time.</li>
+      <li>Try refreshing the page or restarting your browser.</li>
+    </ul>
+
+    <h3>Low recognition accuracy</h3>
+    <ul>
+      <li>Improve lighting conditions (see Camera Tips above).</li>
+      <li>Make sure your full upper body and hands are in the frame.</li>
+      <li>Review the demonstration video and align your movements more closely.</li>
+      <li>Practice the sign several times — the AI improves its recognition with consistent motions.</li>
+    </ul>
+
+    <h3>Page loads slowly</h3>
+    <ul>
+      <li>The first load may take a moment while the AI model initializes.</li>
+      <li>Close unused browser tabs to free up system resources.</li>
+      <li>If using a GPU-equipped machine, ensure GPU drivers are up to date for faster inference.</li>
+    </ul>
+
+    <h3>Cannot log in</h3>
+    <ul>
+      <li>Double-check your username and password for typos.</li>
+      <li>If you've forgotten your password, create a new account.</li>
+    </ul>
+  </div>
+
+  <!-- 10. FAQ -->
+  <div class="manual-section" id="sec-faq">
+    <h2><span class="sec-icon">❓</span>10. FAQ</h2>
+
+    <h3>Does the app need internet?</h3>
+    <p>No. Senyasalin runs fully offline. All AI models and resources are bundled locally.</p>
+
+    <h3>What signs are supported?</h3>
+    <p>
+      The system currently recognizes signs across five categories: Colors, Family, Numbers,
+      Relationships, and Survival phrases.
+    </p>
+
+    <h3>Can I reset the tutorials?</h3>
+    <p>
+      Yes. Click the <strong>?</strong> button in the navigation bar. If you want to see the tutorial
+      on every page again, it will re-show for the current page. To reset all "Don't show again" preferences,
+      open your browser's developer console and run: <code>Tutorial.resetAll()</code>.
+    </p>
+
+    <h3>How is my data stored?</h3>
+    <p>
+      All practice results are stored in a local database on the machine running Senyasalin.
+      No data is sent to external servers.
+    </p>
+
+    <h3>What confidence score should I aim for?</h3>
+    <p>
+      A confidence of <strong>92% or higher</strong> is considered a correct recognition in Auto mode.
+      In practice modes, aim for as high a score as possible to solidify your muscle memory.
+    </p>
+  </div>
+
+</div>
+
+{% endblock %}

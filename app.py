@@ -317,6 +317,10 @@ def auto_recognition():
 def about():
     return render_template("about.html")
 
+@app.route('/manual')
+def manual():
+    return render_template("manual.html")
+
 @app.route('/activity')
 @login_required
 def activity():
