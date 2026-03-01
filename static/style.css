@@ -82,6 +82,7 @@
 
 /* Reset and Base Styles */
 *{box-sizing:border-box}
+button,input,select,textarea{font-family:inherit}
 html{
   scroll-behavior:smooth;
   -webkit-font-smoothing:antialiased;
