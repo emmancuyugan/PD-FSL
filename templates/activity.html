@@ -388,28 +388,7 @@
     box-shadow: 0 4px 16px rgba(167, 139, 250, 0.5);
   }
 
-  .ghost-controls {
-    position: absolute;
-    bottom: 60px;
-    right: 20px;
-    display: none;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 8px;
-    z-index: 18;
-    max-width: 300px;
-  }
 
-  .ghost-btn {
-    background: rgba(255, 255, 255, 0.95);
-    border: none;
-    padding: 8px 16px;
-    border-radius: 12px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    box-shadow: 0 2px 8px var(--shadow);
-  }
 
   .feedback-close-btn {
     position: absolute;
@@ -797,12 +776,7 @@
 
         <div class="ghost-badge" id="ghostBadge">[Guide] Ghost Helper ON</div>
 
-        <div class="ghost-controls" id="ghostControls">
-          <button class="ghost-btn" id="btnSizeDown">Size −</button>
-          <button class="ghost-btn" id="btnSizeUp">Size +</button>
-          <button class="ghost-btn" id="btnNudgeUp">Align ↑</button>
-          <button class="ghost-btn" id="btnNudgeDown">Align ↓</button>
-        </div>
+
 
         <div class="timer-bar-container">
           <div class="timer-bar" id="timerBar"></div>
@@ -1331,29 +1305,10 @@ window.addEventListener("load", () => {
   let ghostAnimationId = null;
 
   const ghostBadge = document.getElementById("ghostBadge");
-  const ghostControls = document.getElementById("ghostControls");
-  const btnSizeDown = document.getElementById("btnSizeDown");
-  const btnSizeUp = document.getElementById("btnSizeUp");
-  const btnNudgeUp = document.getElementById("btnNudgeUp");
-  const btnNudgeDown = document.getElementById("btnNudgeDown");
 
   function showGhostUI(show){
     ghostBadge.style.display = show ? 'inline-block' : 'none';
-    ghostControls.style.display = show ? 'flex' : 'none';
   }
-
-  btnSizeUp.onclick    = () => { scaleMultiplier = Math.min(1.6, scaleMultiplier + 0.04); };
-  btnSizeDown.onclick  = () => { scaleMultiplier = Math.max(0.7, scaleMultiplier - 0.04); };
-  btnNudgeUp.onclick   = () => { yOffset -= 0.01; };
-  btnNudgeDown.onclick = () => { yOffset += 0.01; };
-
-  window.addEventListener('keydown', (e) => {
-    if(!ghostEnabled) return;
-    if(e.key === '=' || e.key === '+') { scaleMultiplier = Math.min(1.6, scaleMultiplier + 0.04); }
-    if(e.key === '-') { scaleMultiplier = Math.max(0.7, scaleMultiplier - 0.04); }
-    if(e.key === 'ArrowUp') { yOffset -= 0.01; }
-    if(e.key === 'ArrowDown') { yOffset += 0.01; }
-  });
 
   function anchorsValid(a){
     if(!a || !a.L_SH || !a.R_SH) return false;
