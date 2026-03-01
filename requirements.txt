@@ -1,26 +1,18 @@
-# =====================================================
-# PD-FSL Requirements
-# =====================================================
-# NOTE: torch & torchvision are NOT listed here because
-#       they must be installed differently per platform.
-#       See setup instructions below.
-# =====================================================
-
-# ── Web framework ──
+# Web framework
 flask
 flask-cors
 flask_sqlalchemy
 python-dotenv
 
-# ── Database ──
-psycopg2-binary          # PostgreSQL (swap to sqlite if not needed)
+# Database
+psycopg2-binary
 
-# ── ML / Vision ──
-numpy<2                  # mediapipe requires numpy <2
+# ML / Vision
+numpy<2       
 Pillow
 mediapipe
-opencv-python-headless   # headless = no GUI deps (works on both platforms)
+opencv-python-headless
 
-# ── Jetson-only (auto-skipped on Windows) ──
-# tensorrt               # comes with JetPack, do NOT pip install
-# pycuda                 # pip install pycuda (Jetson only)
+# Jetson-only
+# tensorrt
+# pycuda
