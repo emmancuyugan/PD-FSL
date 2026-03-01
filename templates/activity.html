@@ -1536,8 +1536,47 @@ window.addEventListener("load", () => {
     await camera.start();
     resultText.textContent='—';
     document.getElementById("assistRow").style.display = 'none';
-    startBtn.click();
+    // Retry the same sign instead of picking a new one
+    retryCurrentSign();
   };
+
+  function retryCurrentSign() {
+    if (!targetGesture) { startBtn.click(); return; }
+
+    const diff = difficultySelect.value;
+    const fastMode = toggleSpeed.checked;
+    CAPTURE_MS = fastMode ? 3000 : ((diff === "compound") ? BASE_CAPTURE_MS * 2 : BASE_CAPTURE_MS);
+
+    // Keep the same targetGesture — just re-display it
+    const suffix = diff === "compound" ? " (Compound)" : " (Easy)";
+    updateGestureDisplay(`${targetGesture}${suffix}`);
+
+    showCameraDisplay();
+
+    buf = [];
+    frameCounter = 0;
+    autoJudge = false;
+    setState(STATE_PREP);
+
+    prepOverlay.style.display = "block";
+    recBadge.style.display = "none";
+    startBtn.style.display = "none";
+    resultText.textContent = "—";
+    capturePhase.textContent = "Get Ready…";
+    running = true;
+    camera.start();
+    timerBar.style.width = "0%";
+    document.getElementById("assistRow").style.display = "none";
+
+    setTimeout(function () {
+      setState(STATE_CAPTURE);
+      prepOverlay.style.display = "none";
+      recBadge.style.display = "inline-block";
+      capturePhase.textContent = (diff === "compound") ? "Perform first sign (~5 s)…" : "Perform Now (~5 s)…";
+      captureStartMs = Date.now();
+      startNumericTimer(toggleSpeed.checked);
+    }, 1000);
+  }
 
   function mainOnResults(res){
     ctx.save();
