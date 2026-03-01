@@ -358,7 +358,7 @@ def results():
             .order_by(func.date(PracticeResult.created_at).desc())
             .all())
 
-    daily_counts = [{"day": d.day.isoformat() if d.day else None, "count": int(d.count)} for d in daily]
+    daily_counts = [{"day": (d.day.isoformat() if hasattr(d.day, 'isoformat') else d.day) if d.day else None, "count": int(d.count)} for d in daily]
 
     top = (db.session.query(PracticeResult.label, func.count(PracticeResult.id).label("c"))
            .filter(PracticeResult.user_id == session["user_id"])
