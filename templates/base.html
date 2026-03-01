@@ -334,7 +334,7 @@
     // Set page name for tutorial system
     document.body.dataset.page = "{{ request.endpoint or '' }}";
     document.addEventListener('DOMContentLoaded', function() {
-      Tutorial.init("{{ request.endpoint or '' }}");
+      Tutorial.init("{{ request.endpoint or '' }}", "{{ session.get('user_id', '') }}");
     });
 
     // Smooth scroll helper

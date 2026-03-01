@@ -97,27 +97,30 @@ const Tutorial = (() => {
   let stepIndex    = 0;
   let overlay      = null;
   let modal        = null;
+  let userId       = "";
 
   // ── LocalStorage helpers ───────────────────────────────────────────
-  const LS_KEY = "senyasalin_tutorial_dismissed";
+  function lsKey() {
+    return "senyasalin_tutorial_dismissed" + (userId ? "_" + userId : "");
+  }
 
   function isDismissed(page) {
     try {
-      const data = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
+      const data = JSON.parse(localStorage.getItem(lsKey()) || "{}");
       return !!data[page];
     } catch { return false; }
   }
 
   function setDismissed(page) {
     try {
-      const data = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
+      const data = JSON.parse(localStorage.getItem(lsKey()) || "{}");
       data[page] = true;
-      localStorage.setItem(LS_KEY, JSON.stringify(data));
+      localStorage.setItem(lsKey(), JSON.stringify(data));
     } catch { /* ignore */ }
   }
 
   function resetAll() {
-    localStorage.removeItem(LS_KEY);
+    localStorage.removeItem(lsKey());
   }
 
   // ── DOM construction ───────────────────────────────────────────────
@@ -238,8 +241,9 @@ const Tutorial = (() => {
   }
 
   /** Initialise — call from DOMContentLoaded. */
-  function init(pageName) {
+  function init(pageName, uid) {
     currentPage = pageName;
+    userId = uid || "";
     // Auto-show after a brief delay so the page finishes rendering
     setTimeout(() => start(pageName, false), 600);
   }
