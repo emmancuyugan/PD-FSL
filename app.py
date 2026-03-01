@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
 
+# Libraries for model inference and MediaPipe
 import torch
 import torch.nn as nn
 import numpy as np
@@ -16,7 +17,7 @@ import threading
 import cv2
 import mediapipe as mp
 
-# ── TensorRT (optional – only used when model.engine exists) ──
+# If converted to TensorRT, therefore having model.engine in the folder.
 try:
     import tensorrt as trt
     import pycuda.driver as cuda
@@ -55,7 +56,6 @@ class User(db.Model):
 
     results = db.relationship("PracticeResult", backref="user", lazy=True)
 
-
 class PracticeResult(db.Model):
     __tablename__ = "practice_results"
 
@@ -65,12 +65,9 @@ class PracticeResult(db.Model):
     confidence = db.Column(db.Float, nullable=True)
     created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
 
-
 def init_db():
-    """Create tables if they don't exist (safe to call repeatedly)."""
     with app.app_context():
         db.create_all()
-
 
 def login_required(fn):
     from functools import wraps
@@ -80,7 +77,6 @@ def login_required(fn):
             return redirect(url_for("login"))
         return fn(*args, **kwargs)
     return wrapper
-
 
 def save_progress(label: str, confidence=None):
     """Save a practice result to PostgreSQL if the user is logged in."""
@@ -95,9 +91,7 @@ def save_progress(label: str, confidence=None):
     db.session.add(row)
     db.session.commit()
 
-# ======================================================
-# Model loading
-# ======================================================
+# For model loading and inference
 MODEL_PATH = r"run2.pt"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -105,7 +99,7 @@ print("CUDA Available:", torch.cuda.is_available())
 if torch.cuda.is_available():
     print("GPU:", torch.cuda.get_device_name(0))
 
-checkpoint = torch.load(
+checkpoint = torch.load( 
     MODEL_PATH,
     map_location=device,
     weights_only=False
@@ -137,7 +131,7 @@ if device.type == "cuda":
 
 model.eval()
 
-# ── TensorRT engine (optional) ──
+# Get tensor dtypes for TensorRT engine if available
 TRT_ENGINE_PATH = os.path.join(os.path.dirname(__file__), "model.engine")
 use_trt = False
 
@@ -166,7 +160,7 @@ if HAS_TRT and os.path.exists(TRT_ENGINE_PATH):
     trt_input_name  = engine.get_tensor_name(0)
     trt_output_name = engine.get_tensor_name(1)
 
-    # ── Auto-detect I/O dtypes from the engine (FP32 or FP16) ──
+    # Detects dtypes of memory.engine if its fp16 or fp32
     trt_input_dtype  = _trt_dtype_to_np(engine.get_tensor_dtype(trt_input_name))
     trt_output_dtype = _trt_dtype_to_np(engine.get_tensor_dtype(trt_output_name))
 
@@ -198,7 +192,6 @@ print("Classes:", len(CLASSES))
 print("SEQ_LEN from config:", SEQ_LEN)
 print(f"[APP] Loaded model → hidden={HIDDEN_SIZE}, layers={NUM_LAYERS}, dropout={DROPOUT}")
 
-# ── Server-side MediaPipe Holistic (replaces browser WASM) ──
 _mp_holistic_mod = mp.solutions.holistic
 
 server_holistic = _mp_holistic_mod.Holistic(
@@ -210,9 +203,7 @@ server_holistic = _mp_holistic_mod.Holistic(
     min_tracking_confidence=0.55,
 )
 
-_mp_lock = threading.Lock()          # guard for single Holistic instance
-
-
+_mp_lock = threading.Lock() 
 def _serialize_landmarks(landmark_list):
     """Convert a MediaPipe NormalizedLandmarkList → list of dicts."""
     if landmark_list is None:
@@ -474,9 +465,6 @@ def logout():
     flash("Logged out successfully.", "info")
     return redirect(url_for('login'))
 
-# ======================================================
-# API Routes (backend logic)
-# ======================================================
 @app.route("/api/save_result", methods=["POST"])
 @login_required
 def api_save_result():
@@ -494,7 +482,6 @@ def api_save_result():
 def ping():
     return jsonify({"message": "Backend is reachable ✅"})
 
-# ── Server-side MediaPipe endpoints ──
 @app.route("/api/landmarks", methods=["POST"])
 def api_landmarks():
     """Accept a raw JPEG frame, run MediaPipe Holistic, return landmarks."""
@@ -514,7 +501,6 @@ def api_landmarks():
         "rightHandLandmarks": _serialize_landmarks(results.right_hand_landmarks),
         "leftHandLandmarks":  _serialize_landmarks(results.left_hand_landmarks),
     })
-
 
 @app.route("/api/ghost_landmarks", methods=["POST"])
 def api_ghost_landmarks():
@@ -557,7 +543,6 @@ def api_ghost_landmarks():
 
     cap.release()
     return jsonify({"frames": frames})
-
 
 # Activity Section
 @app.route("/predict", methods=["POST"])
@@ -608,9 +593,6 @@ def predict_auto():
                 "message": "No hands detected"
             })
 
-        # -----------------------------
-        # 2. NORMAL PROCESSING
-        # -----------------------------
         if "sequence" in data:
             x = prepare_sequence({"sequence": data["sequence"]})
         else:
@@ -656,9 +638,6 @@ def predict_auto():
             "message": "Prediction error"
         }), 400
 
-# --------------------------
-# /api/assess
-# --------------------------
 @app.route("/api/assess", methods=["POST"])
 def assess():
     try:
@@ -681,9 +660,6 @@ def assess():
         print(f"[ERROR] Assessment failed: {e}")
         return jsonify({"error": f"Assessment failed: {str(e)}"}), 500
 
-# ======================================================
-# Run app
-# ======================================================
 if __name__ == "__main__":
     init_db()
     app.run(host="127.0.0.1", port=5000, debug=False, use_reloader=False)
