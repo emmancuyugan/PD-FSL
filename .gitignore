@@ -11,3 +11,4 @@ instance/
 # Jetson-specific build artifacts
 model.engine
 model.onnx
+ghost_cache.json

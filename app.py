@@ -536,8 +536,37 @@ def api_landmarks():
         "personCount":       _face_count_cache,
     })
 
-# ── Server-side ghost landmark cache ──────────────────────────────
-_ghost_cache = {}  # (video_path, total_frames) → list of frame dicts
+# ── Server-side ghost landmark cache (persisted to disk) ──────────
+_GHOST_CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ghost_cache.json")
+
+def _load_ghost_cache():
+    """Load persistent ghost cache from disk on startup."""
+    if os.path.exists(_GHOST_CACHE_FILE):
+        try:
+            with open(_GHOST_CACHE_FILE, "r") as f:
+                raw = json.load(f)
+            # JSON keys are strings; convert back to (path, frames) tuples
+            cache = {}
+            for key_str, frames in raw.items():
+                parts = key_str.rsplit("|", 1)
+                cache[(parts[0], int(parts[1]))] = frames
+            print(f"[GHOST] Loaded {len(cache)} cached sign(s) from disk")
+            return cache
+        except Exception as e:
+            print(f"[GHOST] Cache file corrupt, starting fresh: {e}")
+    return {}
+
+def _save_ghost_cache():
+    """Persist current ghost cache to disk."""
+    try:
+        # Convert tuple keys to strings for JSON
+        raw = {f"{k[0]}|{k[1]}": v for k, v in _ghost_cache.items()}
+        with open(_GHOST_CACHE_FILE, "w") as f:
+            json.dump(raw, f)
+    except Exception as e:
+        print(f"[GHOST] Failed to save cache: {e}")
+
+_ghost_cache = _load_ghost_cache()
 
 @app.route("/api/ghost_landmarks", methods=["POST"])
 def api_ghost_landmarks():
@@ -586,6 +615,8 @@ def api_ghost_landmarks():
 
     cap.release()
     _ghost_cache[cache_key] = frames  # cache for future requests
+    _save_ghost_cache()               # persist to disk
+    print(f"[GHOST] Processed & cached {len(frames)} frames for {video_path}")
     return jsonify({"frames": frames})
 
 # Activity Section
