@@ -575,6 +575,17 @@ def predict():
         label = CLASSES[pred_idx]
         
         conf = float(np.max(probs))
+
+        NOT_FSL_THRESHOLD = 0.90
+
+        if conf < NOT_FSL_THRESHOLD:
+            print(f"[PREDICT] Not in FSL dataset (max_conf={conf:.4f})")
+            return jsonify({
+                "prediction": "Not in FSL dataset",
+                "confidence": conf,
+                "message": "Sign not recognized in FSL dataset"
+            })
+
         save_progress(label, conf)
 
         demo_path = get_demo_video_path(label)
@@ -617,7 +628,16 @@ def predict_auto():
         pred_idx = int(np.argmax(probs))
         label = CLASSES[pred_idx]
 
+        NOT_FSL_THRESHOLD = 0.70
         THRESHOLD = 0.92
+
+        if conf < NOT_FSL_THRESHOLD:
+            print(f"[AUTO] Not in FSL dataset (max_conf={conf:.4f})")
+            return jsonify({
+                "prediction": "Not in FSL dataset",
+                "confidence": conf,
+                "message": "Sign not recognized in FSL dataset"
+            })
 
         if conf < THRESHOLD:
             sorted_indices = np.argsort(probs)[::-1]

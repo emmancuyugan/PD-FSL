@@ -998,6 +998,15 @@ async function predict(){
             detLabel.textContent = '—';
             detStatus.textContent = 'No hands detected';
 
+        }else if(j.prediction==='Not in FSL dataset'){
+            histEntry.innerHTML =
+                `<strong style="color:var(--lavender);">${now}</strong>: ❓ Not in FSL dataset`;
+            gestureOverlay.textContent = 'Not in FSL dataset';
+            gestureOverlay.style.display = 'block';
+            gestureOverlay.style.background = 'rgba(167,139,250,0.9)';
+            detLabel.textContent = '—';
+            detStatus.textContent = 'Sign not recognized in FSL';
+
         }else if(j.prediction==='Incorrect'){
             histEntry.innerHTML =
                 `<strong style="color:var(--coral);">${now}</strong>: ✗ Incorrect (closest: ${cleanLabel(j.closest_sign)||'—'})`;

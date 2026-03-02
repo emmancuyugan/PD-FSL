@@ -1142,6 +1142,23 @@ window.addEventListener("load", () => {
       const j = await callPredict(seq);
       const predicted = extractPredictedLabel(j);
 
+      // Handle "Not in FSL dataset" response
+      if (j.prediction === 'Not in FSL dataset') {
+        if (!silent && state === STATE_CAPTURE) {
+          resultText.textContent = 'Not in FSL dataset';
+          resultText.className = 'result-text';
+          resultText.style.color = 'var(--lavender)';
+          incorrectCount++;
+          incorrectCountEl.textContent = String(incorrectCount);
+          const assistRow = document.getElementById("assistRow");
+          const assistHint = document.getElementById("assistHint");
+          assistRow.style.display = 'block';
+          assistHint.textContent = 'Sign not recognized in FSL. Try a different sign!';
+          await saveResult("Not in FSL dataset", j?.confidence || null);
+        }
+        return { predicted: null, raw: j };
+      }
+
       if (!silent) {
         const target = normLabel(targetGesture || '');
         if (predicted && target && predicted === target) {
