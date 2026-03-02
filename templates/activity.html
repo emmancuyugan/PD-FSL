@@ -1302,6 +1302,11 @@ window.addEventListener("load", () => {
       capturePhase.textContent = "Idle";
       startBtn.style.display = "inline-block";
       timerBar.style.width = "0%";
+
+      // Auto-advance on correct compound sign
+      if (firstPred === firstExpected && secondPred === secondExpected) {
+        setTimeout(() => { originalStart(); }, 2000);
+      }
       return;
     }
 
@@ -1317,7 +1322,10 @@ window.addEventListener("load", () => {
     // Auto-show skeleton feedback on incorrect result (including no-data)
     const target = normLabel(targetGesture || '');
     const predicted = normLabel(result?.predicted);
-    if (target && predicted && predicted !== target) {
+    if (target && predicted && predicted === target) {
+      // Correct! Auto-advance to next sign after a short celebration delay
+      setTimeout(() => { originalStart(); }, 2000);
+    } else if (target && predicted && predicted !== target) {
       triggerShowHow();
     }
   }

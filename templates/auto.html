@@ -604,6 +604,7 @@
   let frameSkip=2;
   let autoJudge=false;  // Track auto-trigger to prevent multiple calls
   let predicting=false; // Lock: true while predict() is in-flight
+  let feedbackActive=false; // True while feedback overlay is showing — pauses accumulation
   let predictInterval=null,tickInterval=null,countdown=5;
 
   const HAND_CONN=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20]];
@@ -868,7 +869,7 @@
     }
 
     const feat=packFeature(res);
-    if(running&&feat){
+    if(running&&!feedbackActive&&feat){
       // OPTIMIZATION: Apply frame skipping for Jetson Orin Nano
       frameCount++;
       if(frameCount % frameSkip === 0){
@@ -917,7 +918,7 @@
   },width:480,height:360});
 
 async function predict(){
-    if(predicting) return; // Already running — skip this tick
+    if(predicting || feedbackActive) return; // Skip while in-flight or showing feedback
     predicting = true;
     try { await _doPredict(); } finally { predicting = false; }
 }
@@ -1033,8 +1034,8 @@ async function _doPredict(){
                 ghostIdx = 0;
                 if(ghostTimer) clearTimeout(ghostTimer);
 
-                try{
-                    const ok = await loadGhostFor(j.closest_sign);
+                // Fire-and-forget: don't block camera while ghost loads
+                loadGhostFor(j.closest_sign).then(ok => {
                     if(ok){
                         ghostEnabled = true;
                         ghostTimer = setTimeout(()=>{
@@ -1044,11 +1045,11 @@ async function _doPredict(){
                             ghostBadge.style.display='none';
                         }, GHOST_DURATION_MS);
                     }
-                }catch(e){
+                }).catch(e => {
                     console.error('Ghost load error', e);
-                }finally{
+                }).finally(() => {
                     loadingGhost = false;
-                }
+                });
             }
 
         }else{
@@ -1076,6 +1077,16 @@ async function _doPredict(){
         }
         historyEl.insertBefore(histEntry, historyEl.firstChild);
         historyEl.scrollTop = 0;
+
+        // Pause accumulation while feedback shows, then start fresh
+        feedbackActive = true;
+        setTimeout(() => {
+            feedbackActive = false;
+            buf = [];
+            frameCount = 0;
+            autoJudge = false;
+            if(showResults) gestureOverlay.style.display = 'none';
+        }, 3000);
 
     }catch(e){
         console.error(e);
@@ -1137,6 +1148,7 @@ async function _doPredict(){
   stopBtn.onclick=async()=>{
     document.body.classList.remove('camera-running');
     running=false;
+    feedbackActive=false;
     recBadge.style.display='none';
     stateBadge.textContent='Ready to Learn!';
     stateBadge.style.background='linear-gradient(135deg, var(--grass-green), var(--sky-blue))';

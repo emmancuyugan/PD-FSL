@@ -545,23 +545,24 @@ def api_ghost_landmarks():
     duration = frame_count / fps if fps else 0
 
     frames = []
-    with _mp_lock:
-        for i in range(total_frames):
-            ts_ms = (duration * i / total_frames) * 1000
-            cap.set(cv2.CAP_PROP_POS_MSEC, ts_ms)
-            ret, frame = cap.read()
-            if not ret:
-                continue
+    for i in range(total_frames):
+        ts_ms = (duration * i / total_frames) * 1000
+        cap.set(cv2.CAP_PROP_POS_MSEC, ts_ms)
+        ret, frame = cap.read()
+        if not ret:
+            continue
 
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        # Lock per-frame so live landmark requests aren't starved
+        with _mp_lock:
             results = server_holistic.process(frame_rgb)
 
-            frames.append({
-                "poseLandmarks":     _serialize_landmarks(results.pose_landmarks),
-                "faceLandmarks":     _serialize_landmarks(results.face_landmarks),
-                "rightHandLandmarks": _serialize_landmarks(results.right_hand_landmarks),
-                "leftHandLandmarks":  _serialize_landmarks(results.left_hand_landmarks),
-            })
+        frames.append({
+            "poseLandmarks":     _serialize_landmarks(results.pose_landmarks),
+            "faceLandmarks":     _serialize_landmarks(results.face_landmarks),
+            "rightHandLandmarks": _serialize_landmarks(results.right_hand_landmarks),
+            "leftHandLandmarks":  _serialize_landmarks(results.left_hand_landmarks),
+        })
 
     cap.release()
     return jsonify({"frames": frames})
