@@ -20,7 +20,7 @@ class ModifiedLSTM(nn.Module):
 
         self.act = nn.ReLU(inplace=True)
         self.drop = nn.Dropout(dropout)
-        self.fc = nn.Linear(hidden_size, num_classes)
+        self.fc = nn.Linear(hidden_size * 2, num_classes)
 
     def forward(self, x, reset_mask=None):
         out = x
@@ -32,7 +32,9 @@ class ModifiedLSTM(nn.Module):
             out = self.drop(out)
             if reset_mask is not None:
                 out = out * reset_mask.unsqueeze(-1)
-        out = out.mean(dim=1)
+        out_mean = out.mean(dim=1)
+        out_last = out[:, -1, :]
+        out = torch.cat([out_mean, out_last], dim=-1)
         return self.fc(out)
 
 def build_modified_lstm(num_classes,
