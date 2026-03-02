@@ -1113,9 +1113,18 @@ window.addEventListener("load", () => {
   }
 
   async function predictOnce(silent=false){
-    if (buf.length < 20) {
+    if (buf.length < 5) {
       if (!silent && state === STATE_CAPTURE) {
         resultText.textContent = 'No hands detected';
+        resultText.className = 'result-text';
+        incorrectCount++;
+        incorrectCountEl.textContent = String(incorrectCount);
+      }
+      return { predicted: null, raw: null };
+    }
+    if (buf.length < 16) {
+      if (!silent && state === STATE_CAPTURE) {
+        resultText.textContent = `Too few frames (${buf.length}/16), keep signing!`;
         resultText.className = 'result-text';
         incorrectCount++;
         incorrectCountEl.textContent = String(incorrectCount);

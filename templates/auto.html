@@ -924,6 +924,33 @@ async function predict(){
       return;
     }
 
+    if(buf.length < 16){
+      if(showResults){
+        const now = new Date().toLocaleTimeString();
+        gestureOverlay.textContent = 'Too few frames, keep signing!';
+        gestureOverlay.style.display = 'block';
+        gestureOverlay.style.background = 'rgba(255,217,61,0.9)';
+        gestureOverlay.style.color = '#333';
+        detLabel.textContent = '—';
+        detStatus.textContent = `Only ${buf.length} frames captured`;
+
+        const histEntry = document.createElement('div');
+        histEntry.style.marginBottom = '8px';
+        histEntry.style.padding = '8px';
+        histEntry.style.borderRadius = '8px';
+        histEntry.style.background = 'rgba(255,255,255,0.6)';
+        histEntry.innerHTML = `<strong style="color:var(--sunshine);">${now}</strong>: ⚠ Too few frames (${buf.length}/16)`;
+        if(historyEl.children.length===1 && historyEl.children[0].style.color==='#999'){
+          historyEl.innerHTML='';
+        }
+        historyEl.insertBefore(histEntry, historyEl.firstChild);
+      }
+      buf = [];
+      frameCount = 0;
+      autoJudge = false;
+      return;
+    }
+
     const fixed = temporalFix(buf, SEQ_LEN);
     const seq = fixed.flatMap(f => Array.from(f));
 

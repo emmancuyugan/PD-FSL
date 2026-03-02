@@ -1107,7 +1107,7 @@ window.addEventListener("load", () => {
   }
 
   async function predictOnce(silent=false){
-    if (buf.length < 20) {
+    if (buf.length < 5) {
       if (!silent && state === STATE_CAPTURE) {
         resultText.textContent = 'No hands detected';
         resultText.className = 'result-text';
@@ -1117,7 +1117,20 @@ window.addEventListener("load", () => {
         const assistHint = document.getElementById("assistHint");
         assistRow.style.display = 'block';
         assistHint.textContent = 'No sign data captured. Try again!';
-        // Save incorrect result
+        await saveResult("Incorrect", null);
+      }
+      return { predicted: null, raw: null };
+    }
+    if (buf.length < 16) {
+      if (!silent && state === STATE_CAPTURE) {
+        resultText.textContent = `Too few frames (${buf.length}/16), keep signing!`;
+        resultText.className = 'result-text';
+        incorrectCount++;
+        incorrectCountEl.textContent = String(incorrectCount);
+        const assistRow = document.getElementById("assistRow");
+        const assistHint = document.getElementById("assistHint");
+        assistRow.style.display = 'block';
+        assistHint.textContent = 'Movement too short. Hold your sign longer!';
         await saveResult("Incorrect", null);
       }
       return { predicted: null, raw: null };
