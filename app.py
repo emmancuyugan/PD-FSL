@@ -524,12 +524,19 @@ def api_landmarks():
         "personCount":       _face_count_cache,
     })
 
+# ── Server-side ghost landmark cache ──────────────────────────────
+_ghost_cache = {}  # (video_path, total_frames) → list of frame dicts
+
 @app.route("/api/ghost_landmarks", methods=["POST"])
 def api_ghost_landmarks():
-    """Process a demo video server-side and return landmark frames."""
+    """Process a demo video server-side and return landmark frames (cached)."""
     data = request.get_json(force=True)
     video_path = data.get("video_path", "")
     total_frames = int(data.get("total_frames", 24))
+
+    cache_key = (video_path, total_frames)
+    if cache_key in _ghost_cache:
+        return jsonify({"frames": _ghost_cache[cache_key]})
 
     # Resolve to absolute path
     abs_path = resource_path(video_path)
@@ -565,6 +572,7 @@ def api_ghost_landmarks():
         })
 
     cap.release()
+    _ghost_cache[cache_key] = frames  # cache for future requests
     return jsonify({"frames": frames})
 
 # Activity Section

@@ -1397,6 +1397,24 @@ window.addEventListener("load", () => {
   let ghostTimer=null;
   const GHOST_DURATION_MS=60000;
   let ghostAnimationId = null;
+
+  // ── Ghost preload cache ───────────────────────────────────
+  let _ghostPreloadPromise = null;
+  let _ghostPreloadLabel = null;
+  let _preloadedFrames = null;
+
+  function preloadGhost(label) {
+    if (!label) return;
+    _ghostPreloadLabel = label;
+    _preloadedFrames = null;
+    _ghostPreloadPromise = loadGhostFor(label).then(ok => {
+      if (ok && _ghostPreloadLabel === label) {
+        _preloadedFrames = ghostFrames;
+      }
+      ghostFrames = null; ghostReady = false; ghostEnabled = false;
+      return ok;
+    }).catch(() => false);
+  }
   
   async function triggerShowHow() {
     if(!targetGesture) return;
@@ -1412,7 +1430,24 @@ window.addEventListener("load", () => {
     ghostEnabled=true; ghostFrames=null; ghostReady=false; ghostIdx=0;
     showSkeletonDisplay();
     document.getElementById("feedbackCloseBtn").style.display = 'flex';
-    const ok = await loadGhostFor(targetGesture);
+
+    // Use preloaded data if available
+    let ok = false;
+    if (_preloadedFrames && _ghostPreloadLabel === targetGesture) {
+      ghostFrames = _preloadedFrames;
+      ghostReady = true;
+      ok = true;
+      document.getElementById("assistHint").textContent = 'Skeleton guide loaded! Watch the big screen.';
+    } else if (_ghostPreloadPromise && _ghostPreloadLabel === targetGesture) {
+      document.getElementById("assistHint").textContent = 'Loading skeleton guide…';
+      ok = await _ghostPreloadPromise;
+      if (ok && _preloadedFrames) {
+        ghostFrames = _preloadedFrames;
+        ghostReady = true;
+      }
+    } else {
+      ok = await loadGhostFor(targetGesture);
+    }
     if (ok){
       showGhostUI(true);
       const animateGhost = () => {
@@ -1682,6 +1717,9 @@ window.addEventListener("load", () => {
     }
     targetGesture = chosen;
     updateGestureDisplay(targetGesture);
+
+    // Preload ghost landmarks while user performs the sign
+    preloadGhost(targetGesture);
 
     buf = [];
     frameCounter = 0;

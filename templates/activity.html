@@ -1506,6 +1506,27 @@ window.addEventListener("load", () => {
   let ghostTimer=null;
   const GHOST_DURATION_MS=60000;
 
+  // ── Ghost preload cache ───────────────────────────────────
+  let _ghostPreloadPromise = null;   // Promise<boolean> from preload
+  let _ghostPreloadLabel = null;     // label the preload is for
+  let _preloadedFrames = null;       // cached frame array from preload
+
+  function preloadGhost(label) {
+    if (!label) return;
+    // For compound signs, preload the first component
+    const signLabel = label.includes('+') ? label.split('+')[0].trim() : label;
+    _ghostPreloadLabel = signLabel;
+    _preloadedFrames = null;
+    _ghostPreloadPromise = loadGhostFor(signLabel).then(ok => {
+      if (ok && _ghostPreloadLabel === signLabel) {
+        _preloadedFrames = ghostFrames;  // stash the loaded frames
+      }
+      // Reset ghost state so live camera isn't affected
+      ghostFrames = null; ghostReady = false; ghostEnabled = false;
+      return ok;
+    }).catch(() => false);
+  }
+
   async function triggerShowHow() {
     if(!targetGesture) return;
     
@@ -1520,7 +1541,28 @@ window.addEventListener("load", () => {
     ghostEnabled=true; ghostFrames=null; ghostReady=false; ghostIdx=0;
     showSkeletonDisplay();
     document.getElementById("feedbackCloseBtn").style.display = 'flex';
-    const ok = await loadGhostFor(targetGesture);
+
+    // Use preloaded data if available for this sign
+    const signLabel = targetGesture.includes('+') ? targetGesture.split('+')[0].trim() : targetGesture;
+    let ok = false;
+    if (_preloadedFrames && _ghostPreloadLabel === signLabel) {
+      ghostFrames = _preloadedFrames;
+      ghostReady = true;
+      ok = true;
+      const assistHint = document.getElementById("assistHint");
+      assistHint.textContent = 'Skeleton guide loaded! Watch the big screen.';
+    } else if (_ghostPreloadPromise && _ghostPreloadLabel === signLabel) {
+      // Preload in flight — wait for it
+      const assistHint = document.getElementById("assistHint");
+      assistHint.textContent = 'Loading skeleton guide…';
+      ok = await _ghostPreloadPromise;
+      if (ok && _preloadedFrames) {
+        ghostFrames = _preloadedFrames;
+        ghostReady = true;
+      }
+    } else {
+      ok = await loadGhostFor(targetGesture);
+    }
     if (ok){
       showGhostUI(true);
       const animateGhost = () => {
@@ -1766,6 +1808,9 @@ window.addEventListener("load", () => {
 
     // Ensure camera view is active
     showCameraDisplay();
+
+    // Preload ghost landmarks for this sign while user performs
+    preloadGhost(targetGesture);
 
     buf = [];
     frameCounter = 0;
