@@ -4,4 +4,10 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.md
+
+# Local database
+instance/
+
+# Jetson-specific build artifacts
+model.engine
+model.onnx
