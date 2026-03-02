@@ -898,7 +898,31 @@
   },width:480,height:360});
 
 async function predict(){
-    if(buf.length < 5) return;
+    if(buf.length < 5){
+      if(showResults){
+        const now = new Date().toLocaleTimeString();
+        gestureOverlay.textContent = 'No hands detected';
+        gestureOverlay.style.display = 'block';
+        gestureOverlay.style.background = 'rgba(255,140,66,0.9)';
+        detLabel.textContent = '—';
+        detStatus.textContent = 'No hands detected';
+
+        const histEntry = document.createElement('div');
+        histEntry.style.marginBottom = '8px';
+        histEntry.style.padding = '8px';
+        histEntry.style.borderRadius = '8px';
+        histEntry.style.background = 'rgba(255,255,255,0.6)';
+        histEntry.innerHTML = `<strong style="color:var(--orange);">${now}</strong>: No hands detected`;
+        if(historyEl.children.length===1 && historyEl.children[0].style.color==='#999'){
+          historyEl.innerHTML='';
+        }
+        historyEl.insertBefore(histEntry, historyEl.firstChild);
+      }
+      buf = [];
+      frameCount = 0;
+      autoJudge = false;
+      return;
+    }
 
     const fixed = temporalFix(buf, SEQ_LEN);
     const seq = fixed.flatMap(f => Array.from(f));
@@ -920,7 +944,16 @@ async function predict(){
         histEntry.style.borderRadius='8px';
         histEntry.style.background='rgba(255,255,255,0.6)';
 
-        if(j.prediction==='Incorrect'){
+        if(j.prediction==='No hands detected' || j.message==='No hands detected'){
+            histEntry.innerHTML =
+                `<strong style="color:var(--orange);">${now}</strong>: No hands detected`;
+            gestureOverlay.textContent = 'No hands detected';
+            gestureOverlay.style.display = 'block';
+            gestureOverlay.style.background = 'rgba(255,140,66,0.9)';
+            detLabel.textContent = '—';
+            detStatus.textContent = 'No hands detected';
+
+        }else if(j.prediction==='Incorrect'){
             histEntry.innerHTML =
                 `<strong style="color:var(--coral);">${now}</strong>: ✗ Incorrect (closest: ${cleanLabel(j.closest_sign)||'—'})`;
 
