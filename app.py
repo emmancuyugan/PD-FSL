@@ -199,7 +199,7 @@ _mp_holistic_mod = mp.solutions.holistic
 
 server_holistic = _mp_holistic_mod.Holistic(
     static_image_mode=False,
-    model_complexity=2,
+    model_complexity=1,          # 1 = ~2x faster than 2, good accuracy
     smooth_landmarks=True,
     refine_face_landmarks=False,
     min_detection_confidence=0.55,
@@ -214,6 +214,9 @@ server_face_detector = _mp_face_det_mod.FaceDetection(
 )
 
 _mp_lock = threading.Lock() 
+_face_count_cache = 0        # cached person count
+_face_frame_counter = 0      # runs face detection every N frames
+
 def _serialize_landmarks(landmark_list):
     """Convert a MediaPipe NormalizedLandmarkList → list of dicts."""
     if landmark_list is None:
@@ -503,19 +506,22 @@ def api_landmarks():
 
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     with _mp_lock:
+        global _face_frame_counter, _face_count_cache
         results = server_holistic.process(frame_rgb)
-        face_results = server_face_detector.process(frame_rgb)
 
-    person_count = 0
-    if face_results.detections:
-        person_count = len(face_results.detections)
+        # Face detection every 10th frame to save CPU
+        _face_frame_counter += 1
+        if _face_frame_counter >= 10:
+            _face_frame_counter = 0
+            face_results = server_face_detector.process(frame_rgb)
+            _face_count_cache = len(face_results.detections) if face_results.detections else 0
 
     return jsonify({
         "poseLandmarks":     _serialize_landmarks(results.pose_landmarks),
         "faceLandmarks":     _serialize_landmarks(results.face_landmarks),
         "rightHandLandmarks": _serialize_landmarks(results.right_hand_landmarks),
         "leftHandLandmarks":  _serialize_landmarks(results.left_hand_landmarks),
-        "personCount":       person_count,
+        "personCount":       _face_count_cache,
     })
 
 @app.route("/api/ghost_landmarks", methods=["POST"])
