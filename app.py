@@ -203,6 +203,13 @@ server_holistic = _mp_holistic_mod.Holistic(
     min_tracking_confidence=0.55,
 )
 
+# Face detector for counting people in frame
+_mp_face_det_mod = mp.solutions.face_detection
+server_face_detector = _mp_face_det_mod.FaceDetection(
+    model_selection=0,
+    min_detection_confidence=0.5,
+)
+
 _mp_lock = threading.Lock() 
 def _serialize_landmarks(landmark_list):
     """Convert a MediaPipe NormalizedLandmarkList → list of dicts."""
@@ -494,12 +501,18 @@ def api_landmarks():
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     with _mp_lock:
         results = server_holistic.process(frame_rgb)
+        face_results = server_face_detector.process(frame_rgb)
+
+    person_count = 0
+    if face_results.detections:
+        person_count = len(face_results.detections)
 
     return jsonify({
         "poseLandmarks":     _serialize_landmarks(results.pose_landmarks),
         "faceLandmarks":     _serialize_landmarks(results.face_landmarks),
         "rightHandLandmarks": _serialize_landmarks(results.right_hand_landmarks),
         "leftHandLandmarks":  _serialize_landmarks(results.left_hand_landmarks),
+        "personCount":       person_count,
     })
 
 @app.route("/api/ghost_landmarks", methods=["POST"])

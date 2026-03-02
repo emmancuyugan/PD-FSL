@@ -731,6 +731,8 @@
 
         <div class="ghost-badge" id="ghostBadge">Ghost Helper ON</div>
 
+        <div id="personWarning" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,107,157,0.95);color:#fff;padding:16px 32px;border-radius:20px;font-size:22px;font-weight:700;display:none;z-index:25;text-align:center;box-shadow:0 8px 24px rgba(255,107,157,0.5);pointer-events:none;"></div>
+
 
 
         <div class="timer-bar-container">
@@ -920,6 +922,7 @@ window.addEventListener("load", () => {
   const progressBar = document.getElementById("progressBar");
   const prepOverlay = document.getElementById("prepOverlay");
   const recBadge = document.getElementById("recBadge");
+  const personWarning = document.getElementById("personWarning");
   const timerBar = document.getElementById("timerBar");
 
   const toggleVisuals = document.getElementById('toggleVisuals');
@@ -1456,6 +1459,20 @@ window.addEventListener("load", () => {
     ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
     ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
 
+    // Person detection warnings
+    const pc = res.personCount;
+    if(pc !== undefined){
+      if(pc === 0){
+        personWarning.textContent = 'No one detected';
+        personWarning.style.display = 'block';
+      } else if(pc > 1){
+        personWarning.textContent = 'One person at a time please';
+        personWarning.style.display = 'block';
+      } else {
+        personWarning.style.display = 'none';
+      }
+    }
+
     // Update FPS counter
     fpsFrameCount++;
     const now = Date.now();
@@ -1619,7 +1636,8 @@ window.addEventListener("load", () => {
         poseLandmarks:      _latestLM.poseLandmarks,
         faceLandmarks:      _latestLM.faceLandmarks,
         rightHandLandmarks: _latestLM.rightHandLandmarks,
-        leftHandLandmarks:  _latestLM.leftHandLandmarks
+        leftHandLandmarks:  _latestLM.leftHandLandmarks,
+        personCount:        _latestLM.personCount
       });
       if (!_mpBusy) {
         _mpBusy = true;
