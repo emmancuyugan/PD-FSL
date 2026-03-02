@@ -1,4 +1,8 @@
 import torch
+import pathlib, platform
+if platform.system() != "Windows":
+    pathlib.WindowsPath = pathlib.PurePosixPath
+
 from model import ModifiedLSTM
 
 MODEL_PATH = "run18.pt"

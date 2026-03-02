@@ -10,6 +10,9 @@ import torch
 import torch.nn as nn
 import numpy as np
 import os
+import pathlib, platform
+if platform.system() != "Windows":
+    pathlib.WindowsPath = pathlib.PurePosixPath
 import random
 import json
 import datetime
