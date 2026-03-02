@@ -907,7 +907,7 @@
       ghostBadge.style.display='none';
     }
 
-    const feat=packFeature(res);
+    const feat=packFeature(_latestLM);
     if(running&&!feedbackActive&&feat){
       // OPTIMIZATION: Apply frame skipping for Jetson Orin Nano
       frameCount++;
@@ -935,13 +935,41 @@
   let _latestLM = {};
   let _mpBusy = false;
 
+  // ── Smooth landmark interpolation (chase-lerp at render rate) ──
+  let _displayLM = {};
+  const _LERP_ALPHA = 0.45; // 0→sluggish, 1→instant snap
+  function _lerpList(prev, cur, a){
+    if(!prev||!prev.length) return cur;
+    if(!cur||!cur.length) return cur;
+    const out=[];
+    for(let i=0;i<cur.length;i++){
+      const p=prev[i], c=cur[i];
+      if(!p||!c){out.push(c||p);continue;}
+      out.push({x:p.x+(c.x-p.x)*a, y:p.y+(c.y-p.y)*a, z:p.z+(c.z-p.z)*a});
+    }
+    return out;
+  }
+  function _smoothLandmarks(){
+    const raw=_latestLM;
+    if(!raw||!Object.keys(raw).length) return raw;
+    _displayLM={
+      poseLandmarks:      _lerpList(_displayLM.poseLandmarks, raw.poseLandmarks, _LERP_ALPHA),
+      faceLandmarks:      _lerpList(_displayLM.faceLandmarks, raw.faceLandmarks, _LERP_ALPHA),
+      rightHandLandmarks: _lerpList(_displayLM.rightHandLandmarks, raw.rightHandLandmarks, _LERP_ALPHA),
+      leftHandLandmarks:  _lerpList(_displayLM.leftHandLandmarks, raw.leftHandLandmarks, _LERP_ALPHA),
+      personCount: raw.personCount
+    };
+    return _displayLM;
+  }
+
   const camera=new Camera(videoEl,{onFrame:async()=>{
+    const _smoothed = _smoothLandmarks();
     mainOnResults({
-      poseLandmarks:      _latestLM.poseLandmarks,
-      faceLandmarks:      _latestLM.faceLandmarks,
-      rightHandLandmarks: _latestLM.rightHandLandmarks,
-      leftHandLandmarks:  _latestLM.leftHandLandmarks,
-      personCount:        _latestLM.personCount
+      poseLandmarks:      _smoothed.poseLandmarks,
+      faceLandmarks:      _smoothed.faceLandmarks,
+      rightHandLandmarks: _smoothed.rightHandLandmarks,
+      leftHandLandmarks:  _smoothed.leftHandLandmarks,
+      personCount:        _smoothed.personCount
     });
     if(!_mpBusy){
       _mpBusy=true;
