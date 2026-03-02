@@ -92,7 +92,7 @@ def save_progress(label: str, confidence=None):
     db.session.commit()
 
 # For model loading and inference
-MODEL_PATH = r"run16.pt"
+MODEL_PATH = r"run18.pt"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 print("CUDA Available:", torch.cuda.is_available())
