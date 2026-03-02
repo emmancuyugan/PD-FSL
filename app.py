@@ -206,6 +206,18 @@ server_holistic = _mp_holistic_mod.Holistic(
     min_tracking_confidence=0.55,
 )
 
+# Separate Holistic for ghost/demo video processing — static mode so each
+# frame is detected independently (no cross-contamination with live tracker)
+_ghost_holistic = _mp_holistic_mod.Holistic(
+    static_image_mode=True,
+    model_complexity=1,
+    smooth_landmarks=False,
+    refine_face_landmarks=False,
+    min_detection_confidence=0.5,
+    min_tracking_confidence=0.5,
+)
+_ghost_lock = threading.Lock()  # protect ghost holistic separately
+
 # Face detector for counting people in frame
 _mp_face_det_mod = mp.solutions.face_detection
 server_face_detector = _mp_face_det_mod.FaceDetection(
@@ -560,9 +572,10 @@ def api_ghost_landmarks():
             continue
 
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        # Lock per-frame so live landmark requests aren't starved
-        with _mp_lock:
-            results = server_holistic.process(frame_rgb)
+        # Use dedicated ghost holistic (static_image_mode) — no lock
+        # contention with live camera, and each frame detected independently
+        with _ghost_lock:
+            results = _ghost_holistic.process(frame_rgb)
 
         frames.append({
             "poseLandmarks":     _serialize_landmarks(results.pose_landmarks),
