@@ -620,6 +620,12 @@
   let ghostTimer=null;
   const GHOST_DURATION_MS=12000;
 
+  // ── Client-side ghost frame cache ──────────────────────────
+  // Key: normLabel(label) → value: ghostFrames array
+  // Survives across predictions so repeat signs are instant.
+  const _ghostCache = new Map();
+  let _preloadBusy = false;
+
   function flattenHand(lms){if(!lms)return new Float32Array(63);const a=[];for(let i=0;i<21;i++){const p=lms[i];a.push(p.x,p.y,p.z);}return new Float32Array(a);}
   function lm(list,idx){if(!list||idx>=list.length)return{x:NaN,y:NaN,z:NaN};return list[idx];}
   function dist2D(a,b){const dx=a.x-b.x,dy=a.y-b.y;return Math.hypot(dx,dy)||1e-6;}
@@ -753,20 +759,8 @@
     return null;
   }
 
-  async function loadGhostFor(label){
-    const cat=inferCategory(label);
-    const key=normLabel(label);
-    const url=await findDemoUrl(cat,key);
-    if(!url)return false;
-    // Process video server-side
-    const videoPath = url.replace(window.location.origin + '/', '');
-    const resp = await fetch('/api/ghost_landmarks', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({video_path: videoPath, total_frames: 24})
-    });
-    const data = await resp.json();
-    ghostFrames=[];
+  function _parseGhostFrames(data){
+    const frames=[];
     for(const frame of (data.frames||[])){
       const pose=frame.poseLandmarks||[];
       const face=frame.faceLandmarks||[];
@@ -776,10 +770,55 @@
       if(!Lh&&!Rh)continue;
       const L=Lh?normalizeGlobal(Lh,anchors):null;
       const R=Rh?normalizeGlobal(Rh,anchors):null;
-      ghostFrames.push({L,R});
+      frames.push({L,R});
     }
-    ghostReady=ghostFrames&&ghostFrames.length>0;
-    return ghostReady;
+    return frames;
+  }
+
+  async function _fetchGhostFrames(label){
+    const cat=inferCategory(label);
+    const key=normLabel(label);
+    const url=await findDemoUrl(cat,key);
+    if(!url)return null;
+    const videoPath = url.replace(window.location.origin + '/', '');
+    const resp = await fetch('/api/ghost_landmarks', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({video_path: videoPath, total_frames: 24})
+    });
+    const data = await resp.json();
+    const frames = _parseGhostFrames(data);
+    return frames.length > 0 ? frames : null;
+  }
+
+  async function loadGhostFor(label){
+    const cacheKey = normLabel(label);
+    // 1️⃣ Check client-side cache first → instant
+    if(_ghostCache.has(cacheKey)){
+      ghostFrames = _ghostCache.get(cacheKey);
+      ghostReady = true;
+      return true;
+    }
+    // 2️⃣ Fetch from server (server has its own disk cache)
+    const frames = await _fetchGhostFrames(label);
+    if(frames){
+      _ghostCache.set(cacheKey, frames);
+      ghostFrames = frames;
+      ghostReady = true;
+      return true;
+    }
+    return false;
+  }
+
+  // Background preload: fetch ghost for a label and store in cache
+  function preloadGhostFor(label){
+    if(!label || _preloadBusy) return;
+    const cacheKey = normLabel(label);
+    if(_ghostCache.has(cacheKey)) return; // already cached
+    _preloadBusy = true;
+    _fetchGhostFrames(label).then(frames => {
+      if(frames) _ghostCache.set(cacheKey, frames);
+    }).catch(() => {}).finally(() => { _preloadBusy = false; });
   }
 
   function celebrate(){
@@ -1070,6 +1109,9 @@ async function _doPredict(){
             ghostFrames=null;
             if(ghostTimer) clearTimeout(ghostTimer);
             ghostBadge.style.display='none';
+
+            // Preload ghost in background for this sign (in case user tries again)
+            preloadGhostFor(j.prediction);
         }
 
         if(historyEl.children.length===1 && historyEl.children[0].style.color==='#999'){
