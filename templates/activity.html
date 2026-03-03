@@ -1302,6 +1302,11 @@ window.addEventListener("load", () => {
       capturePhase.textContent = "Idle";
       startBtn.style.display = "inline-block";
       timerBar.style.width = "0%";
+
+      // Auto-advance on correct compound sign
+      if (firstPred === firstExpected && secondPred === secondExpected) {
+        setTimeout(() => { originalStart(); }, 2000);
+      }
       return;
     }
 
@@ -1317,7 +1322,10 @@ window.addEventListener("load", () => {
     // Auto-show skeleton feedback on incorrect result (including no-data)
     const target = normLabel(targetGesture || '');
     const predicted = normLabel(result?.predicted);
-    if (target && predicted && predicted !== target) {
+    if (target && predicted && predicted === target) {
+      // Correct! Auto-advance to next sign after a short celebration delay
+      setTimeout(() => { originalStart(); }, 2000);
+    } else if (target && predicted && predicted !== target) {
       triggerShowHow();
     }
   }
@@ -1471,7 +1479,7 @@ window.addEventListener("load", () => {
     const v=document.createElement('video');
     v.src=url; v.muted=true; v.playsInline=true;
     await new Promise((resolve,reject)=>{ v.onloadedmetadata=resolve; v.onerror=()=>reject(new Error('Video error')); });
-    const total=Math.min(30, Math.max(15, Math.floor(v.duration*10)));
+    const total=Math.min(20, Math.max(10, Math.floor(v.duration*8)));
     v.src=''; // release
     // Process video server-side
     const videoPath = url.replace(window.location.origin + '/', '');
@@ -1498,6 +1506,27 @@ window.addEventListener("load", () => {
   let ghostTimer=null;
   const GHOST_DURATION_MS=60000;
 
+  // ── Ghost preload cache ───────────────────────────────────
+  let _ghostPreloadPromise = null;   // Promise<boolean> from preload
+  let _ghostPreloadLabel = null;     // label the preload is for
+  let _preloadedFrames = null;       // cached frame array from preload
+
+  function preloadGhost(label) {
+    if (!label) return;
+    // For compound signs, preload the first component
+    const signLabel = label.includes('+') ? label.split('+')[0].trim() : label;
+    _ghostPreloadLabel = signLabel;
+    _preloadedFrames = null;
+    _ghostPreloadPromise = loadGhostFor(signLabel).then(ok => {
+      if (ok && _ghostPreloadLabel === signLabel) {
+        _preloadedFrames = ghostFrames;  // stash the loaded frames
+      }
+      // Reset ghost state so live camera isn't affected
+      ghostFrames = null; ghostReady = false; ghostEnabled = false;
+      return ok;
+    }).catch(() => false);
+  }
+
   async function triggerShowHow() {
     if(!targetGesture) return;
     
@@ -1512,7 +1541,28 @@ window.addEventListener("load", () => {
     ghostEnabled=true; ghostFrames=null; ghostReady=false; ghostIdx=0;
     showSkeletonDisplay();
     document.getElementById("feedbackCloseBtn").style.display = 'flex';
-    const ok = await loadGhostFor(targetGesture);
+
+    // Use preloaded data if available for this sign
+    const signLabel = targetGesture.includes('+') ? targetGesture.split('+')[0].trim() : targetGesture;
+    let ok = false;
+    if (_preloadedFrames && _ghostPreloadLabel === signLabel) {
+      ghostFrames = _preloadedFrames;
+      ghostReady = true;
+      ok = true;
+      const assistHint = document.getElementById("assistHint");
+      assistHint.textContent = 'Skeleton guide loaded! Watch the big screen.';
+    } else if (_ghostPreloadPromise && _ghostPreloadLabel === signLabel) {
+      // Preload in flight — wait for it
+      const assistHint = document.getElementById("assistHint");
+      assistHint.textContent = 'Loading skeleton guide…';
+      ok = await _ghostPreloadPromise;
+      if (ok && _preloadedFrames) {
+        ghostFrames = _preloadedFrames;
+        ghostReady = true;
+      }
+    } else {
+      ok = await loadGhostFor(targetGesture);
+    }
     if (ok){
       showGhostUI(true);
       const animateGhost = () => {
@@ -1691,7 +1741,7 @@ window.addEventListener("load", () => {
     if (running && state === STATE_CAPTURE) {
       frameCounter++;
       if (frameCounter % frameSkip === 0) {
-        const feat = packFeature(res);
+        const feat = packFeature(_latestLM);
         if (feat) updateBuffer(feat);
       }
 
@@ -1717,15 +1767,43 @@ window.addEventListener("load", () => {
   let _latestLM = {};
   let _mpBusy = false;
 
+  // ── Smooth landmark interpolation (chase-lerp at render rate) ──
+  let _displayLM = {};
+  const _LERP_ALPHA = 0.45;
+  function _lerpList(prev, cur, a){
+    if(!prev||!prev.length) return cur;
+    if(!cur||!cur.length) return cur;
+    const out=[];
+    for(let i=0;i<cur.length;i++){
+      const p=prev[i], c=cur[i];
+      if(!p||!c){out.push(c||p);continue;}
+      out.push({x:p.x+(c.x-p.x)*a, y:p.y+(c.y-p.y)*a, z:p.z+(c.z-p.z)*a});
+    }
+    return out;
+  }
+  function _smoothLandmarks(){
+    const raw=_latestLM;
+    if(!raw||!Object.keys(raw).length) return raw;
+    _displayLM={
+      poseLandmarks:      _lerpList(_displayLM.poseLandmarks, raw.poseLandmarks, _LERP_ALPHA),
+      faceLandmarks:      _lerpList(_displayLM.faceLandmarks, raw.faceLandmarks, _LERP_ALPHA),
+      rightHandLandmarks: _lerpList(_displayLM.rightHandLandmarks, raw.rightHandLandmarks, _LERP_ALPHA),
+      leftHandLandmarks:  _lerpList(_displayLM.leftHandLandmarks, raw.leftHandLandmarks, _LERP_ALPHA),
+      personCount: raw.personCount
+    };
+    return _displayLM;
+  }
+
   const camera = new Camera(videoEl, {
     onFrame: async function() {
-      // Always render immediately with latest available landmarks
+      // Render with smoothly interpolated landmarks
+      const _smoothed = _smoothLandmarks();
       mainOnResults({
-        poseLandmarks:      _latestLM.poseLandmarks,
-        faceLandmarks:      _latestLM.faceLandmarks,
-        rightHandLandmarks: _latestLM.rightHandLandmarks,
-        leftHandLandmarks:  _latestLM.leftHandLandmarks,
-        personCount:        _latestLM.personCount
+        poseLandmarks:      _smoothed.poseLandmarks,
+        faceLandmarks:      _smoothed.faceLandmarks,
+        rightHandLandmarks: _smoothed.rightHandLandmarks,
+        leftHandLandmarks:  _smoothed.leftHandLandmarks,
+        personCount:        _smoothed.personCount
       });
       // Fire async landmark request if idle
       if (!_mpBusy) {
@@ -1758,6 +1836,9 @@ window.addEventListener("load", () => {
 
     // Ensure camera view is active
     showCameraDisplay();
+
+    // Preload ghost landmarks for this sign while user performs
+    preloadGhost(targetGesture);
 
     buf = [];
     frameCounter = 0;

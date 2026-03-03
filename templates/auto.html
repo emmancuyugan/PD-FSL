@@ -603,6 +603,8 @@
   let buf=[],running=false,handsPresent=false,frameCount=0,showVisuals=true,showTimer=true,showResults=true;
   let frameSkip=2;
   let autoJudge=false;  // Track auto-trigger to prevent multiple calls
+  let predicting=false; // Lock: true while predict() is in-flight
+  let feedbackActive=false; // True while feedback overlay is showing — pauses accumulation
   let predictInterval=null,tickInterval=null,countdown=5;
 
   const HAND_CONN=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20]];
@@ -617,6 +619,12 @@
   let ghostPlaybackSpeed=0.25;
   let ghostTimer=null;
   const GHOST_DURATION_MS=12000;
+
+  // ── Client-side ghost frame cache ──────────────────────────
+  // Key: normLabel(label) → value: ghostFrames array
+  // Survives across predictions so repeat signs are instant.
+  const _ghostCache = new Map();
+  let _preloadBusy = false;
 
   function flattenHand(lms){if(!lms)return new Float32Array(63);const a=[];for(let i=0;i<21;i++){const p=lms[i];a.push(p.x,p.y,p.z);}return new Float32Array(a);}
   function lm(list,idx){if(!list||idx>=list.length)return{x:NaN,y:NaN,z:NaN};return list[idx];}
@@ -751,20 +759,8 @@
     return null;
   }
 
-  async function loadGhostFor(label){
-    const cat=inferCategory(label);
-    const key=normLabel(label);
-    const url=await findDemoUrl(cat,key);
-    if(!url)return false;
-    // Process video server-side
-    const videoPath = url.replace(window.location.origin + '/', '');
-    const resp = await fetch('/api/ghost_landmarks', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({video_path: videoPath, total_frames: 24})
-    });
-    const data = await resp.json();
-    ghostFrames=[];
+  function _parseGhostFrames(data){
+    const frames=[];
     for(const frame of (data.frames||[])){
       const pose=frame.poseLandmarks||[];
       const face=frame.faceLandmarks||[];
@@ -774,10 +770,55 @@
       if(!Lh&&!Rh)continue;
       const L=Lh?normalizeGlobal(Lh,anchors):null;
       const R=Rh?normalizeGlobal(Rh,anchors):null;
-      ghostFrames.push({L,R});
+      frames.push({L,R});
     }
-    ghostReady=ghostFrames&&ghostFrames.length>0;
-    return ghostReady;
+    return frames;
+  }
+
+  async function _fetchGhostFrames(label){
+    const cat=inferCategory(label);
+    const key=normLabel(label);
+    const url=await findDemoUrl(cat,key);
+    if(!url)return null;
+    const videoPath = url.replace(window.location.origin + '/', '');
+    const resp = await fetch('/api/ghost_landmarks', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({video_path: videoPath, total_frames: 24})
+    });
+    const data = await resp.json();
+    const frames = _parseGhostFrames(data);
+    return frames.length > 0 ? frames : null;
+  }
+
+  async function loadGhostFor(label){
+    const cacheKey = normLabel(label);
+    // 1️⃣ Check client-side cache first → instant
+    if(_ghostCache.has(cacheKey)){
+      ghostFrames = _ghostCache.get(cacheKey);
+      ghostReady = true;
+      return true;
+    }
+    // 2️⃣ Fetch from server (server has its own disk cache)
+    const frames = await _fetchGhostFrames(label);
+    if(frames){
+      _ghostCache.set(cacheKey, frames);
+      ghostFrames = frames;
+      ghostReady = true;
+      return true;
+    }
+    return false;
+  }
+
+  // Background preload: fetch ghost for a label and store in cache
+  function preloadGhostFor(label){
+    if(!label || _preloadBusy) return;
+    const cacheKey = normLabel(label);
+    if(_ghostCache.has(cacheKey)) return; // already cached
+    _preloadBusy = true;
+    _fetchGhostFrames(label).then(frames => {
+      if(frames) _ghostCache.set(cacheKey, frames);
+    }).catch(() => {}).finally(() => { _preloadBusy = false; });
   }
 
   function celebrate(){
@@ -866,8 +907,8 @@
       ghostBadge.style.display='none';
     }
 
-    const feat=packFeature(res);
-    if(running&&feat){
+    const feat=packFeature(_latestLM);
+    if(running&&!feedbackActive&&feat){
       // OPTIMIZATION: Apply frame skipping for Jetson Orin Nano
       frameCount++;
       if(frameCount % frameSkip === 0){
@@ -894,13 +935,41 @@
   let _latestLM = {};
   let _mpBusy = false;
 
+  // ── Smooth landmark interpolation (chase-lerp at render rate) ──
+  let _displayLM = {};
+  const _LERP_ALPHA = 0.45; // 0→sluggish, 1→instant snap
+  function _lerpList(prev, cur, a){
+    if(!prev||!prev.length) return cur;
+    if(!cur||!cur.length) return cur;
+    const out=[];
+    for(let i=0;i<cur.length;i++){
+      const p=prev[i], c=cur[i];
+      if(!p||!c){out.push(c||p);continue;}
+      out.push({x:p.x+(c.x-p.x)*a, y:p.y+(c.y-p.y)*a, z:p.z+(c.z-p.z)*a});
+    }
+    return out;
+  }
+  function _smoothLandmarks(){
+    const raw=_latestLM;
+    if(!raw||!Object.keys(raw).length) return raw;
+    _displayLM={
+      poseLandmarks:      _lerpList(_displayLM.poseLandmarks, raw.poseLandmarks, _LERP_ALPHA),
+      faceLandmarks:      _lerpList(_displayLM.faceLandmarks, raw.faceLandmarks, _LERP_ALPHA),
+      rightHandLandmarks: _lerpList(_displayLM.rightHandLandmarks, raw.rightHandLandmarks, _LERP_ALPHA),
+      leftHandLandmarks:  _lerpList(_displayLM.leftHandLandmarks, raw.leftHandLandmarks, _LERP_ALPHA),
+      personCount: raw.personCount
+    };
+    return _displayLM;
+  }
+
   const camera=new Camera(videoEl,{onFrame:async()=>{
+    const _smoothed = _smoothLandmarks();
     mainOnResults({
-      poseLandmarks:      _latestLM.poseLandmarks,
-      faceLandmarks:      _latestLM.faceLandmarks,
-      rightHandLandmarks: _latestLM.rightHandLandmarks,
-      leftHandLandmarks:  _latestLM.leftHandLandmarks,
-      personCount:        _latestLM.personCount
+      poseLandmarks:      _smoothed.poseLandmarks,
+      faceLandmarks:      _smoothed.faceLandmarks,
+      rightHandLandmarks: _smoothed.rightHandLandmarks,
+      leftHandLandmarks:  _smoothed.leftHandLandmarks,
+      personCount:        _smoothed.personCount
     });
     if(!_mpBusy){
       _mpBusy=true;
@@ -916,6 +985,11 @@
   },width:480,height:360});
 
 async function predict(){
+    if(predicting || feedbackActive) return; // Skip while in-flight or showing feedback
+    predicting = true;
+    try { await _doPredict(); } finally { predicting = false; }
+}
+async function _doPredict(){
     if(buf.length < 5){
       if(showResults){
         const now = new Date().toLocaleTimeString();
@@ -1027,8 +1101,8 @@ async function predict(){
                 ghostIdx = 0;
                 if(ghostTimer) clearTimeout(ghostTimer);
 
-                try{
-                    const ok = await loadGhostFor(j.closest_sign);
+                // Fire-and-forget: don't block camera while ghost loads
+                loadGhostFor(j.closest_sign).then(ok => {
                     if(ok){
                         ghostEnabled = true;
                         ghostTimer = setTimeout(()=>{
@@ -1038,11 +1112,11 @@ async function predict(){
                             ghostBadge.style.display='none';
                         }, GHOST_DURATION_MS);
                     }
-                }catch(e){
+                }).catch(e => {
                     console.error('Ghost load error', e);
-                }finally{
+                }).finally(() => {
                     loadingGhost = false;
-                }
+                });
             }
 
         }else{
@@ -1063,6 +1137,9 @@ async function predict(){
             ghostFrames=null;
             if(ghostTimer) clearTimeout(ghostTimer);
             ghostBadge.style.display='none';
+
+            // Preload ghost in background for this sign (in case user tries again)
+            preloadGhostFor(j.prediction);
         }
 
         if(historyEl.children.length===1 && historyEl.children[0].style.color==='#999'){
@@ -1070,6 +1147,16 @@ async function predict(){
         }
         historyEl.insertBefore(histEntry, historyEl.firstChild);
         historyEl.scrollTop = 0;
+
+        // Pause accumulation while feedback shows, then start fresh
+        feedbackActive = true;
+        setTimeout(() => {
+            feedbackActive = false;
+            buf = [];
+            frameCount = 0;
+            autoJudge = false;
+            if(showResults) gestureOverlay.style.display = 'none';
+        }, 3000);
 
     }catch(e){
         console.error(e);
@@ -1131,6 +1218,7 @@ async function predict(){
   stopBtn.onclick=async()=>{
     document.body.classList.remove('camera-running');
     running=false;
+    feedbackActive=false;
     recBadge.style.display='none';
     stateBadge.textContent='Ready to Learn!';
     stateBadge.style.background='linear-gradient(135deg, var(--grass-green), var(--sky-blue))';
