@@ -1034,11 +1034,19 @@ window.addEventListener("load", () => {
     return new Float32Array([...L,...R,...alt,lf,rf]);
   }
 
+  // Match training temporal structure: [5 head zeros][30 core][5 decay tail][8 zero pad]
   function temporalFix(frames,seqLen){
-    if(frames.length<=seqLen){
-      const pad=Array.from({length:seqLen-frames.length},()=>frames[frames.length-1]);
-      return frames.concat(pad);
+    if(!frames.length) return Array.from({length:seqLen},()=>new Float32Array(188));
+    const DIM=frames[0].length;
+    const PAD_HEAD=5, PAD_TAIL=5, ZERO_TAIL=8;
+    const CORE=Math.max(8, seqLen - PAD_HEAD - PAD_TAIL - ZERO_TAIL); // 30
+
+    // Pad up if too few frames
+    while(frames.length<CORE){
+      frames.push(frames[frames.length-1]);
     }
+
+    // Score frames by motion + presence
     const scores=new Array(frames.length).fill(0);
     for(let i=1;i<frames.length;i++){
       const f0=frames[i-1], f1=frames[i]; if(!f0||!f1) continue;
@@ -1047,25 +1055,52 @@ window.addEventListener("load", () => {
       const presence=f1[f1.length-2]+f1[f1.length-1];
       scores[i]=0.7*motion+0.3*presence;
     }
-    const W=Math.min(40,frames.length);
+
+    // Find best motion window
+    const W=Math.min(CORE+10, frames.length);
     let bestStart=0, bestSum=-1e9, runSum=0;
-    for(let i=0;i<W;i++) runSum+=scores[i]; bestSum=runSum;
+    for(let i=0;i<Math.min(W,scores.length);i++) runSum+=scores[i];
+    bestSum=runSum;
     for(let i=1;i<=scores.length-W;i++){
       runSum+=scores[i+W-1]-scores[i-1];
       if(runSum>bestSum){bestSum=runSum; bestStart=i;}
     }
     const selected=frames.slice(bestStart,bestStart+W);
-    const step=selected.length/seqLen;
-    const aligned=[];
-    for(let i=0;i<seqLen;i++){
+
+    // Resample to CORE length
+    const step=selected.length/CORE; const core=[];
+    for(let i=0;i<CORE;i++){
       const idx=Math.min(Math.floor(i*step),selected.length-1);
-      aligned.push(selected[idx]);
+      core.push(selected[idx]);
     }
-    return aligned;
+
+    // Build final 48-frame sequence
+    const result=[];
+    // 1) Head: 5 zero frames
+    for(let i=0;i<PAD_HEAD;i++) result.push(new Float32Array(DIM));
+    // 2) Core: 30 motion frames
+    for(const f of core) result.push(f);
+    // 3) Decay tail: 5 frames fading to zero (flags=0)
+    const last=core[core.length-1];
+    const alphas=[0.8,0.6,0.4,0.2,0.0];
+    for(let t=0;t<PAD_TAIL;t++){
+      const dec=new Float32Array(DIM);
+      for(let j=0;j<DIM-2;j++) dec[j]=last[j]*alphas[t];
+      result.push(dec);
+    }
+    // 4) Zero tail: 8 zero frames (matches training Dataset padding)
+    for(let i=0;i<ZERO_TAIL;i++) result.push(new Float32Array(DIM));
+    return result;
   }
 
   function updateBuffer(f){
     if(!f) return;
+    // Skip duplicate frames (stale landmarks from slow MediaPipe)
+    if(buf.length>0){
+      const prev=buf[buf.length-1];
+      let ssd=0; for(let k=0;k<f.length-2;k++){const d=f[k]-prev[k]; ssd+=d*d;}
+      if(ssd<1e-10) return; // identical to last frame, skip
+    }
     if(buf.length<CAPTURE_MAX) buf.push(f);
     else { buf.shift(); buf.push(f); }
     frameCountEl.textContent=Math.min(buf.length,SEQ_LEN);
@@ -1370,7 +1405,7 @@ window.addEventListener("load", () => {
     const v=document.createElement('video');
     v.src=url; v.muted=true; v.playsInline=true;
     await new Promise((resolve,reject)=>{ v.onloadedmetadata=resolve; v.onerror=()=>reject(new Error('Video error')); });
-    const total=Math.min(30, Math.max(15, Math.floor(v.duration*10)));
+    const total=Math.min(20, Math.max(10, Math.floor(v.duration*8)));
     v.src=''; // release
     // Process video server-side
     const videoPath = url.replace(window.location.origin + '/', '');
@@ -1397,6 +1432,24 @@ window.addEventListener("load", () => {
   let ghostTimer=null;
   const GHOST_DURATION_MS=60000;
   let ghostAnimationId = null;
+
+  // ── Ghost preload cache ───────────────────────────────────
+  let _ghostPreloadPromise = null;
+  let _ghostPreloadLabel = null;
+  let _preloadedFrames = null;
+
+  function preloadGhost(label) {
+    if (!label) return;
+    _ghostPreloadLabel = label;
+    _preloadedFrames = null;
+    _ghostPreloadPromise = loadGhostFor(label).then(ok => {
+      if (ok && _ghostPreloadLabel === label) {
+        _preloadedFrames = ghostFrames;
+      }
+      ghostFrames = null; ghostReady = false; ghostEnabled = false;
+      return ok;
+    }).catch(() => false);
+  }
   
   async function triggerShowHow() {
     if(!targetGesture) return;
@@ -1412,7 +1465,24 @@ window.addEventListener("load", () => {
     ghostEnabled=true; ghostFrames=null; ghostReady=false; ghostIdx=0;
     showSkeletonDisplay();
     document.getElementById("feedbackCloseBtn").style.display = 'flex';
-    const ok = await loadGhostFor(targetGesture);
+
+    // Use preloaded data if available
+    let ok = false;
+    if (_preloadedFrames && _ghostPreloadLabel === targetGesture) {
+      ghostFrames = _preloadedFrames;
+      ghostReady = true;
+      ok = true;
+      document.getElementById("assistHint").textContent = 'Skeleton guide loaded! Watch the big screen.';
+    } else if (_ghostPreloadPromise && _ghostPreloadLabel === targetGesture) {
+      document.getElementById("assistHint").textContent = 'Loading skeleton guide…';
+      ok = await _ghostPreloadPromise;
+      if (ok && _preloadedFrames) {
+        ghostFrames = _preloadedFrames;
+        ghostReady = true;
+      }
+    } else {
+      ok = await loadGhostFor(targetGesture);
+    }
     if (ok){
       showGhostUI(true);
       const animateGhost = () => {
@@ -1628,7 +1698,7 @@ window.addEventListener("load", () => {
     if (running && state === STATE_CAPTURE) {
       frameCounter++;
       if (frameCounter % frameSkip === 0) {
-        const feat = packFeature(res);
+        const feat = packFeature(_latestLM);
         if (feat) updateBuffer(feat);
       }
 
@@ -1647,14 +1717,42 @@ window.addEventListener("load", () => {
   let _latestLM = {};
   let _mpBusy = false;
 
+  // ── Smooth landmark interpolation (chase-lerp at render rate) ──
+  let _displayLM = {};
+  const _LERP_ALPHA = 0.45;
+  function _lerpList(prev, cur, a){
+    if(!prev||!prev.length) return cur;
+    if(!cur||!cur.length) return cur;
+    const out=[];
+    for(let i=0;i<cur.length;i++){
+      const p=prev[i], c=cur[i];
+      if(!p||!c){out.push(c||p);continue;}
+      out.push({x:p.x+(c.x-p.x)*a, y:p.y+(c.y-p.y)*a, z:p.z+(c.z-p.z)*a});
+    }
+    return out;
+  }
+  function _smoothLandmarks(){
+    const raw=_latestLM;
+    if(!raw||!Object.keys(raw).length) return raw;
+    _displayLM={
+      poseLandmarks:      _lerpList(_displayLM.poseLandmarks, raw.poseLandmarks, _LERP_ALPHA),
+      faceLandmarks:      _lerpList(_displayLM.faceLandmarks, raw.faceLandmarks, _LERP_ALPHA),
+      rightHandLandmarks: _lerpList(_displayLM.rightHandLandmarks, raw.rightHandLandmarks, _LERP_ALPHA),
+      leftHandLandmarks:  _lerpList(_displayLM.leftHandLandmarks, raw.leftHandLandmarks, _LERP_ALPHA),
+      personCount: raw.personCount
+    };
+    return _displayLM;
+  }
+
   const camera = new Camera(videoEl, {
     onFrame: async function() {
+      const _smoothed = _smoothLandmarks();
       mainOnResults({
-        poseLandmarks:      _latestLM.poseLandmarks,
-        faceLandmarks:      _latestLM.faceLandmarks,
-        rightHandLandmarks: _latestLM.rightHandLandmarks,
-        leftHandLandmarks:  _latestLM.leftHandLandmarks,
-        personCount:        _latestLM.personCount
+        poseLandmarks:      _smoothed.poseLandmarks,
+        faceLandmarks:      _smoothed.faceLandmarks,
+        rightHandLandmarks: _smoothed.rightHandLandmarks,
+        leftHandLandmarks:  _smoothed.leftHandLandmarks,
+        personCount:        _smoothed.personCount
       });
       if (!_mpBusy) {
         _mpBusy = true;
@@ -1682,6 +1780,9 @@ window.addEventListener("load", () => {
     }
     targetGesture = chosen;
     updateGestureDisplay(targetGesture);
+
+    // Preload ghost landmarks while user performs the sign
+    preloadGhost(targetGesture);
 
     buf = [];
     frameCounter = 0;
