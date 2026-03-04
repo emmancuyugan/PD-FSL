@@ -637,13 +637,27 @@
     for(let i=0;i<63;i+=3){out[i]=(hand63[i]-Cx)/scale;out[i+1]=(hand63[i+1]-Cy)/scale;out[i+2]=(hand63[i+2]-Cz)/scale;}
     return out;
   }
+  function normalizeAnchors(a){
+    // Transform face/pose anchors into the same shoulder-centered space as hands
+    if(!a||!a.L_SH||!a.R_SH||isNaN(a.L_SH.x)||isNaN(a.R_SH.x))return a;
+    const Cx=(a.L_SH.x+a.R_SH.x)/2,Cy=(a.L_SH.y+a.R_SH.y)/2,Cz=(a.L_SH.z+a.R_SH.z)/2;
+    const scale=Math.max(1e-6,dist2D(a.L_SH,a.R_SH));
+    const CLIP=5.0;
+    const n={};
+    for(const[k,v]of Object.entries(a)){
+      n[k]={x:Math.max(-CLIP,Math.min(CLIP,(v.x-Cx)/scale)),
+             y:Math.max(-CLIP,Math.min(CLIP,(v.y-Cy)/scale)),
+             z:Math.max(-CLIP,Math.min(CLIP,(v.z-Cz)/scale))};
+    }
+    return n;
+  }
   function derivedAltitudeFeatures(L,R,a){
     const out=[],SEL=[0,4,8,12,16,20],brow_y=0.5*(a.brow_r.y+a.brow_l.y);
     for(const H of [L,R]){
       for(const j of SEL){
-        const by=j*3+1,bz=j*3+2;
-        const py=H[by],pz=H[bz];
-        out.push(py-a.chin.y,py-a.lip_u.y,py-brow_y,py-a.forehead.y,pz-a.nose.z);
+        const bx=j*3,by=j*3+1,bz=j*3+2;
+        const px=H[bx],py=H[by],pz=H[bz];
+        out.push(px-a.chin.x,py-a.chin.y,py-a.lip_u.y,py-brow_y,py-a.forehead.y,pz-a.nose.z);
       }
     }
     return new Float32Array(out);
@@ -655,7 +669,9 @@
     const Rh=res.leftHandLandmarks?flattenHand(res.leftHandLandmarks):null;
     if(!Lh&&!Rh)return null;
     const L=normalizeGlobal(Lh,a),R=normalizeGlobal(Rh,a);
-    const alt=derivedAltitudeFeatures(L,R,a);
+    // Normalize anchors into same shoulder-centered space before computing altitude features
+    const na=normalizeAnchors(a);
+    const alt=derivedAltitudeFeatures(L,R,na);
     return new Float32Array([...L,...R,...alt,Lh?1:0,Rh?1:0]);
   }
   
