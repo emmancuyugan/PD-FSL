@@ -635,6 +635,7 @@
     const Cx=(a.L_SH.x+a.R_SH.x)/2,Cy=(a.L_SH.y+a.R_SH.y)/2,Cz=(a.L_SH.z+a.R_SH.z)/2;
     const scale=Math.max(1e-6,dist2D(a.L_SH,a.R_SH));
     for(let i=0;i<63;i+=3){out[i]=(hand63[i]-Cx)/scale;out[i+1]=(hand63[i+1]-Cy)/scale;out[i+2]=(hand63[i+2]-Cz)/scale;}
+    for(let i=0;i<63;i++) out[i]=Math.max(-5,Math.min(5,out[i]));
     return out;
   }
   function derivedAltitudeFeatures(L,R,a){
@@ -659,14 +660,63 @@
     return new Float32Array([...L,...R,...alt,Lh?1:0,Rh?1:0]);
   }
   
+  // Match training temporal structure: [5 head zeros][30 core][5 decay tail][8 zero pad]
   function temporalFix(frames,n){
-    if(frames.length<=n){
-      const pad=Array.from({length:n-frames.length},()=>frames[frames.length-1]);
-      return frames.concat(pad);
+    if(!frames.length) return Array.from({length:n},()=>new Float32Array(188));
+    const DIM=frames[0].length;
+    const PAD_HEAD=5, PAD_TAIL=5, ZERO_TAIL=8;
+    const CORE=Math.max(8, n - PAD_HEAD - PAD_TAIL - ZERO_TAIL); // 30
+
+    // Pad up if too few frames
+    while(frames.length<CORE){
+      frames.push(frames[frames.length-1]);
     }
-    const step=frames.length/n;const out=[];
-    for(let i=0;i<n;i++){const idx=Math.min(Math.floor(i*step),frames.length-1);out.push(frames[idx]);}
-    return out;
+
+    // Score frames by motion + presence
+    const scores=new Array(frames.length).fill(0);
+    for(let i=1;i<frames.length;i++){
+      const f0=frames[i-1],f1=frames[i]; if(!f0||!f1) continue;
+      let motion=0; for(let j=0;j<f0.length-2;j++) motion+=Math.abs(f1[j]-f0[j]);
+      motion/=(f0.length-2);
+      const presence=f1[f1.length-2]+f1[f1.length-1];
+      scores[i]=0.7*motion+0.3*presence;
+    }
+
+    // Find best motion window
+    const W=Math.min(CORE+10, frames.length);
+    let bestStart=0,bestSum=-1e9,runSum=0;
+    for(let i=0;i<Math.min(W,scores.length);i++) runSum+=scores[i];
+    bestSum=runSum;
+    for(let i=1;i<=scores.length-W;i++){
+      runSum+=scores[i+W-1]-scores[i-1];
+      if(runSum>bestSum){bestSum=runSum; bestStart=i;}
+    }
+    const selected=frames.slice(bestStart,bestStart+W);
+
+    // Resample to CORE length
+    const step=selected.length/CORE; const core=[];
+    for(let i=0;i<CORE;i++){
+      const idx=Math.min(Math.floor(i*step),selected.length-1);
+      core.push(selected[idx]);
+    }
+
+    // Build final 48-frame sequence
+    const result=[];
+    // 1) Head: 5 zero frames
+    for(let i=0;i<PAD_HEAD;i++) result.push(new Float32Array(DIM));
+    // 2) Core: 30 motion frames
+    for(const f of core) result.push(f);
+    // 3) Decay tail: 5 frames fading to zero (flags=0)
+    const last=core[core.length-1];
+    const alphas=[0.8,0.6,0.4,0.2,0.0];
+    for(let t=0;t<PAD_TAIL;t++){
+      const dec=new Float32Array(DIM);
+      for(let j=0;j<DIM-2;j++) dec[j]=last[j]*alphas[t];
+      result.push(dec);
+    }
+    // 4) Zero tail: 8 zero frames (matches training Dataset padding)
+    for(let i=0;i<ZERO_TAIL;i++) result.push(new Float32Array(DIM));
+    return result;
   }
 
   function anchorsValid(a){
@@ -912,9 +962,15 @@
       // OPTIMIZATION: Apply frame skipping for Jetson Orin Nano
       frameCount++;
       if(frameCount % frameSkip === 0){
-        // Keep buffer at max size
-        if(buf.length<CAPTURE_MAX) buf.push(feat);
-        else { buf.shift(); buf.push(feat); }
+        // Skip duplicate frames (stale landmarks from slow MediaPipe)
+        if(buf.length>0){
+          const prev=buf[buf.length-1];
+          let ssd=0; for(let k=0;k<feat.length-2;k++){const d=feat[k]-prev[k]; ssd+=d*d;}
+          if(ssd<1e-10){ /* skip identical frame */ }
+          else{ if(buf.length<CAPTURE_MAX) buf.push(feat); else{buf.shift();buf.push(feat);} }
+        } else {
+          buf.push(feat);
+        }
         frameInfo.textContent='Capturing: '+Math.floor(buf.length)+' frames';
         frameInfo.style.display='block';
         
