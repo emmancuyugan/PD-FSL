@@ -531,14 +531,14 @@
     <div class="category-card category-relationship" onclick="showCategory('relationship')">
       <div class="card-header">
         <h2 class="card-title">Relationship</h2>
-        <span class="card-badge">4 Signs</span>
+        <span class="card-badge">2 Signs</span>
       </div>
       <p class="card-description">Essential relationship terms for social interactions.</p>
       <div class="items-grid">
         <div class="item-badge">Boy</div>
         <div class="item-badge">Girl</div>
-        <div class="item-badge">Man</div>
-        <div class="item-badge">Woman</div>
+        <div class="item-badge" style="visibility: hidden;"></div>
+        <div class="item-badge" style="visibility: hidden;"></div>
         <div class="item-badge" style="visibility: hidden;"></div>
         <div class="item-badge" style="visibility: hidden;"></div>
         <div class="item-badge" style="visibility: hidden;"></div>
@@ -616,7 +616,7 @@
     relationship: {
       title: "Relationship Learning Module",
       description: "Learn essential relationship terms for social interactions.",
-      items: ["boy","girl","man","woman"],
+      items: ["boy","girl"],
       color: "var(--grass-green)"
     },
     survival: {
