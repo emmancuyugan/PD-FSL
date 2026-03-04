@@ -550,16 +550,16 @@
     <div class="category-card category-survival" onclick="showCategory('survival')">
       <div class="card-header">
         <h2 class="card-title">Survival</h2>
-        <span class="card-badge">6 Words</span>
+        <span class="card-badge">5 Words</span>
       </div>
       <p class="card-description">Critical communication words for everyday situations.</p>
       <div class="items-grid">
         <div class="item-badge">Correct</div>
-        <div class="item-badge">Don't Understand</div>
         <div class="item-badge">No</div>
         <div class="item-badge">Understand</div>
         <div class="item-badge">Wrong</div>
         <div class="item-badge">Yes</div>
+        <div class="item-badge" style="visibility: hidden;"></div>
         <div class="item-badge" style="visibility: hidden;"></div>
         <div class="item-badge" style="visibility: hidden;"></div>
       </div>
@@ -622,7 +622,7 @@
     survival: {
       title: "Survival Learning Module",
       description: "Learn critical communication words for everyday situations.",
-      items: ["correct","dontunderstand","no","understand","wrong","yes"],
+      items: ["correct","no","understand","wrong","yes"],
       color: "var(--orange)"
     }
   };

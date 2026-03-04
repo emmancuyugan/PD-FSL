@@ -849,7 +849,7 @@ window.addEventListener("load", () => {
   const COLOR_SIGNS  = ["Black","Blue","Green","Orange","Pink","Red","White","Yellow"];
   const FAMILY_SIGNS = ["Daughter","Father","Grandfather","Grandmother","Mother","Son"];
   const RELATIONSHIP_SIGNS = ["Boy","Girl"];
-  const SURVIVAL_SIGNS = ["Correct","Don't Understand","No","Understand","Wrong","Yes"];
+  const SURVIVAL_SIGNS = ["Correct","No","Understand","Wrong","Yes"];
 
   // Initialize display to show camera by default
   const showCameraDisplay = () => {
@@ -1004,7 +1004,7 @@ window.addEventListener("load", () => {
       "boy":"boy","girl":"girl",
       "son":"son","daughter":"daughter",
       "black":"black","blue":"blue","green":"green","orange":"orange","pink":"pink","red":"red","white":"white","yellow":"yellow",
-      "correct":"correct","dontunderstand":"dontunderstand","no":"no","understand":"understand","wrong":"wrong","yes":"yes"
+      "correct":"correct","no":"no","understand":"understand","wrong":"wrong","yes":"yes"
     };
     return map[x] || x;
   }
@@ -1014,7 +1014,7 @@ window.addEventListener("load", () => {
     if (["one","two","three","four","five"].includes(l)) return "numbers";
     if (["daughter","father","grandfather","grandmother","mother","son"].includes(l)) return "family";
     if (["boy","girl"].includes(l)) return "relationship";
-    if (["correct","dontunderstand","no","understand","wrong","yes"].includes(l)) return "survival";
+    if (["correct","no","understand","wrong","yes"].includes(l)) return "survival";
     return "colors";
   }
 

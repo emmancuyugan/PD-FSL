@@ -719,7 +719,7 @@
     let x=String(s).toLowerCase();
     x=x.replace(/^(numbers_|colors_|color_|family_|relationship_|survival_)/,"");
     x=x.replace(/[^a-z0-9]+/g,'');
-    const map={"1":"one","2":"two","3":"three","4":"four","5":"five","grandmother":"grandmother","grandma":"grandmother","lola":"grandmother","grandfather":"grandfather","grandpa":"grandfather","lolo":"grandfather","mom":"mother","mother":"mother","nanay":"mother","dad":"father","father":"father","tatay":"father","boy":"boy","girl":"girl","man":"man","woman":"woman","son":"son","daughter":"daughter","black":"black","blue":"blue","green":"green","orange":"orange","pink":"pink","red":"red","white":"white","yellow":"yellow","correct":"correct","dontunderstand":"dontunderstand","no":"no","understand":"understand","wrong":"wrong","yes":"yes"};
+    const map={"1":"one","2":"two","3":"three","4":"four","5":"five","grandmother":"grandmother","grandma":"grandmother","lola":"grandmother","grandfather":"grandfather","grandpa":"grandfather","lolo":"grandfather","mom":"mother","mother":"mother","nanay":"mother","dad":"father","father":"father","tatay":"father","boy":"boy","girl":"girl","son":"son","daughter":"daughter","black":"black","blue":"blue","green":"green","orange":"orange","pink":"pink","red":"red","white":"white","yellow":"yellow","correct":"correct","no":"no","understand":"understand","wrong":"wrong","yes":"yes"};
     return map[x]||x;
   }
 
@@ -733,8 +733,8 @@
     const l=normLabel(label);
     const numbers=["one","two","three","four","five"];
     const family=["daughter","father","grandfather","grandmother","mother","son"];
-    const relationship=["boy","girl","man","woman"];
-    const survival=["correct","dontunderstand","no","understand","wrong","yes"];
+    const relationship=["boy","girl"];
+    const survival=["correct","no","understand","wrong","yes"];
     if(numbers.includes(l))return "numbers";
     if(family.includes(l))return "family";
     if(relationship.includes(l))return "relationship";
