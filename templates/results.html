@@ -321,7 +321,7 @@
   function generatePDF(mode) {
     pdfModal.classList.remove('active');
     const script = document.createElement('script');
-    script.src = '{{ url_for("static", filename="vendor/html2pdf.bundle.min.js") }}';
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
     script.onload = () => {
       const dataRows = mode === 'today' ? rows.filter(r => dateKey(r.created_at) === todayK) : rows;
       const username = escapeHtml('{{ session.get("username","student") }}');

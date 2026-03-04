@@ -10,9 +10,6 @@ import torch
 import torch.nn as nn
 import numpy as np
 import os
-import pathlib, platform
-if platform.system() != "Windows":
-    pathlib.WindowsPath = pathlib.PurePosixPath
 import random
 import json
 import datetime
@@ -199,24 +196,12 @@ _mp_holistic_mod = mp.solutions.holistic
 
 server_holistic = _mp_holistic_mod.Holistic(
     static_image_mode=False,
-    model_complexity=1,          # 1 = ~2x faster than 2, good accuracy
+    model_complexity=2,
     smooth_landmarks=True,
     refine_face_landmarks=False,
     min_detection_confidence=0.55,
     min_tracking_confidence=0.55,
 )
-
-# Separate Holistic for ghost/demo video processing — static mode so each
-# frame is detected independently (no cross-contamination with live tracker)
-_ghost_holistic = _mp_holistic_mod.Holistic(
-    static_image_mode=True,
-    model_complexity=1,
-    smooth_landmarks=False,
-    refine_face_landmarks=False,
-    min_detection_confidence=0.5,
-    min_tracking_confidence=0.5,
-)
-_ghost_lock = threading.Lock()  # protect ghost holistic separately
 
 # Face detector for counting people in frame
 _mp_face_det_mod = mp.solutions.face_detection
@@ -226,9 +211,6 @@ server_face_detector = _mp_face_det_mod.FaceDetection(
 )
 
 _mp_lock = threading.Lock() 
-_face_count_cache = 0        # cached person count
-_face_frame_counter = 0      # runs face detection every N frames
-
 def _serialize_landmarks(landmark_list):
     """Convert a MediaPipe NormalizedLandmarkList → list of dicts."""
     if landmark_list is None:
@@ -518,66 +500,27 @@ def api_landmarks():
 
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     with _mp_lock:
-        global _face_frame_counter, _face_count_cache
         results = server_holistic.process(frame_rgb)
+        face_results = server_face_detector.process(frame_rgb)
 
-        # Face detection every 10th frame to save CPU
-        _face_frame_counter += 1
-        if _face_frame_counter >= 10:
-            _face_frame_counter = 0
-            face_results = server_face_detector.process(frame_rgb)
-            _face_count_cache = len(face_results.detections) if face_results.detections else 0
+    person_count = 0
+    if face_results.detections:
+        person_count = len(face_results.detections)
 
     return jsonify({
         "poseLandmarks":     _serialize_landmarks(results.pose_landmarks),
         "faceLandmarks":     _serialize_landmarks(results.face_landmarks),
         "rightHandLandmarks": _serialize_landmarks(results.right_hand_landmarks),
         "leftHandLandmarks":  _serialize_landmarks(results.left_hand_landmarks),
-        "personCount":       _face_count_cache,
+        "personCount":       person_count,
     })
-
-# ── Server-side ghost landmark cache (persisted to disk) ──────────
-_GHOST_CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ghost_cache.json")
-
-def _load_ghost_cache():
-    """Load persistent ghost cache from disk on startup."""
-    if os.path.exists(_GHOST_CACHE_FILE):
-        try:
-            with open(_GHOST_CACHE_FILE, "r") as f:
-                raw = json.load(f)
-            # JSON keys are strings; convert back to (path, frames) tuples
-            cache = {}
-            for key_str, frames in raw.items():
-                parts = key_str.rsplit("|", 1)
-                cache[(parts[0], int(parts[1]))] = frames
-            print(f"[GHOST] Loaded {len(cache)} cached sign(s) from disk")
-            return cache
-        except Exception as e:
-            print(f"[GHOST] Cache file corrupt, starting fresh: {e}")
-    return {}
-
-def _save_ghost_cache():
-    """Persist current ghost cache to disk."""
-    try:
-        # Convert tuple keys to strings for JSON
-        raw = {f"{k[0]}|{k[1]}": v for k, v in _ghost_cache.items()}
-        with open(_GHOST_CACHE_FILE, "w") as f:
-            json.dump(raw, f)
-    except Exception as e:
-        print(f"[GHOST] Failed to save cache: {e}")
-
-_ghost_cache = _load_ghost_cache()
 
 @app.route("/api/ghost_landmarks", methods=["POST"])
 def api_ghost_landmarks():
-    """Process a demo video server-side and return landmark frames (cached)."""
+    """Process a demo video server-side and return landmark frames."""
     data = request.get_json(force=True)
     video_path = data.get("video_path", "")
     total_frames = int(data.get("total_frames", 24))
-
-    cache_key = (video_path, total_frames)
-    if cache_key in _ghost_cache:
-        return jsonify({"frames": _ghost_cache[cache_key]})
 
     # Resolve to absolute path
     abs_path = resource_path(video_path)
@@ -593,30 +536,25 @@ def api_ghost_landmarks():
     duration = frame_count / fps if fps else 0
 
     frames = []
-    for i in range(total_frames):
-        ts_ms = (duration * i / total_frames) * 1000
-        cap.set(cv2.CAP_PROP_POS_MSEC, ts_ms)
-        ret, frame = cap.read()
-        if not ret:
-            continue
+    with _mp_lock:
+        for i in range(total_frames):
+            ts_ms = (duration * i / total_frames) * 1000
+            cap.set(cv2.CAP_PROP_POS_MSEC, ts_ms)
+            ret, frame = cap.read()
+            if not ret:
+                continue
 
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        # Use dedicated ghost holistic (static_image_mode) — no lock
-        # contention with live camera, and each frame detected independently
-        with _ghost_lock:
-            results = _ghost_holistic.process(frame_rgb)
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            results = server_holistic.process(frame_rgb)
 
-        frames.append({
-            "poseLandmarks":     _serialize_landmarks(results.pose_landmarks),
-            "faceLandmarks":     _serialize_landmarks(results.face_landmarks),
-            "rightHandLandmarks": _serialize_landmarks(results.right_hand_landmarks),
-            "leftHandLandmarks":  _serialize_landmarks(results.left_hand_landmarks),
-        })
+            frames.append({
+                "poseLandmarks":     _serialize_landmarks(results.pose_landmarks),
+                "faceLandmarks":     _serialize_landmarks(results.face_landmarks),
+                "rightHandLandmarks": _serialize_landmarks(results.right_hand_landmarks),
+                "leftHandLandmarks":  _serialize_landmarks(results.left_hand_landmarks),
+            })
 
     cap.release()
-    _ghost_cache[cache_key] = frames  # cache for future requests
-    _save_ghost_cache()               # persist to disk
-    print(f"[GHOST] Processed & cached {len(frames)} frames for {video_path}")
     return jsonify({"frames": frames})
 
 # Activity Section
