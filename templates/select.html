@@ -1034,19 +1034,11 @@ window.addEventListener("load", () => {
     return new Float32Array([...L,...R,...alt,lf,rf]);
   }
 
-  // Match training temporal structure: [5 head zeros][30 core][5 decay tail][8 zero pad]
   function temporalFix(frames,seqLen){
-    if(!frames.length) return Array.from({length:seqLen},()=>new Float32Array(188));
-    const DIM=frames[0].length;
-    const PAD_HEAD=5, PAD_TAIL=5, ZERO_TAIL=8;
-    const CORE=Math.max(8, seqLen - PAD_HEAD - PAD_TAIL - ZERO_TAIL); // 30
-
-    // Pad up if too few frames
-    while(frames.length<CORE){
-      frames.push(frames[frames.length-1]);
+    if(frames.length<=seqLen){
+      const pad=Array.from({length:seqLen-frames.length},()=>frames[frames.length-1]);
+      return frames.concat(pad);
     }
-
-    // Score frames by motion + presence
     const scores=new Array(frames.length).fill(0);
     for(let i=1;i<frames.length;i++){
       const f0=frames[i-1], f1=frames[i]; if(!f0||!f1) continue;
@@ -1055,52 +1047,25 @@ window.addEventListener("load", () => {
       const presence=f1[f1.length-2]+f1[f1.length-1];
       scores[i]=0.7*motion+0.3*presence;
     }
-
-    // Find best motion window
-    const W=Math.min(CORE+10, frames.length);
+    const W=Math.min(40,frames.length);
     let bestStart=0, bestSum=-1e9, runSum=0;
-    for(let i=0;i<Math.min(W,scores.length);i++) runSum+=scores[i];
-    bestSum=runSum;
+    for(let i=0;i<W;i++) runSum+=scores[i]; bestSum=runSum;
     for(let i=1;i<=scores.length-W;i++){
       runSum+=scores[i+W-1]-scores[i-1];
       if(runSum>bestSum){bestSum=runSum; bestStart=i;}
     }
     const selected=frames.slice(bestStart,bestStart+W);
-
-    // Resample to CORE length
-    const step=selected.length/CORE; const core=[];
-    for(let i=0;i<CORE;i++){
+    const step=selected.length/seqLen;
+    const aligned=[];
+    for(let i=0;i<seqLen;i++){
       const idx=Math.min(Math.floor(i*step),selected.length-1);
-      core.push(selected[idx]);
+      aligned.push(selected[idx]);
     }
-
-    // Build final 48-frame sequence
-    const result=[];
-    // 1) Head: 5 zero frames
-    for(let i=0;i<PAD_HEAD;i++) result.push(new Float32Array(DIM));
-    // 2) Core: 30 motion frames
-    for(const f of core) result.push(f);
-    // 3) Decay tail: 5 frames fading to zero (flags=0)
-    const last=core[core.length-1];
-    const alphas=[0.8,0.6,0.4,0.2,0.0];
-    for(let t=0;t<PAD_TAIL;t++){
-      const dec=new Float32Array(DIM);
-      for(let j=0;j<DIM-2;j++) dec[j]=last[j]*alphas[t];
-      result.push(dec);
-    }
-    // 4) Zero tail: 8 zero frames (matches training Dataset padding)
-    for(let i=0;i<ZERO_TAIL;i++) result.push(new Float32Array(DIM));
-    return result;
+    return aligned;
   }
 
   function updateBuffer(f){
     if(!f) return;
-    // Skip duplicate frames (stale landmarks from slow MediaPipe)
-    if(buf.length>0){
-      const prev=buf[buf.length-1];
-      let ssd=0; for(let k=0;k<f.length-2;k++){const d=f[k]-prev[k]; ssd+=d*d;}
-      if(ssd<1e-10) return; // identical to last frame, skip
-    }
     if(buf.length<CAPTURE_MAX) buf.push(f);
     else { buf.shift(); buf.push(f); }
     frameCountEl.textContent=Math.min(buf.length,SEQ_LEN);
