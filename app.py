@@ -329,6 +329,14 @@ def run_inference(x):
 
     return probs
 
+
+def log_top3(probs, tag="INFERENCE"):
+    """Print top-3 predictions with confidence to the terminal."""
+    top3_idx = np.argsort(probs)[::-1][:3]
+    print(f"[{tag}] Top-3 predictions:")
+    for rank, idx in enumerate(top3_idx, 1):
+        print(f"  {rank}. {CLASSES[idx]:.<30s} {probs[idx]*100:6.2f}%")
+
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -633,6 +641,7 @@ def predict():
 
         
         probs = run_inference(x)
+        log_top3(probs, tag="PREDICT")
         pred_idx = int(np.argmax(probs))
         label = CLASSES[pred_idx]
         
@@ -685,6 +694,7 @@ def predict_auto():
             x = prepare_sequence({"features": data["features"]})
 
         probs = run_inference(x)
+        log_top3(probs, tag="AUTO")
 
         conf = float(np.max(probs)) 
         pred_idx = int(np.argmax(probs))
@@ -740,6 +750,7 @@ def assess():
         x = prepare_sequence(data)
 
         probs = run_inference(x)
+        log_top3(probs, tag="ASSESS")
         pred_idx = int(np.argmax(probs))
         label = CLASSES[pred_idx]
 
