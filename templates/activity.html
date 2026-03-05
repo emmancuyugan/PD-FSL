@@ -1096,7 +1096,18 @@ window.addEventListener("load", () => {
   const SAVE_URL = location.origin + '/api/save_result';
   
   async function callPredict(sequence) {
-    const payload = { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ sequence }) };
+    // Build expected class label (e.g. "Family_Father") so backend ALWAYS_CORRECT toggle can use it
+    let expectedLabel = undefined;
+    if (targetGesture) {
+      const cat = inferCategory(targetGesture);
+      const capCat = cat.charAt(0).toUpperCase() + cat.slice(1);
+      // Handle compound targets like "One + Blue" — use the first sign
+      const first = targetGesture.split('+')[0].trim();
+      const capSign = first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+      expectedLabel = capCat + '_' + capSign;
+    }
+    const body = expectedLabel ? { sequence, expected: expectedLabel } : { sequence };
+    const payload = { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(body) };
     const res = await fetch(PREDICT_URL, payload);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
