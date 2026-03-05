@@ -5,7 +5,7 @@ if platform.system() != "Windows":
 
 from model import ModifiedLSTM
 
-MODEL_PATH = "run18.pt"
+MODEL_PATH = "run20.pt"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
