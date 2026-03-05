@@ -11,4 +11,9 @@ instance/
 # Jetson-specific build artifacts
 model.engine
 model.onnx
-ghost_cache.jsoninstance/fsl.db
+
+# Runtime-generated files
+ghost_cache.json
+tmp_live_seq.npy
+
+instance/fsl.db
