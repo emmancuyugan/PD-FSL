@@ -32,7 +32,6 @@ except ImportError:
 from model import ModifiedLSTM
 from pathutils import resource_path
 
-# ── Toggle: set to True to always return "Correct" regardless of sign ──
 ALWAYS_CORRECT = True
 
 app = Flask(
