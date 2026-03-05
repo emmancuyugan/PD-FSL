@@ -132,163 +132,11 @@
 
   .camera-section {
     flex: 2;
-    display: flex;
-    gap: 20px;
-    min-height: 0;
-  }
-
-  .camera-half {
-    flex: 1;
     position: relative;
     background: var(--white);
     border-radius: 30px;
     box-shadow: 0 8px 32px var(--shadow);
     overflow: hidden;
-  }
-
-  .feedback-half {
-    flex: 1;
-    position: relative;
-    background: var(--white);
-    border-radius: 30px;
-    box-shadow: 0 8px 32px var(--shadow);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .feedback-panel {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .skeleton-display {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    border-radius: 30px;
-    overflow: hidden;
-    display: none;
-    z-index: 2;
-  }
-
-  .skeleton-label {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    background: rgba(59, 130, 246, 0.9);
-    color: var(--white);
-    padding: 10px 20px;
-    border-radius: 15px;
-    font-size: 16px;
-    font-weight: 700;
-    z-index: 10;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
-  }
-
-  #skeletonCanvas {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
-
-  .feedback-close-btn {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    border: none;
-    background: rgba(255, 107, 157, 0.9);
-    color: var(--white);
-    font-size: 22px;
-    font-weight: 700;
-    cursor: pointer;
-    z-index: 30;
-    box-shadow: 0 4px 16px rgba(255, 107, 157, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .feedback-close-btn:hover {
-    transform: scale(1.1);
-    background: rgba(255, 60, 120, 1);
-  }
-
-  .feedback-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 30px;
-    text-align: center;
-    z-index: 1;
-  }
-
-  .feedback-icon {
-    font-size: 72px;
-    margin-bottom: 16px;
-  }
-
-  .feedback-title {
-    font-size: 32px;
-    font-weight: 700;
-    margin-bottom: 8px;
-  }
-
-  .feedback-title.correct {
-    color: var(--grass-green);
-  }
-
-  .feedback-title.incorrect {
-    color: var(--coral);
-  }
-
-  .feedback-title.neutral {
-    background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  .feedback-subtitle {
-    font-size: 18px;
-    color: #888;
-    font-weight: 600;
-    line-height: 1.5;
-  }
-
-  .feedback-actions {
-    display: flex;
-    gap: 12px;
-    padding: 20px;
-    justify-content: center;
-  }
-
-  .assist-btn {
-    padding: 14px 24px;
-    border: none;
-    border-radius: 15px;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 2px 8px var(--shadow);
-  }
-
-  .show-how-btn {
-    background: linear-gradient(135deg, var(--lavender), var(--deep-blue));
-    color: var(--white);
-  }
-
-  .try-again-btn {
-    background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
-    color: var(--white);
   }
 
   .camera-wrapper {
@@ -611,15 +459,7 @@
 
   .camera-section {
     min-height: 0;
-  }
-
-  .camera-half {
-    min-height: 0;
     display: flex;
-  }
-
-  .feedback-half {
-    min-height: 0;
   }
 
   .camera-wrapper {
@@ -660,7 +500,6 @@
 
   <div class="main-content">
     <div class="camera-section">
-      <div class="camera-half">
       <div class="camera-wrapper">
         <video id="cam" autoplay playsinline muted></video>
         <canvas id="overlay"></canvas>
@@ -697,25 +536,6 @@
         <div class="control-buttons">
           <button class="big-button start-btn" id="startBtn">Start Learning!</button>
           <button class="big-button stop-btn" id="stopBtn">Stop</button>
-        </div>
-      </div>
-      </div>
-      <div class="feedback-half">
-        <div class="feedback-panel">
-          <div class="skeleton-display" id="skeletonDisplay">
-            <span class="skeleton-label">Skeleton AI</span>
-            <button class="feedback-close-btn" id="feedbackCloseBtn" title="Close feedback" style="display:none;">&#10005;</button>
-            <canvas id="skeletonCanvas"></canvas>
-          </div>
-          <div class="feedback-content" id="feedbackContent">
-            <div class="feedback-icon" id="feedbackIcon">&#128075;</div>
-            <div class="feedback-title neutral" id="feedbackTitle">Ready!</div>
-            <div class="feedback-subtitle" id="feedbackSubtitle">Start signing to see feedback</div>
-          </div>
-          <div class="feedback-actions" id="feedbackActions" style="display:none;">
-            <button class="assist-btn show-how-btn" id="btnShowHow">&#128065; Show How</button>
-            <button class="assist-btn try-again-btn" id="btnTryAgain">&#8635; Try Again</button>
-          </div>
         </div>
       </div>
     </div>
@@ -770,14 +590,6 @@
   const timerOverlay=document.getElementById('timerOverlay');
   const ghostBadge=document.getElementById('ghostBadge');
   const personWarning=document.getElementById('personWarning');
-  const feedbackContent=document.getElementById('feedbackContent');
-  const feedbackIcon=document.getElementById('feedbackIcon');
-  const feedbackTitle=document.getElementById('feedbackTitle');
-  const feedbackSubtitle=document.getElementById('feedbackSubtitle');
-  const feedbackActions=document.getElementById('feedbackActions');
-  const skeletonCanvas=document.getElementById('skeletonCanvas');
-  const skeletonCtx=skeletonCanvas.getContext('2d');
-  const skeletonDisplayEl=document.getElementById('skeletonDisplay');
 
   const PREDICT_URL=location.origin+'/predict_auto';
   const SAVE_URL=location.origin+'/api/save_result';
@@ -1040,150 +852,6 @@
     }
   }
 
-  // ── Skeleton feedback panel (ported from select/activity) ──
-  let lastDetectedSign = null;
-  let skeletonFramesArr = null;
-  let skeletonIdx = 0;
-  let skeletonReady = false;
-  let skeletonAnimationId = null;
-
-  const POSE_CONNECTIONS = [
-    [11,12],[11,13],[13,15],[15,17],[15,19],[15,21],[17,19],
-    [12,14],[14,16],[16,18],[16,20],[16,22],[18,20],
-    [11,23],[12,24],[23,24],
-    [23,25],[24,26],[25,27],[26,28],[27,29],[28,30],[29,31],[30,32]
-  ];
-
-  function updateFeedbackPanel(icon, title, subtitle, titleClass, showActions) {
-    feedbackIcon.textContent = icon;
-    feedbackTitle.textContent = title;
-    feedbackTitle.className = 'feedback-title ' + (titleClass || 'neutral');
-    feedbackSubtitle.textContent = subtitle;
-    feedbackActions.style.display = showActions ? 'flex' : 'none';
-    feedbackContent.style.display = 'flex';
-  }
-
-  function drawSkeletonFrame(frame) {
-    if (!frame || !skeletonReady) return;
-    skeletonCtx.save();
-    skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
-    if (frame.pose && frame.pose.length > 0) {
-      skeletonCtx.strokeStyle = 'rgba(167, 139, 250, 0.9)';
-      skeletonCtx.lineWidth = 4;
-      skeletonCtx.shadowBlur = 12;
-      skeletonCtx.shadowColor = 'rgba(167, 139, 250, 0.6)';
-      POSE_CONNECTIONS.forEach(([s, e]) => {
-        const a = frame.pose[s], b = frame.pose[e];
-        if (a && b) {
-          skeletonCtx.beginPath();
-          skeletonCtx.moveTo(a.x * skeletonCanvas.width, a.y * skeletonCanvas.height);
-          skeletonCtx.lineTo(b.x * skeletonCanvas.width, b.y * skeletonCanvas.height);
-          skeletonCtx.stroke();
-        }
-      });
-      frame.pose.forEach(p => {
-        skeletonCtx.fillStyle = 'rgba(167, 139, 250, 1)';
-        skeletonCtx.beginPath();
-        skeletonCtx.arc(p.x * skeletonCanvas.width, p.y * skeletonCanvas.height, 6, 0, 2 * Math.PI);
-        skeletonCtx.fill();
-      });
-    }
-    if (frame.face && frame.face.length > 0) {
-      frame.face.forEach((p, i) => {
-        if (i % 10 === 0) {
-          skeletonCtx.fillStyle = 'rgba(255, 140, 66, 0.8)';
-          skeletonCtx.beginPath();
-          skeletonCtx.arc(p.x * skeletonCanvas.width, p.y * skeletonCanvas.height, 3, 0, 2 * Math.PI);
-          skeletonCtx.fill();
-        }
-      });
-    }
-    const drawHand = (lms, color) => {
-      if (!lms || !lms.length) return;
-      skeletonCtx.strokeStyle = color;
-      skeletonCtx.lineWidth = 4;
-      skeletonCtx.shadowBlur = 10;
-      skeletonCtx.shadowColor = color;
-      HAND_CONN.forEach(([s, e]) => {
-        const a = lms[s], b = lms[e];
-        if (a && b) {
-          skeletonCtx.beginPath();
-          skeletonCtx.moveTo(a.x * skeletonCanvas.width, a.y * skeletonCanvas.height);
-          skeletonCtx.lineTo(b.x * skeletonCanvas.width, b.y * skeletonCanvas.height);
-          skeletonCtx.stroke();
-        }
-      });
-      lms.forEach(p => {
-        skeletonCtx.fillStyle = color;
-        skeletonCtx.beginPath();
-        skeletonCtx.arc(p.x * skeletonCanvas.width, p.y * skeletonCanvas.height, 5, 0, 2 * Math.PI);
-        skeletonCtx.fill();
-      });
-    };
-    if (frame.rightHand && frame.rightHand.length > 0) drawHand(frame.rightHand, 'rgba(76, 201, 240, 0.95)');
-    if (frame.leftHand && frame.leftHand.length > 0) drawHand(frame.leftHand, 'rgba(6, 214, 160, 0.95)');
-    skeletonCtx.restore();
-  }
-
-  async function loadSkeletonFor(label) {
-    const cat = inferCategory(label);
-    const key = normLabel(label);
-    const url = await findDemoUrl(cat, key);
-    if (!url) return false;
-    const videoPath = url.replace(window.location.origin + '/', '');
-    const resp = await fetch('/api/ghost_landmarks', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ video_path: videoPath, total_frames: 20 })
-    });
-    const data = await resp.json();
-    skeletonFramesArr = [];
-    for (const f of (data.frames || [])) {
-      skeletonFramesArr.push({ pose: f.poseLandmarks || [], face: f.faceLandmarks || [], rightHand: f.rightHandLandmarks || [], leftHand: f.leftHandLandmarks || [] });
-    }
-    skeletonReady = skeletonFramesArr.length > 0;
-    return skeletonReady;
-  }
-
-  async function triggerShowHow() {
-    if (!lastDetectedSign) return;
-    feedbackContent.style.display = 'none';
-    feedbackActions.style.display = 'none';
-    skeletonDisplayEl.style.display = 'block';
-    document.getElementById('feedbackCloseBtn').style.display = 'flex';
-    skeletonFramesArr = null; skeletonReady = false; skeletonIdx = 0;
-    if (skeletonAnimationId) { cancelAnimationFrame(skeletonAnimationId); skeletonAnimationId = null; }
-    const ok = await loadSkeletonFor(lastDetectedSign);
-    if (ok) {
-      const animate = () => {
-        if (skeletonReady && skeletonFramesArr && skeletonFramesArr.length) {
-          skeletonIdx += 0.3;
-          if (skeletonIdx >= skeletonFramesArr.length) skeletonIdx = 0;
-          drawSkeletonFrame(skeletonFramesArr[Math.floor(skeletonIdx) % skeletonFramesArr.length]);
-          skeletonAnimationId = requestAnimationFrame(animate);
-        }
-      };
-      animate();
-    } else {
-      dismissSkeletonDisplay();
-    }
-  }
-
-  function dismissSkeletonDisplay() {
-    skeletonDisplayEl.style.display = 'none';
-    feedbackContent.style.display = 'flex';
-    document.getElementById('feedbackCloseBtn').style.display = 'none';
-    if (skeletonAnimationId) { cancelAnimationFrame(skeletonAnimationId); skeletonAnimationId = null; }
-    skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
-  }
-
-  document.getElementById('btnShowHow').onclick = () => { triggerShowHow(); };
-  document.getElementById('feedbackCloseBtn').onclick = () => { dismissSkeletonDisplay(); };
-  document.getElementById('btnTryAgain').onclick = () => {
-    dismissSkeletonDisplay();
-    updateFeedbackPanel('\u{1F44B}', 'Ready!', 'Keep signing \u2014 next prediction coming!', 'neutral', false);
-  };
-
   function mainOnResults(res){
     ctx.clearRect(0,0,canvasEl.width,canvasEl.height);
     ctx.drawImage(videoEl,0,0,canvasEl.width,canvasEl.height);
@@ -1338,7 +1006,6 @@ async function predict(){
     try { await _doPredict(); } finally { predicting = false; }
 }
 async function _doPredict(){
-    dismissSkeletonDisplay();
     if(buf.length < 5){
       if(showResults){
         const now = new Date().toLocaleTimeString();
@@ -1347,7 +1014,6 @@ async function _doPredict(){
         gestureOverlay.style.background = 'rgba(255,140,66,0.9)';
         detLabel.textContent = '—';
         detStatus.textContent = 'No hands detected';
-        updateFeedbackPanel('\u{1F937}', 'No Hands', 'Make sure your hands are visible', 'neutral', false);
 
         const histEntry = document.createElement('div');
         histEntry.style.marginBottom = '8px';
@@ -1375,7 +1041,6 @@ async function _doPredict(){
         gestureOverlay.style.color = '#333';
         detLabel.textContent = '—';
         detStatus.textContent = `Only ${buf.length} frames captured`;
-        updateFeedbackPanel('\u23F3', 'Too Few Frames', 'Keep signing! ' + buf.length + '/16 frames', 'neutral', false);
 
         const histEntry = document.createElement('div');
         histEntry.style.marginBottom = '8px';
@@ -1422,7 +1087,6 @@ async function _doPredict(){
             gestureOverlay.style.background = 'rgba(255,140,66,0.9)';
             detLabel.textContent = '—';
             detStatus.textContent = 'No hands detected';
-            updateFeedbackPanel('\u{1F937}', 'No Hands', 'No hand data detected', 'neutral', false);
 
         }else if(j.prediction==='Not in FSL dataset'){
             histEntry.innerHTML =
@@ -1432,7 +1096,6 @@ async function _doPredict(){
             gestureOverlay.style.background = 'rgba(167,139,250,0.9)';
             detLabel.textContent = '—';
             detStatus.textContent = 'Sign not recognized in FSL';
-            updateFeedbackPanel('\u2753', 'Not in FSL', 'Sign not recognized in dataset', 'neutral', false);
 
         }else if(j.prediction==='Incorrect'){
             histEntry.innerHTML =
@@ -1445,9 +1108,6 @@ async function _doPredict(){
 
             detLabel.textContent = cleanLabel(j.closest_sign)||'—';
             detStatus.textContent = 'Try again!';
-            lastDetectedSign = j.closest_sign || null;
-            updateFeedbackPanel('\u2717', 'Try Again!', 'Closest: ' + (cleanLabel(j.closest_sign) || '\u2014'), 'incorrect', true);
-            triggerShowHow();
 
             if(j.closest_sign && !loadingGhost){
                 loadingGhost = true;
@@ -1487,7 +1147,6 @@ async function _doPredict(){
             detLabel.textContent = cleanLabel(j.prediction)||'—';
             detStatus.textContent = 'Correct! Keep going!';
             celebrate();
-            updateFeedbackPanel('\u2713', cleanLabel(j.prediction) || '\u2014', 'Great Job! Keep going!', 'correct', false);
 
             ghostEnabled=false;
             ghostReady=false;
@@ -1521,7 +1180,6 @@ async function _doPredict(){
         gestureOverlay.style.display='block';
         gestureOverlay.style.background='rgba(255,140,66,0.9)';
         detStatus.textContent='Connection error';
-        updateFeedbackPanel('⚠️', 'Oops!', 'Connection error — try again', 'neutral', false);
     }
 
     // 🔥 CRITICAL RESET — TRUE WINDOW MODE
@@ -1591,23 +1249,14 @@ async function _doPredict(){
     ghostFrames=null;
     ghostBadge.style.display='none';
     if(ghostTimer)clearTimeout(ghostTimer);
-    dismissSkeletonDisplay();
-    updateFeedbackPanel('\u{1F44B}', 'Ready!', 'Start signing to see feedback', 'neutral', false);
-    lastDetectedSign=null;
     try{await camera.stop();}catch(_){}
     stopBtn.style.display='none';startBtn.style.display='inline-block';
   };
 
   clearBtn.onclick=()=>{historyEl.innerHTML='<div style="color: #999;">Start signing to see your progress!</div>';};
 
-  function resize(){
-    canvasEl.width=videoEl.clientWidth;canvasEl.height=videoEl.clientHeight;
-    const sc=skeletonCanvas.parentElement;
-    if(sc){skeletonCanvas.width=sc.clientWidth;skeletonCanvas.height=sc.clientHeight;}
-  }
-  new ResizeObserver(resize).observe(videoEl);
-  if(skeletonCanvas.parentElement) new ResizeObserver(resize).observe(skeletonCanvas.parentElement);
-  resize();
+  function resize(){canvasEl.width=videoEl.clientWidth;canvasEl.height=videoEl.clientHeight;}
+  new ResizeObserver(resize).observe(videoEl);resize();
 })();
 </script>
 
