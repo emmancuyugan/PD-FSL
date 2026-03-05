@@ -978,15 +978,30 @@ window.addEventListener("load", () => {
     return out;
   }
 
+  function normalizeAnchors(a){
+    // Transform face/pose anchors into the same shoulder-centered space as hands
+    if(!a||!a.L_SH||!a.R_SH||isNaN(a.L_SH.x)||isNaN(a.R_SH.x))return a;
+    const Cx=(a.L_SH.x+a.R_SH.x)/2,Cy=(a.L_SH.y+a.R_SH.y)/2,Cz=(a.L_SH.z+a.R_SH.z)/2;
+    const scale=Math.max(1e-6,dist2D(a.L_SH,a.R_SH));
+    const CLIP=5.0;
+    const n={};
+    for(const[k,v]of Object.entries(a)){
+      n[k]={x:Math.max(-CLIP,Math.min(CLIP,(v.x-Cx)/scale)),
+             y:Math.max(-CLIP,Math.min(CLIP,(v.y-Cy)/scale)),
+             z:Math.max(-CLIP,Math.min(CLIP,(v.z-Cz)/scale))};
+    }
+    return n;
+  }
+
   function derivedAltitudeFeatures(L,R,anchors){
     const out=[];
     const brow_y=0.5*(anchors.brow_r.y+anchors.brow_l.y);
     const SEL=[0,4,8,12,16,20];
     for(const H of [L,R]){
       for(const j of SEL){
-        const by=j*3+1, bz=j*3+2;
-        const py=H[by], pz=H[bz];
-        out.push(py-anchors.chin.y, py-anchors.lip_u.y, py-brow_y, py-anchors.forehead.y, pz-anchors.nose.z);
+        const bx=j*3, by=j*3+1, bz=j*3+2;
+        const px=H[bx], py=H[by], pz=H[bz];
+        out.push(px-anchors.chin.x, py-anchors.chin.y, py-anchors.lip_u.y, py-brow_y, py-anchors.forehead.y, pz-anchors.nose.z);
       }
     }
     return new Float32Array(out);
@@ -1030,7 +1045,9 @@ window.addEventListener("load", () => {
     const lf=Lh?1:0, rf=Rh?1:0;
     if(!Lh && !Rh) return null;
     const L=normalizeGlobal(Lh,anchors), R=normalizeGlobal(Rh,anchors);
-    const alt=derivedAltitudeFeatures(L,R,anchors);
+    // Normalize anchors into same shoulder-centered space before computing altitude features
+    const na=normalizeAnchors(anchors);
+    const alt=derivedAltitudeFeatures(L,R,na);
     return new Float32Array([...L,...R,...alt,lf,rf]);
   }
 
@@ -1663,7 +1680,7 @@ window.addEventListener("load", () => {
     if (running && state === STATE_CAPTURE) {
       frameCounter++;
       if (frameCounter % frameSkip === 0) {
-        const feat = packFeature(_latestLM);
+        const feat = packFeature(_displayLM);
         if (feat) updateBuffer(feat);
       }
 
@@ -1684,7 +1701,7 @@ window.addEventListener("load", () => {
 
   // ── Smooth landmark interpolation (chase-lerp at render rate) ──
   let _displayLM = {};
-  const _LERP_ALPHA = 0.45;
+  const _LERP_ALPHA = 0.30;  // lower = stronger smoothing (reduces thumb jitter)
   function _lerpList(prev, cur, a){
     if(!prev||!prev.length) return cur;
     if(!cur||!cur.length) return cur;

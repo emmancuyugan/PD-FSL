@@ -923,7 +923,7 @@
       ghostBadge.style.display='none';
     }
 
-    const feat=packFeature(_latestLM);
+    const feat=packFeature(_displayLM);
     if(running&&!feedbackActive&&feat){
       // OPTIMIZATION: Apply frame skipping for Jetson Orin Nano
       frameCount++;
@@ -953,7 +953,7 @@
 
   // ── Smooth landmark interpolation (chase-lerp at render rate) ──
   let _displayLM = {};
-  const _LERP_ALPHA = 0.45; // 0→sluggish, 1→instant snap
+  const _LERP_ALPHA = 0.30; // lower = stronger smoothing (reduces thumb jitter)
   function _lerpList(prev, cur, a){
     if(!prev||!prev.length) return cur;
     if(!cur||!cur.length) return cur;

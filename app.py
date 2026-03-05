@@ -95,7 +95,7 @@ def save_progress(label: str, confidence=None):
     db.session.commit()
 
 # For model loading and inference
-MODEL_PATH = r"run18.pt"
+MODEL_PATH = r"run20.pt"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 print("CUDA Available:", torch.cuda.is_available())
@@ -199,7 +199,7 @@ _mp_holistic_mod = mp.solutions.holistic
 
 server_holistic = _mp_holistic_mod.Holistic(
     static_image_mode=False,
-    model_complexity=1,          # 1 = ~2x faster than 2, good accuracy
+    model_complexity= 2,          
     smooth_landmarks=True,
     refine_face_landmarks=False,
     min_detection_confidence=0.55,
@@ -247,6 +247,7 @@ def prepare_sequence(data_json):
 
     if "sequence" in data_json:
         seq = np.array(data_json["sequence"], dtype=np.float32)
+        print(f"[DEBUG] sequence ndim={seq.ndim}, shape={seq.shape}, size={seq.size}, expected 1D size={seq_len*feat_dim}")
 
         if seq.ndim == 1 and seq.size == seq_len * feat_dim:
             seq = seq.reshape(seq_len, feat_dim)
@@ -639,7 +640,11 @@ def predict():
         else:
             raise ValueError("Missing 'sequence' or 'features'")
 
-        
+        # Save live sequence for debugging comparison
+        live_seq = x.squeeze(0).cpu().float().numpy()  # (seq_len, feat_dim)
+        np.save("tmp_live_seq.npy", live_seq)
+        print(f"[DEBUG] Saved live sequence to tmp_live_seq.npy  shape={live_seq.shape}")
+
         probs = run_inference(x)
         log_top3(probs, tag="PREDICT")
         pred_idx = int(np.argmax(probs))
