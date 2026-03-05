@@ -335,44 +335,6 @@
     accent-color: var(--grass-green);
   }
 
-  .difficulty-selector {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 25;
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 20px;
-    padding: 12px 20px;
-    box-shadow: 0 4px 16px var(--shadow);
-    backdrop-filter: blur(10px);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .difficulty-selector label {
-    font-weight: 700;
-    color: #333;
-    margin: 0;
-    font-size: 16px;
-  }
-
-  .difficulty-selector select {
-    border: 2px solid var(--grass-green);
-    border-radius: 12px;
-    padding: 8px 16px;
-    font-size: 16px;
-    font-weight: 600;
-    background: white;
-    cursor: pointer;
-    outline: none;
-  }
-
-  .difficulty-selector select:focus {
-    border-color: var(--deep-blue);
-    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
-  }
-
   .ghost-badge {
     position: absolute;
     bottom: 20px;
@@ -768,13 +730,7 @@
           </div>
         </div>
 
-        <div class="difficulty-selector" id="difficultyOverlay">
-          <label>Level:</label>
-          <select id="difficultySelect">
-            <option value="easy" selected>🟢 Easy</option>
-            <option value="compound">🔴 Compound</option>
-          </select>
-        </div>
+
 
         <div class="ghost-badge" id="ghostBadge">Ghost Helper ON</div>
 
@@ -856,11 +812,7 @@ window.addEventListener("load", () => {
     return EASY_ALL_SIGNS[Math.floor(Math.random() * EASY_ALL_SIGNS.length)];
   }
 
-  function pickCompoundSign(){
-    const first = NUMBER_SIGNS[Math.floor(Math.random() * NUMBER_SIGNS.length)];
-    const second = COLOR_SIGNS[Math.floor(Math.random()*COLOR_SIGNS.length)];
-    return `${first} + ${second}`;
-  }
+
 
   function celebrate(){
     if(!ENABLE_CONFETTI) return;
@@ -881,17 +833,13 @@ window.addEventListener("load", () => {
   const showCameraDisplay = () => {
     document.getElementById("cameraDisplay").style.display = 'block';
     document.getElementById("skeletonDisplay").style.display = 'none';
-    // Ensure settings/difficulty panels stay visible
     document.getElementById("settingsPanel").style.display = '';
-    document.getElementById("difficultyOverlay").style.display = '';
   };
 
   const showSkeletonDisplay = () => {
     document.getElementById("cameraDisplay").style.display = 'none';
     document.getElementById("skeletonDisplay").style.display = 'block';
-    // Keep settings/difficulty visible during skeleton feedback
     document.getElementById("settingsPanel").style.display = '';
-    document.getElementById("difficultyOverlay").style.display = '';
   };
 
   showCameraDisplay();
@@ -920,7 +868,7 @@ window.addEventListener("load", () => {
   const recBadge = document.getElementById("recBadge");
   const personWarning = document.getElementById("personWarning");
   const timerBar = document.getElementById("timerBar");
-  const difficultySelect = document.getElementById("difficultySelect");
+
 
   const toggleVisuals = document.getElementById('toggleVisuals');
   const toggleTimer   = document.getElementById('toggleTimer');
@@ -1101,9 +1049,7 @@ window.addEventListener("load", () => {
     if (targetGesture) {
       const cat = inferCategory(targetGesture);
       const capCat = cat.charAt(0).toUpperCase() + cat.slice(1);
-      // Handle compound targets like "One + Blue" — use the first sign
-      const first = targetGesture.split('+')[0].trim();
-      const capSign = first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+      const capSign = targetGesture.charAt(0).toUpperCase() + targetGesture.slice(1).toLowerCase();
       expectedLabel = capCat + '_' + capSign;
     }
     const body = expectedLabel ? { sequence, expected: expectedLabel } : { sequence };
@@ -1190,7 +1136,7 @@ window.addEventListener("load", () => {
         return { predicted: null, raw: j };
       }
 
-      if (difficultySelect.value !== "compound" && !silent) {
+      if (!silent) {
         const target = normLabel(targetGesture || '');
         if (predicted && target && predicted === target) {
           // CORRECT: Save the target gesture
@@ -1231,112 +1177,8 @@ window.addEventListener("load", () => {
     }
   }
 
-  async function stopAndPredict(isHalfway = false) {
+  async function stopAndPredict() {
     if (state !== STATE_CAPTURE && state !== STATE_PREP) return;
-
-    if (isHalfway) {
-      if (autoJudge === "lock" || autoJudge === "half_done") return;
-      autoJudge = "lock";
-
-      capturePhase.textContent = "✓ First sign complete — processing...";
-      const firstResult = await predictOnce(true);
-      window.firstCompoundResult = firstResult;
-
-      const [firstExpected, secondExpected] = (targetGesture || "")
-        .split("+")
-        .map(s => normLabel(s.trim()));
-
-      const firstPred = normLabel(firstResult?.predicted);
-      if (firstPred === firstExpected) {
-        resultText.textContent = `✓ First sign correct (${firstExpected})`;
-        resultText.className = "result-text correct";
-      } else {
-        resultText.textContent = `✗ First sign incorrect — expected ${firstExpected}`;
-        resultText.className = "result-text incorrect";
-      }
-
-      buf = [];
-      frameCounter = 0;
-      frameCountEl.textContent = "0";
-      progressBar.style.width = "0%";
-      timerBar.style.width = "0%";
-
-      setTimeout(() => {
-        autoJudge = "half_done";
-        capturePhase.textContent = "Perform second sign (~5 s)…";
-        captureStartMs = Date.now();
-      }, 1200);
-
-      return;
-    }
-
-    if (difficultySelect.value === "compound") {
-      if (autoJudge === "done") return;
-      autoJudge = "done";
-
-      running = false;
-      recBadge.style.display = "none";
-      capturePhase.textContent = "Processing results...";
-      try { await camera.stop(); } catch(_) {}
-
-      const secondResult = await predictOnce(true);
-      const firstResult = window.firstCompoundResult || {};
-
-      const [firstExpected, secondExpected] = (targetGesture || "")
-        .split("+")
-        .map(s => normLabel(s.trim()));
-
-      const firstPred = normLabel(firstResult?.predicted);
-      const secondPred = normLabel(secondResult?.predicted);
-
-      let summary = "";
-      if (firstPred === firstExpected && secondPred === secondExpected) {
-        summary = `✓ Compound correct: ${firstExpected} + ${secondExpected}`;
-        resultText.className = "result-text correct";
-        correctCount++;
-        celebrate();
-        // Save both correct results
-        await saveResult(firstExpected, firstResult?.raw?.confidence || null);
-        await saveResult(secondExpected, secondResult?.raw?.confidence || null);
-      } else if (firstPred === firstExpected && secondPred !== secondExpected) {
-        summary = `✗ Second sign incorrect — expected ${secondExpected}`;
-        resultText.className = "result-text incorrect";
-        incorrectCount++;
-        // Save first as correct, second as incorrect
-        await saveResult(firstExpected, firstResult?.raw?.confidence || null);
-        await saveResult("Incorrect", secondResult?.raw?.confidence || null);
-      } else if (firstPred !== firstExpected && secondPred === secondExpected) {
-        summary = `✗ First sign incorrect — expected ${firstExpected}`;
-        resultText.className = "result-text incorrect";
-        incorrectCount++;
-        // Save first as incorrect, second as correct
-        await saveResult("Incorrect", firstResult?.raw?.confidence || null);
-        await saveResult(secondExpected, secondResult?.raw?.confidence || null);
-      } else {
-        summary = `✗ Both signs incorrect`;
-        resultText.className = "result-text incorrect";
-        incorrectCount++;
-        // Save both as incorrect
-        await saveResult("Incorrect", firstResult?.raw?.confidence || null);
-        await saveResult("Incorrect", secondResult?.raw?.confidence || null);
-      }
-
-      resultText.textContent = summary;
-      correctCountEl.textContent = String(correctCount);
-      incorrectCountEl.textContent = String(incorrectCount);
-
-      stopNumericTimer();
-      setState(STATE_READY);
-      capturePhase.textContent = "Idle";
-      startBtn.style.display = "inline-block";
-      timerBar.style.width = "0%";
-
-      // Auto-advance on correct compound sign
-      if (firstPred === firstExpected && secondPred === secondExpected) {
-        setTimeout(() => { originalStart(); }, 2000);
-      }
-      return;
-    }
 
     running = false;
     recBadge.style.display = "none";
@@ -1541,8 +1383,7 @@ window.addEventListener("load", () => {
 
   function preloadGhost(label) {
     if (!label) return;
-    // For compound signs, preload the first component
-    const signLabel = label.includes('+') ? label.split('+')[0].trim() : label;
+    const signLabel = label;
     _ghostPreloadLabel = signLabel;
     _preloadedFrames = null;
     _ghostPreloadPromise = loadGhostFor(signLabel).then(ok => {
@@ -1654,13 +1495,11 @@ window.addEventListener("load", () => {
   function retryCurrentSign() {
     if (!targetGesture) { startBtn.click(); return; }
 
-    const diff = difficultySelect.value;
     const fastMode = toggleSpeed.checked;
-    CAPTURE_MS = fastMode ? 3000 : ((diff === "compound") ? BASE_CAPTURE_MS * 2 : BASE_CAPTURE_MS);
+    CAPTURE_MS = fastMode ? 3000 : BASE_CAPTURE_MS;
 
     // Keep the same targetGesture — just re-display it
-    const suffix = diff === "compound" ? " (Compound)" : " (Easy)";
-    updateGestureDisplay(`${targetGesture}${suffix}`);
+    updateGestureDisplay(targetGesture);
 
     showCameraDisplay();
 
@@ -1683,7 +1522,7 @@ window.addEventListener("load", () => {
       setState(STATE_CAPTURE);
       prepOverlay.style.display = "none";
       recBadge.style.display = "inline-block";
-      capturePhase.textContent = (diff === "compound") ? "Perform first sign (~5 s)…" : "Perform Now (~5 s)…";
+      capturePhase.textContent = "Perform Now (~5 s)…";
       captureStartMs = Date.now();
       startNumericTimer(toggleSpeed.checked);
     }, 1000);
@@ -1775,13 +1614,7 @@ window.addEventListener("load", () => {
 
       const elapsed = Date.now() - captureStartMs;
 
-      if (difficultySelect.value === "compound") {
-        if (elapsed >= BASE_CAPTURE_MS && autoJudge === false) {
-          stopAndPredict(true);
-        } else if (elapsed >= BASE_CAPTURE_MS * 2 && autoJudge === "half_done") {
-          stopAndPredict(false);
-        }
-      } else if (elapsed >= BASE_CAPTURE_MS && autoJudge === false) {
+      if (elapsed >= BASE_CAPTURE_MS && autoJudge === false) {
         autoJudge = true;
         setTimeout(() => stopAndPredict(), 80);
       }
@@ -1850,17 +1683,11 @@ window.addEventListener("load", () => {
   });
 
   const originalStart = () => {
-    const diff = difficultySelect.value;
     const fastMode = toggleSpeed.checked;
-    CAPTURE_MS = fastMode ? 3000 : ((diff === "compound") ? BASE_CAPTURE_MS * 2 : BASE_CAPTURE_MS);
+    CAPTURE_MS = fastMode ? 3000 : BASE_CAPTURE_MS;
 
-    if (diff === "easy") {
-      targetGesture = pickEasySign();
-      updateGestureDisplay(`${targetGesture} (Easy)`);
-    } else if (diff === "compound") {
-      targetGesture = pickCompoundSign();
-      updateGestureDisplay(`${targetGesture} (Compound)`);
-    }
+    targetGesture = pickEasySign();
+    updateGestureDisplay(targetGesture);
 
     // Ensure camera view is active
     showCameraDisplay();
@@ -1887,7 +1714,7 @@ window.addEventListener("load", () => {
       setState(STATE_CAPTURE);
       prepOverlay.style.display = "none";
       recBadge.style.display = "inline-block";
-      capturePhase.textContent = (diff === "compound") ? "Perform first sign (~5 s)…" : "Perform Now (~5 s)…";
+      capturePhase.textContent = "Perform Now (~5 s)…";
       captureStartMs = Date.now();
       startNumericTimer(toggleSpeed.checked);
     }, 1000);

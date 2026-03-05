@@ -32,7 +32,7 @@ except ImportError:
 from model import ModifiedLSTM
 from pathutils import resource_path
 
-ALWAYS_CORRECT = True
+ALWAYS_CORRECT = False
 
 app = Flask(
     __name__,
