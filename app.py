@@ -669,11 +669,11 @@ def predict():
         NOT_FSL_THRESHOLD = 0.90
 
         if conf < NOT_FSL_THRESHOLD:
-            print(f"[PREDICT] Not in FSL dataset (max_conf={conf:.4f})")
+            print(f"[PREDICT] Unrecognized Sign (max_conf={conf:.4f})")
             return jsonify({
-                "prediction": "Not in FSL dataset",
+                "prediction": "Unrecognized Sign",
                 "confidence": conf,
-                "message": "Sign not recognized in FSL dataset"
+                "message": "Unrecognized sign"
             })
 
         save_progress(label, conf)
@@ -734,11 +734,11 @@ def predict_auto():
         THRESHOLD = 0.92
 
         if conf < NOT_FSL_THRESHOLD:
-            print(f"[AUTO] Not in FSL dataset (max_conf={conf:.4f})")
+            print(f"[AUTO] Unrecognized Sign (max_conf={conf:.4f})")
             return jsonify({
-                "prediction": "Not in FSL dataset",
+                "prediction": "Unrecognized Sign",
                 "confidence": conf,
-                "message": "Sign not recognized in FSL dataset"
+                "message": "Unrecognized sign"
             })
 
         if conf < THRESHOLD:
