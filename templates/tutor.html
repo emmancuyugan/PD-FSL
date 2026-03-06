@@ -681,8 +681,6 @@
   }
 
   async function loadVideo(category, item, btnElement) {
-    await loadManifest();
-
     document.querySelectorAll('#videoButtons .select-btn').forEach(b => {
       b.classList.remove('active');
     });
@@ -693,32 +691,11 @@
 
     // Pause current video before switching
     video.pause();
-    
-    const list = VIDEO?.[category]?.[item];
-    let src = pickRandom(list);
 
-    // Fallback: try item_01.mp4 ... item_10.mp4, then item.mp4
-    if (!src) {
-      const base = `/static/video/${category}/${item}`;
-      const candidates = [];
-      for (let i = 1; i <= 10; i++) {
-        candidates.push(`${base}_${String(i).padStart(2, "0")}.mp4`);
-      }
-      candidates.push(`${base}.mp4`);
-
-      // pick the first one that exists
-      for (const u of candidates) {
-        try {
-          const r = await fetch(u, { method: "HEAD", cache: "no-store" });
-          if (r.ok) { src = u; break; }
-        } catch (_) {}
-      }
-    }
-
-    if (!src) {
-      console.warn("No video found for", category, item);
-      src = `/static/video/${category}/${item}.mp4`; // last resort
-    }
+    // Map category keys to file prefixes (numbers -> number)
+    const prefixMap = { numbers: 'number' };
+    const prefix = prefixMap[category] || category;
+    const src = `/static/learn_videos/${prefix}_${item}.mp4`;
 
     const poster = posterFromSrc(src);
 
