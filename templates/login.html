@@ -97,15 +97,15 @@
   .login-section {
     position: relative;
     z-index: 1;
-    min-height: 100vh;
+    min-height: calc(100vh - 48px);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 40px 20px;
+    padding: 10px 14px;
   }
 
   .login-container {
-    max-width: 480px;
+    max-width: 400px;
     width: 100%;
     animation: popUp 0.6s ease-out;
   }
@@ -117,23 +117,23 @@
 
   .login-card {
     background: var(--white);
-    border-radius: 30px;
-    padding: 50px;
+    border-radius: 16px;
+    padding: 20px 24px;
     text-align: center;
-    box-shadow: 0 12px 40px var(--shadow);
+    box-shadow: 0 4px 16px var(--shadow);
   }
 
   .login-icon {
-    width: 100px;
-    height: 100px;
-    margin: 0 auto 24px;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 10px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 48px;
-    box-shadow: 0 8px 24px rgba(67, 97, 238, 0.3);
+    font-size: 26px;
+    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
     animation: bounce 0.6s ease-out 0.2s backwards;
   }
 
@@ -144,26 +144,27 @@
   }
 
   .login-title {
-    font-size: 40px;
+    font-size: 22px;
     font-weight: 900;
     background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 12px;
+    margin-bottom: 4px;
   }
 
   .login-subtitle {
-    font-size: 16px;
+    font-size: 11px;
     color: #666;
-    margin-bottom: 32px;
+    margin-bottom: 14px;
   }
 
   .flash-message {
-    padding: 16px 20px;
-    border-radius: 15px;
-    margin-bottom: 24px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    margin-bottom: 10px;
     font-weight: 700;
+    font-size: 11px;
     animation: slideDown 0.4s ease-out;
   }
 
@@ -185,24 +186,24 @@
   }
 
   .form-group {
-    margin-bottom: 24px;
+    margin-bottom: 12px;
     text-align: left;
   }
 
   .form-label {
     display: block;
-    font-size: 16px;
+    font-size: 11px;
     font-weight: 700;
     color: #333;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
   }
 
   .form-input {
     width: 100%;
-    padding: 16px 20px;
-    border: 3px solid var(--grass-green);
-    border-radius: 15px;
-    font-size: 16px;
+    padding: 8px 12px;
+    border: 2px solid var(--grass-green);
+    border-radius: 10px;
+    font-size: 12px;
     font-weight: 600;
     transition: all 0.3s ease;
     background: var(--white);
@@ -222,17 +223,17 @@
 
   .submit-btn {
     width: 100%;
-    padding: 18px;
-    font-size: 20px;
+    padding: 10px;
+    font-size: 14px;
     font-weight: 700;
     border: none;
-    border-radius: 15px;
+    border-radius: 10px;
     background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
     color: var(--white);
     cursor: pointer;
-    box-shadow: 0 6px 20px rgba(6, 214, 160, 0.3);
+    box-shadow: 0 3px 10px rgba(6, 214, 160, 0.3);
     transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    margin-bottom: 24px;
+    margin-bottom: 10px;
   }
 
   .submit-btn:hover {
@@ -245,28 +246,28 @@
   }
 
   .signup-section {
-    margin-top: 24px;
-    padding-top: 24px;
+    margin-top: 10px;
+    padding-top: 10px;
     border-top: 2px solid #EEE;
   }
 
   .signup-text {
-    font-size: 16px;
+    font-size: 11px;
     color: #666;
-    margin-bottom: 12px;
+    margin-bottom: 6px;
   }
 
   .signup-link {
     display: inline-block;
-    padding: 12px 32px;
+    padding: 6px 18px;
     background: linear-gradient(135deg, var(--coral), var(--orange));
     color: var(--white);
     text-decoration: none;
-    border-radius: 15px;
+    border-radius: 10px;
     font-weight: 700;
-    font-size: 16px;
+    font-size: 11px;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+    box-shadow: 0 2px 6px rgba(255, 107, 157, 0.3);
   }
 
   .signup-link:hover {
@@ -276,11 +277,11 @@
 
   .back-link {
     display: inline-block;
-    margin-top: 24px;
+    margin-top: 10px;
     color: var(--deep-blue);
     text-decoration: none;
     font-weight: 700;
-    font-size: 16px;
+    font-size: 11px;
     transition: all 0.2s ease;
   }
 
