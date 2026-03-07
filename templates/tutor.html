@@ -96,15 +96,19 @@
   .page-container {
     position: relative;
     z-index: 1;
-    padding: 8px 14px;
+    padding: 12px 20px;
     max-width: 1400px;
     margin: 0 auto;
+    min-height: calc(100vh - 64px);
+    display: flex;
+    flex-direction: column;
   }
 
   .header-section {
     text-align: center;
-    margin-bottom: 10px;
+    margin-bottom: 14px;
     animation: slideDown 0.6s ease-out;
+    flex-shrink: 0;
   }
 
   @keyframes slideDown {
@@ -113,17 +117,17 @@
   }
 
   .page-title {
-    font-size: 24px;
+    font-size: 28px;
     font-weight: 900;
     background: linear-gradient(135deg, var(--deep-blue), var(--lavender), var(--coral));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
   }
 
   .page-subtitle {
-    font-size: 12px;
+    font-size: 15px;
     color: #333;
     max-width: 800px;
     margin: 0 auto;
@@ -133,31 +137,33 @@
   /* 3 categories on top, 2 on bottom */
   .categories-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(180px, 1fr));
-    gap: 8px;
-    margin-bottom: 8px;
+    grid-template-columns: repeat(3, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+    flex: 1;
   }
 
   .categories-grid-bottom {
     display: grid;
-    grid-template-columns: repeat(2, minmax(180px, 1fr));
-    gap: 8px;
-    margin-bottom: 10px;
+    grid-template-columns: repeat(2, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
     max-width: 900px;
     margin-left: auto;
     margin-right: auto;
+    flex: 1;
   }
 
   .category-card {
     background: var(--white);
-    border-radius: 14px;
-    padding: 10px 12px;
-    box-shadow: 0 2px 8px var(--shadow);
+    border-radius: 16px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 10px var(--shadow);
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     animation: popUp 0.6s ease-out backwards;
     min-height: 0;
-    min-width: 180px;
+    min-width: 200px;
     display: flex;
     flex-direction: column;
   }
@@ -181,23 +187,23 @@
   }
 
   .card-title {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 900;
     margin: 0;
   }
 
   .card-badge {
-    padding: 4px 10px;
+    padding: 5px 12px;
     border-radius: 10px;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
     white-space: nowrap;
   }
 
   .card-description {
     color: #666;
-    font-size: 11px;
-    margin-bottom: 8px;
+    font-size: 13px;
+    margin-bottom: 10px;
     line-height: 1.4;
   }
 
@@ -208,10 +214,10 @@
   }
 
   .item-badge {
-    padding: 6px 8px;
+    padding: 8px 10px;
     border-radius: 8px;
     font-weight: 700;
-    font-size: 11px;
+    font-size: 13px;
     text-align: center;
     transition: all 0.2s ease;
   }
@@ -302,9 +308,9 @@
   /* Video Detail View Styles */
   .detail-card {
     background: var(--white);
-    border-radius: 14px;
-    padding: 12px 14px;
-    box-shadow: 0 2px 8px var(--shadow);
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 0 2px 10px var(--shadow);
     animation: fadeIn 0.6s ease-out;
   }
 
@@ -321,22 +327,23 @@
   }
 
   .detail-title {
-    font-size: 18px;
+    font-size: 22px;
     font-weight: 900;
     margin: 0;
   }
 
   .back-btn {
-    padding: 6px 14px;
+    padding: 8px 18px;
     background: linear-gradient(135deg, var(--orange), var(--sunshine));
     color: var(--white);
     border: none;
     border-radius: 10px;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 2px 6px rgba(255, 140, 66, 0.3);
+    min-height: 40px;
   }
 
   .selection-buttons {
@@ -347,16 +354,17 @@
   }
 
   .select-btn {
-    padding: 6px 10px;
+    padding: 8px 12px;
     background: var(--white);
     color: #333;
     border: 2px solid var(--grass-green);
-    border-radius: 8px;
-    font-size: 11px;
+    border-radius: 10px;
+    font-size: 13px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     box-shadow: 0 1px 4px var(--shadow);
+    min-height: 40px;
   }
 
   .select-btn.active {
@@ -389,10 +397,10 @@
   }
 
   .steps-title {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--deep-blue);
-    margin-bottom: 6px;
+    margin-bottom: 8px;
   }
 
   .steps-list {
@@ -401,7 +409,7 @@
   }
 
   .steps-list li {
-    font-size: 11px;
+    font-size: 14px;
     color: #666;
     line-height: 1.6;
     margin-bottom: 4px;
