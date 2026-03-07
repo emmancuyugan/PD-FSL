@@ -706,7 +706,6 @@
           <span class="pip-label">Camera</span>
           <video id="mainCamera" autoplay playsinline muted></video>
           <canvas id="overlayCanvas"></canvas>
-          <canvas id="silhouetteOverlay" width="320" height="360" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></canvas>
           <div class="fps-counter" id="fpsCounter">FPS: 0</div>
         </div>
 
@@ -809,76 +808,6 @@
 
 <script>
 window.addEventListener("load", () => {
-    // Silhouette overlay logic
-    const silhouetteOverlay = document.getElementById("silhouetteOverlay");
-    const overlayCtx = silhouetteOverlay ? silhouetteOverlay.getContext("2d") : null;
-    // Silhouette dimensions (1.7m tall at 1.0m distance, IMX477-160 FOV)
-    const silhouetteHeightPx = 280; // 1.7m mapped to 280px (fit in 360px canvas)
-    const silhouetteWidthPx = 80;   // average shoulder width ~40cm mapped to 80px
-    const silhouetteY = 40;         // vertical offset
-    const silhouetteX = 120;        // horizontal offset
-    // Draw silhouette
-    function drawSilhouette(color) {
-      if (!overlayCtx) return;
-      overlayCtx.clearRect(0, 0, silhouetteOverlay.width, silhouetteOverlay.height);
-      overlayCtx.save();
-      overlayCtx.globalAlpha = 0.25;
-      overlayCtx.strokeStyle = color;
-      overlayCtx.lineWidth = 4;
-      overlayCtx.beginPath();
-      // Head
-      overlayCtx.arc(silhouetteX + silhouetteWidthPx/2, silhouetteY + 30, 30, 0, 2*Math.PI);
-      // Body
-      overlayCtx.moveTo(silhouetteX + silhouetteWidthPx/2, silhouetteY + 60);
-      overlayCtx.lineTo(silhouetteX + silhouetteWidthPx/2, silhouetteY + silhouetteHeightPx - 40);
-      // Shoulders
-      overlayCtx.moveTo(silhouetteX, silhouetteY + 60);
-      overlayCtx.lineTo(silhouetteX + silhouetteWidthPx, silhouetteY + 60);
-      // Arms
-      overlayCtx.moveTo(silhouetteX, silhouetteY + 60);
-      overlayCtx.lineTo(silhouetteX, silhouetteY + silhouetteHeightPx - 80);
-      overlayCtx.moveTo(silhouetteX + silhouetteWidthPx, silhouetteY + 60);
-      overlayCtx.lineTo(silhouetteX + silhouetteWidthPx, silhouetteY + silhouetteHeightPx - 80);
-      // Legs
-      overlayCtx.moveTo(silhouetteX + silhouetteWidthPx/2, silhouetteY + silhouetteHeightPx - 40);
-      overlayCtx.lineTo(silhouetteX + 20, silhouetteY + silhouetteHeightPx);
-      overlayCtx.moveTo(silhouetteX + silhouetteWidthPx/2, silhouetteY + silhouetteHeightPx - 40);
-      overlayCtx.lineTo(silhouetteX + silhouetteWidthPx - 20, silhouetteY + silhouetteHeightPx);
-      overlayCtx.stroke();
-      overlayCtx.restore();
-    }
-    // Initial draw: red (not detected)
-    drawSilhouette("#FF6B9D");
-    function updateSilhouetteFeedback(poseLandmarks) {
-      if (poseLandmarks && Array.isArray(poseLandmarks)) {
-        let minY = 999, maxY = -999, minX = 999, maxX = -999;
-        poseLandmarks.forEach(pt => {
-          if (pt && typeof pt.x === "number" && typeof pt.y === "number") {
-            minX = Math.min(minX, pt.x);
-            maxX = Math.max(maxX, pt.x);
-            minY = Math.min(minY, pt.y);
-            maxY = Math.max(maxY, pt.y);
-          }
-        });
-        minY = minY * silhouetteOverlay.height;
-        maxY = maxY * silhouetteOverlay.height;
-        minX = minX * silhouetteOverlay.width;
-        maxX = maxX * silhouetteOverlay.width;
-        const userHeight = maxY - minY;
-        const userWidth = maxX - minX;
-        const heightDiff = Math.abs(userHeight - silhouetteHeightPx);
-        const widthDiff = Math.abs(userWidth - silhouetteWidthPx);
-        if (heightDiff < silhouetteHeightPx * 0.15 && widthDiff < silhouetteWidthPx * 0.15) {
-          drawSilhouette("#06D6A0"); // green
-        } else if (heightDiff < silhouetteHeightPx * 0.3 && widthDiff < silhouetteWidthPx * 0.3) {
-          drawSilhouette("#FFD93D"); // yellow
-        } else {
-          drawSilhouette("#FF6B9D"); // red
-        }
-      } else {
-        drawSilhouette("#FF6B9D"); // red
-      }
-    }
   const ENABLE_CONFETTI = false; // keep look, disable expensive confetti
   const NUMBER_SIGNS = ["One","Two","Three","Four","Five"];
   const COLOR_SIGNS  = ["Black","Blue","Green","Orange","Pink","Red","White","Yellow"];
