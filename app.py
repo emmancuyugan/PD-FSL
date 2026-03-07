@@ -666,7 +666,7 @@ def predict():
                 "demo": demo_path or f"No demo found for {expected}"
             })
 
-        NOT_FSL_THRESHOLD = 0.90
+        NOT_FSL_THRESHOLD = 0.70
 
         if conf < NOT_FSL_THRESHOLD:
             print(f"[PREDICT] Unrecognized Sign (max_conf={conf:.4f})")
@@ -730,8 +730,8 @@ def predict_auto():
                 "message": f"✅ Correct — {expected.replace('_', ' ')}"
             })
 
-        NOT_FSL_THRESHOLD = 0.70
-        THRESHOLD = 0.92
+        NOT_FSL_THRESHOLD = 0.50
+        THRESHOLD = 0.75
 
         if conf < NOT_FSL_THRESHOLD:
             print(f"[AUTO] Unrecognized Sign (max_conf={conf:.4f})")
