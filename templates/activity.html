@@ -600,49 +600,6 @@
     display: none;
   }
 
-  /* Distance guide badge */
-  .distance-badge {
-    position: absolute;
-    top: 60px;
-    right: 20px;
-    padding: 8px 16px;
-    border-radius: 12px;
-    font-size: 14px;
-    font-weight: 700;
-    z-index: 21;
-    pointer-events: none;
-    transition: background 0.3s, color 0.3s;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  }
-
-  /* Video feedback overlay */
-  .video-feedback-overlay {
-    position: absolute;
-    inset: 0;
-    background: #000;
-    z-index: 28;
-    display: none;
-    border-radius: 30px;
-    overflow: hidden;
-  }
-  .video-feedback-overlay video {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-  .video-feedback-label {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    background: rgba(167,139,250,0.9);
-    color: #fff;
-    padding: 10px 20px;
-    border-radius: 15px;
-    font-size: 16px;
-    font-weight: 700;
-    z-index: 29;
-  }
-
   @media (max-width: 1024px) {
     .app-container {
       padding: 15px;
@@ -771,32 +728,13 @@
             <input type="checkbox" id="toggleSpeed">
             <span>Fast Mode (3 Seconds)</span>
           </div>
-          <div class="setting-item">
-            <input type="checkbox" id="toggleDistanceGuide" checked>
-            <span>Distance Guide</span>
-          </div>
-          <div class="setting-item" style="flex-direction:column;align-items:flex-start;gap:6px;">
-            <span>Feedback Mode</span>
-            <select id="feedbackModeSelect" style="width:100%;padding:6px 10px;border:2px solid var(--grass-green);border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">
-              <option value="skeleton">Skeleton Overlay</option>
-              <option value="video">Video Demo</option>
-            </select>
-          </div>
         </div>
 
 
 
         <div class="ghost-badge" id="ghostBadge">Ghost Helper ON</div>
 
-        <!-- Distance guide badge -->
-        <div class="distance-badge" id="distanceBadge" style="display:none;"></div>
 
-        <!-- Video feedback overlay -->
-        <div class="video-feedback-overlay" id="videoFeedbackOverlay">
-          <span class="video-feedback-label">Video Demo</span>
-          <button class="feedback-close-btn" id="videoFeedbackCloseBtn" title="Close video" style="z-index:30;">✕</button>
-          <video id="feedbackVideo" playsinline muted></video>
-        </div>
 
         <div class="timer-bar-container">
           <div class="timer-bar" id="timerBar"></div>
@@ -936,15 +874,10 @@ window.addEventListener("load", () => {
   const toggleTimer   = document.getElementById('toggleTimer');
   const toggleResults = document.getElementById('toggleResults');
   const toggleSpeed   = document.getElementById('toggleSpeed');
-  const toggleDistanceGuide = document.getElementById('toggleDistanceGuide');
-  const feedbackModeSelect = document.getElementById('feedbackModeSelect');
-  const distanceBadge = document.getElementById('distanceBadge');
 
   let showVisuals = true;
   let showTimer   = true;
   let showResults = true;
-  let showDistanceGuide = true;
-  let feedbackMode = 'skeleton'; // 'skeleton' or 'video'
 
   toggleVisuals.onchange = () => { showVisuals = toggleVisuals.checked; };
   toggleTimer.onchange   = () => {
@@ -954,13 +887,6 @@ window.addEventListener("load", () => {
   toggleResults.onchange = () => {
     showResults = toggleResults.checked;
     resultText.style.display = showResults ? 'block' : 'none';
-  };
-  toggleDistanceGuide.onchange = () => {
-    showDistanceGuide = toggleDistanceGuide.checked;
-    if (!showDistanceGuide) distanceBadge.style.display = 'none';
-  };
-  feedbackModeSelect.onchange = () => {
-    feedbackMode = feedbackModeSelect.value;
   };
 
   const STATE_READY=0, STATE_PREP=1, STATE_CAPTURE=2;
@@ -1472,13 +1398,6 @@ window.addEventListener("load", () => {
   async function triggerShowHow() {
     if(!targetGesture) return;
     
-    // If video feedback mode is selected, show the learn video instead
-    if (feedbackMode === 'video') {
-      await camera.stop();
-      showVideoFeedback(targetGesture);
-      return;
-    }
-
     if(ghostAnimationId) {
       cancelAnimationFrame(ghostAnimationId);
       ghostAnimationId = null;
@@ -1553,7 +1472,6 @@ window.addEventListener("load", () => {
     }
     if (ghostTimer) { clearTimeout(ghostTimer); ghostTimer = null; }
     skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
-    hideVideoFeedback();
     showCameraDisplay();
   }
 
@@ -1571,116 +1489,6 @@ window.addEventListener("load", () => {
     document.getElementById("assistRow").style.display = 'none';
     // Retry the same sign instead of picking a new one
     retryCurrentSign();
-  };
-
-  // ── Distance Guide Constants ──
-  // Optimal shoulder span as fraction of frame width: ~0.15 to 0.30
-  // This corresponds roughly to sitting 2-3 feet from the camera.
-  const DIST_IDEAL_MIN = 0.13;
-  const DIST_IDEAL_MAX = 0.32;
-  const DIST_WARN_MIN  = 0.08; // too far
-  const DIST_WARN_MAX  = 0.42; // too close
-
-  function drawDistanceGuide(ctx, w, h, pose) {
-    if (!showDistanceGuide) { distanceBadge.style.display = 'none'; return; }
-    const lSh = lm(pose, 11);
-    const rSh = lm(pose, 12);
-    if (!lSh || !rSh || isNaN(lSh.x) || isNaN(rSh.x)) {
-      distanceBadge.style.display = 'none';
-      return;
-    }
-
-    const shoulderSpan = Math.abs(rSh.x - lSh.x);
-    let color, label, bgColor;
-
-    if (shoulderSpan >= DIST_IDEAL_MIN && shoulderSpan <= DIST_IDEAL_MAX) {
-      color = 'rgba(6, 214, 160, 0.7)';   // green
-      bgColor = 'rgba(6, 214, 160, 0.9)';
-      label = '✓ Good Distance';
-    } else if (shoulderSpan < DIST_IDEAL_MIN && shoulderSpan >= DIST_WARN_MIN) {
-      color = 'rgba(255, 217, 61, 0.7)';   // yellow
-      bgColor = 'rgba(255, 140, 66, 0.9)';
-      label = '↑ Move Closer';
-    } else if (shoulderSpan > DIST_IDEAL_MAX && shoulderSpan <= DIST_WARN_MAX) {
-      color = 'rgba(255, 217, 61, 0.7)';   // yellow
-      bgColor = 'rgba(255, 140, 66, 0.9)';
-      label = '↓ Move Back';
-    } else if (shoulderSpan < DIST_WARN_MIN) {
-      color = 'rgba(255, 107, 157, 0.7)';  // red
-      bgColor = 'rgba(255, 107, 157, 0.9)';
-      label = '⚠ Too Far Away';
-    } else {
-      color = 'rgba(255, 107, 157, 0.7)';  // red
-      bgColor = 'rgba(255, 107, 157, 0.9)';
-      label = '⚠ Too Close';
-    }
-
-    // Draw silhouette guide frame (shoulder-level rectangle showing ideal zone)
-    const guideTop = h * 0.08;
-    const guideBottom = h * 0.92;
-    const guideLeft = w * 0.15;
-    const guideRight = w * 0.85;
-    const guideR = 20;
-
-    ctx.save();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 3;
-    ctx.setLineDash([12, 8]);
-
-    // Draw rounded rectangle guide
-    ctx.beginPath();
-    ctx.moveTo(guideLeft + guideR, guideTop);
-    ctx.lineTo(guideRight - guideR, guideTop);
-    ctx.arcTo(guideRight, guideTop, guideRight, guideTop + guideR, guideR);
-    ctx.lineTo(guideRight, guideBottom - guideR);
-    ctx.arcTo(guideRight, guideBottom, guideRight - guideR, guideBottom, guideR);
-    ctx.lineTo(guideLeft + guideR, guideBottom);
-    ctx.arcTo(guideLeft, guideBottom, guideLeft, guideBottom - guideR, guideR);
-    ctx.lineTo(guideLeft, guideTop + guideR);
-    ctx.arcTo(guideLeft, guideTop, guideLeft + guideR, guideTop, guideR);
-    ctx.closePath();
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.restore();
-
-    // Update the badge
-    distanceBadge.style.display = 'block';
-    distanceBadge.style.background = bgColor;
-    distanceBadge.style.color = '#fff';
-    distanceBadge.textContent = label;
-  }
-
-  // ── Video Feedback Functions ──
-  function getLearnVideoUrl(label) {
-    const cat = inferCategory(label);
-    const key = normLabel(label);
-    const prefixMap = { numbers: 'number' };
-    const prefix = prefixMap[cat] || cat;
-    return `/static/learn_videos/${prefix}_${key}.mp4`;
-  }
-
-  function showVideoFeedback(label) {
-    const url = getLearnVideoUrl(label);
-    const overlay = document.getElementById('videoFeedbackOverlay');
-    const video = document.getElementById('feedbackVideo');
-    video.src = url;
-    video.loop = true;
-    video.muted = false;
-    overlay.style.display = 'block';
-    video.play().catch(() => { video.muted = true; video.play(); });
-  }
-
-  function hideVideoFeedback() {
-    const overlay = document.getElementById('videoFeedbackOverlay');
-    const video = document.getElementById('feedbackVideo');
-    video.pause();
-    video.src = '';
-    overlay.style.display = 'none';
-  }
-
-  document.getElementById('videoFeedbackCloseBtn').onclick = async () => {
-    hideVideoFeedback();
-    await camera.start();
   };
 
   function retryCurrentSign() {
@@ -1793,9 +1601,6 @@ window.addEventListener("load", () => {
       if (RH) drawBox(RH, 'rgba(6,214,160,0.9)');
       if (LH) drawBox(LH, 'rgba(255,107,157,0.9)');
     }
-
-    // Draw distance guide overlay
-    drawDistanceGuide(ctx, canvasEl.width, canvasEl.height, pose);
 
     ctx.restore();
 
@@ -1938,8 +1743,6 @@ window.addEventListener("load", () => {
     stopNumericTimer();
     startBtn.style.display='inline-block';
     scaleMultiplier=1.08; yOffset=-0.08; ghostPlaybackSpeed=0.3;
-    hideVideoFeedback();
-    distanceBadge.style.display = 'none';
   };
   resetBtn.onclick = async () => {
     document.body.classList.remove('camera-running'); await stopPreviewIfAny(); originalReset(); };
