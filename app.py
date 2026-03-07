@@ -32,8 +32,6 @@ except ImportError:
 from model import ModifiedLSTM
 from pathutils import resource_path
 
-ALWAYS_CORRECT = False
-
 app = Flask(
     __name__,
     template_folder=resource_path("templates"),
@@ -654,18 +652,6 @@ def predict():
         
         conf = float(np.max(probs))
 
-        # ── ALWAYS_CORRECT override ──
-        if ALWAYS_CORRECT:
-            expected = data.get("expected", label)
-            save_progress(expected, 1.0)
-            demo_path = get_demo_video_path(expected)
-            print(f"[PREDICT] ALWAYS_CORRECT → {expected}")
-            return jsonify({
-                "prediction": expected,
-                "confidence": 1.0,
-                "demo": demo_path or f"No demo found for {expected}"
-            })
-
         NOT_FSL_THRESHOLD = 0.90
 
         if conf < NOT_FSL_THRESHOLD:
@@ -718,17 +704,6 @@ def predict_auto():
         conf = float(np.max(probs)) 
         pred_idx = int(np.argmax(probs))
         label = CLASSES[pred_idx]
-
-        # ── ALWAYS_CORRECT override ──
-        if ALWAYS_CORRECT:
-            expected = data.get("expected", label)
-            save_progress(expected, 1.0)
-            print(f"[AUTO] ALWAYS_CORRECT → {expected}")
-            return jsonify({
-                "prediction": expected,
-                "confidence": 1.0,
-                "message": f"✅ Correct — {expected.replace('_', ' ')}"
-            })
 
         NOT_FSL_THRESHOLD = 0.70
         THRESHOLD = 0.92
