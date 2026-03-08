@@ -944,31 +944,22 @@
     }
 
     const feat=packFeature(_displayLM);
-    if(running&&!feedbackActive){
-      if(feat){
-        // OPTIMIZATION: Apply frame skipping for Jetson Orin Nano
-        frameCount++;
-        if(frameCount % frameSkip === 0){
-          // Keep buffer at max size
-          if(buf.length<CAPTURE_MAX) buf.push(feat);
-          else { buf.shift(); buf.push(feat); }
-          frameInfo.textContent='Capturing: '+Math.floor(buf.length)+' frames';
-          frameInfo.style.display='block';
-          
-          // Auto-trigger when buffer reaches 75% capacity
-          const threshold = Math.ceil(CAPTURE_MAX * 0.75);
-          if(buf.length >= threshold && !autoJudge){
-            autoJudge=true; 
-            setTimeout(()=>predict(), 200);
-          }
-        }
-      } else if(buf.length > 0) {
-        // Hand dropped — reset accumulated frames so next sign starts fresh
-        buf = [];
-        frameCount = 0;
-        autoJudge = false;
-        frameInfo.textContent='Hand lost — reset';
+    if(running&&!feedbackActive&&feat){
+      // OPTIMIZATION: Apply frame skipping for Jetson Orin Nano
+      frameCount++;
+      if(frameCount % frameSkip === 0){
+        // Keep buffer at max size
+        if(buf.length<CAPTURE_MAX) buf.push(feat);
+        else { buf.shift(); buf.push(feat); }
+        frameInfo.textContent='Capturing: '+Math.floor(buf.length)+' frames';
         frameInfo.style.display='block';
+        
+        // Auto-trigger when buffer reaches 75% capacity
+        const threshold = Math.ceil(CAPTURE_MAX * 0.75);
+        if(buf.length >= threshold && !autoJudge){
+          autoJudge=true; 
+          setTimeout(()=>predict(), 200);
+        }
       }
     }
   }
