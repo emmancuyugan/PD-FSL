@@ -989,7 +989,7 @@
 
     // ── Smooth landmark interpolation (chase-lerp at render rate) ──
     let _displayLM = {};
-    const _LERP_ALPHA = 0.50; // higher = more responsive real-time tracking
+    const _LERP_ALPHA = 0.25; // lower = smoother glide, higher = snappier tracking
     function _lerpList(prev, cur, a) {
       if (!prev || !prev.length) return cur;
       if (!cur || !cur.length) return cur;
