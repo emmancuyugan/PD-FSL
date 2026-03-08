@@ -539,6 +539,10 @@
             <input type="checkbox" id="toggleSpeed">
             <span>Fast Mode (3 Seconds)</span>
           </div>
+          <div class="setting-item">
+            <input type="checkbox" id="toggleDistance" checked>
+            <span>Distance Guide</span>
+          </div>
         </div>
 
         <div class="control-buttons">
@@ -569,6 +573,7 @@
 
 <script src="{{ url_for('static', filename='mediapipe/camera_utils/camera_utils.js') }}"></script>
 <script src="{{ url_for('static', filename='mediapipe/drawing_utils/drawing_utils.js') }}"></script>
+<script src="{{ url_for('static', filename='distance-guide.js') }}"></script>
 
 <script>
 (() => {
@@ -594,6 +599,7 @@
   const toggleTimer=document.getElementById('toggleTimer');
   const toggleResults=document.getElementById('toggleResults');
   const toggleSpeed=document.getElementById('toggleSpeed');
+  const toggleDistance=document.getElementById('toggleDistance');
   const gestureOverlay=document.getElementById('gestureOverlay');
   const timerOverlay=document.getElementById('timerOverlay');
   const ghostBadge=document.getElementById('ghostBadge');
@@ -608,7 +614,7 @@
   const CAPTURE_MAX = 80;  // Adjusted for frameSkip=2
   const BASE_CAPTURE_MS = 5500;  // Increased to ensure enough frames
   let CAPTURE_MS = BASE_CAPTURE_MS;
-  let buf=[],running=false,handsPresent=false,frameCount=0,showVisuals=true,showTimer=true,showResults=true;
+  let buf=[],running=false,handsPresent=false,frameCount=0,showVisuals=true,showTimer=true,showResults=true,showDistanceGuide=true;
   let frameSkip=2;
   let autoJudge=false;  // Track auto-trigger to prevent multiple calls
   let predicting=false; // Lock: true while predict() is in-flight
@@ -863,6 +869,8 @@
   function mainOnResults(res){
     ctx.clearRect(0,0,canvasEl.width,canvasEl.height);
     ctx.drawImage(videoEl,0,0,canvasEl.width,canvasEl.height);
+
+    if(showDistanceGuide && !running) DistanceGuide.draw(ctx,canvasEl.width,canvasEl.height,res.poseLandmarks);
 
     // Person detection warnings
     const pc = res.personCount;
@@ -1197,6 +1205,7 @@ async function _doPredict(){
 }
 
   toggleVisuals.onchange=()=>{showVisuals=toggleVisuals.checked;};
+  toggleDistance.onchange=()=>{showDistanceGuide=toggleDistance.checked;};
   toggleTimer.onchange=()=>{showTimer=toggleTimer.checked;timerOverlay.style.display=showTimer?'block':'none';};
   toggleResults.onchange=()=>{showResults=toggleResults.checked;gestureOverlay.style.display=showResults?'block':'none';};
 

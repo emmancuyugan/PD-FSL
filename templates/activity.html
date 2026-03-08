@@ -737,6 +737,10 @@
             <input type="checkbox" id="toggleSpeed">
             <span>Fast Mode (3 Seconds)</span>
           </div>
+          <div class="setting-item">
+            <input type="checkbox" id="toggleDistance" checked>
+            <span>Distance Guide</span>
+          </div>
         </div>
 
 
@@ -805,6 +809,7 @@
 
 <script src="{{ url_for('static', filename='mediapipe/camera_utils/camera_utils.js') }}"></script>
 <script src="{{ url_for('static', filename='mediapipe/drawing_utils/drawing_utils.js') }}"></script>
+<script src="{{ url_for('static', filename='distance-guide.js') }}"></script>
 
 <script>
 window.addEventListener("load", () => {
@@ -883,12 +888,15 @@ window.addEventListener("load", () => {
   const toggleTimer   = document.getElementById('toggleTimer');
   const toggleResults = document.getElementById('toggleResults');
   const toggleSpeed   = document.getElementById('toggleSpeed');
+  const toggleDistance = document.getElementById('toggleDistance');
 
   let showVisuals = true;
   let showTimer   = true;
   let showResults = true;
+  let showDistanceGuide = true;
 
   toggleVisuals.onchange = () => { showVisuals = toggleVisuals.checked; };
+  toggleDistance.onchange = () => { showDistanceGuide = toggleDistance.checked; };
   toggleTimer.onchange   = () => {
     showTimer = toggleTimer.checked;
     timerBar.style.display = showTimer ? 'block' : 'none';
@@ -1540,6 +1548,8 @@ window.addEventListener("load", () => {
     ctx.save();
     ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
     ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
+
+    if(showDistanceGuide && state !== STATE_CAPTURE) DistanceGuide.draw(ctx,canvasEl.width,canvasEl.height,res.poseLandmarks);
 
     // Person detection warnings
     const pc = res.personCount;
