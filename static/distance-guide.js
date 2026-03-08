@@ -103,16 +103,40 @@ const DistanceGuide = (() => {
   function drawBadge(ctx, W, H, status) {
     ctx.save();
     var text = status.text;
-    var fontSize = Math.max(11, Math.min(14, W * 0.028));
+    var fontSize = Math.max(18, Math.min(24, W * 0.045));
     ctx.font = '700 ' + fontSize + 'px Inter, system-ui, sans-serif';
-    // Position text at upper right
-    var textX = W - fontSize * 8;
-    var textY = fontSize * 2;
+    var metrics = ctx.measureText(text);
+    var textW = metrics.width;
+    var padX = fontSize * 1.2;
+    var padY = fontSize * 0.7;
+    var boxW = textW + padX * 2;
+    var boxH = fontSize + padY * 2;
+    // Draw rectangle at center
+    var rectX = (W - boxW) / 2;
+    var rectY = (H - boxH) / 2;
+    var radius = boxH / 2;
+
     ctx.globalAlpha = status.level === 'green' ? 0.55 : 0.80;
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+    ctx.beginPath();
+    ctx.moveTo(rectX + radius, rectY);
+    ctx.lineTo(rectX + boxW - radius, rectY);
+    ctx.arcTo(rectX + boxW, rectY, rectX + boxW, rectY + radius, radius);
+    ctx.arcTo(rectX + boxW, rectY + boxH, rectX + boxW - radius, rectY + boxH, radius);
+    ctx.lineTo(rectX + radius, rectY + boxH);
+    ctx.arcTo(rectX, rectY + boxH, rectX, rectY + boxH - radius, radius);
+    ctx.arcTo(rectX, rectY, rectX + radius, rectY, radius);
+    ctx.closePath();
+    ctx.fill();
+
+    // Draw feedback message at upper right
     ctx.fillStyle = status.color;
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'top';
-    ctx.fillText(text, textX, textY);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    var msgX = W - boxW / 2 - (fontSize * 0.5);
+    var msgY = fontSize * 0.5 + boxH / 2;
+    ctx.fillText(text, msgX, msgY);
 
     ctx.restore();
   }
