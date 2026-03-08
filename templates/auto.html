@@ -987,80 +987,28 @@
     let _latestLM = {};
     let _mpBusy = false;
 
-    // ── Velocity-based predictive landmark interpolation ──
-    // Tracks velocity of each landmark and extrapolates between server updates
-    // for real-time feel. Smoothly corrects when new server data arrives.
+    // ── Smooth landmark interpolation (chase-lerp at render rate) ──
     let _displayLM = {};
-    let _prevServerLM = {};      // previous server snapshot (for velocity calc)
-    let _velocityLM = {};        // per-landmark velocity arrays
-    let _serverUpdateTime = 0;   // timestamp of last server update
-    const _CORRECT_ALPHA = 0.35; // how aggressively to correct toward server data
-    const _VELOCITY_DAMP = 0.85; // dampen velocity each frame to prevent overshoot
-    const _MAX_V = 0.05;         // clamp max velocity per axis to avoid jumps
-
-    function _computeVelocity(prev, cur) {
-      if (!prev || !prev.length || !cur || !cur.length) return null;
-      const v = [];
+    const _LERP_ALPHA = 0.25; // lower = smoother glide, higher = snappier tracking
+    function _lerpList(prev, cur, a) {
+      if (!prev || !prev.length) return cur;
+      if (!cur || !cur.length) return cur;
+      const out = [];
       for (let i = 0; i < cur.length; i++) {
         const p = prev[i], c = cur[i];
-        if (!p || !c) { v.push({ x: 0, y: 0, z: 0 }); continue; }
-        v.push({
-          x: Math.max(-_MAX_V, Math.min(_MAX_V, c.x - p.x)),
-          y: Math.max(-_MAX_V, Math.min(_MAX_V, c.y - p.y)),
-          z: Math.max(-_MAX_V, Math.min(_MAX_V, c.z - p.z))
-        });
-      }
-      return v;
-    }
-
-    function _predictList(display, target, velocity) {
-      if (!target || !target.length) return target;
-      if (!display || !display.length) return target;
-      const out = [];
-      for (let i = 0; i < target.length; i++) {
-        const d = display[i], t = target[i];
-        const v = (velocity && velocity[i]) || { x: 0, y: 0, z: 0 };
-        if (!d || !t) { out.push(t || d); continue; }
-        // Extrapolate with velocity + correct toward server target
-        const px = d.x + v.x * _VELOCITY_DAMP;
-        const py = d.y + v.y * _VELOCITY_DAMP;
-        const pz = d.z + v.z * _VELOCITY_DAMP;
-        out.push({
-          x: px + (t.x - px) * _CORRECT_ALPHA,
-          y: py + (t.y - py) * _CORRECT_ALPHA,
-          z: pz + (t.z - pz) * _CORRECT_ALPHA
-        });
+        if (!p || !c) { out.push(c || p); continue; }
+        out.push({ x: p.x + (c.x - p.x) * a, y: p.y + (c.y - p.y) * a, z: p.z + (c.z - p.z) * a });
       }
       return out;
     }
-
-    // Called when new server landmarks arrive
-    function _onServerUpdate(lm) {
-      // Compute velocity from previous→current server snapshot
-      if (_prevServerLM.poseLandmarks) {
-        _velocityLM.pose = _computeVelocity(_prevServerLM.poseLandmarks, lm.poseLandmarks);
-        _velocityLM.face = _computeVelocity(_prevServerLM.faceLandmarks, lm.faceLandmarks);
-        _velocityLM.rightHand = _computeVelocity(_prevServerLM.rightHandLandmarks, lm.rightHandLandmarks);
-        _velocityLM.leftHand = _computeVelocity(_prevServerLM.leftHandLandmarks, lm.leftHandLandmarks);
-      }
-      _prevServerLM = {
-        poseLandmarks: lm.poseLandmarks,
-        faceLandmarks: lm.faceLandmarks,
-        rightHandLandmarks: lm.rightHandLandmarks,
-        leftHandLandmarks: lm.leftHandLandmarks
-      };
-      _serverUpdateTime = Date.now();
-      _latestLM = lm;
-    }
-
     function _smoothLandmarks() {
       const raw = _latestLM;
       if (!raw || !Object.keys(raw).length) return raw;
       _displayLM = {
-        poseLandmarks:      _predictList(_displayLM.poseLandmarks, raw.poseLandmarks, _velocityLM.pose),
-        faceLandmarks:      _predictList(_displayLM.faceLandmarks, raw.faceLandmarks, _velocityLM.face),
-        rightHandLandmarks: _predictList(_displayLM.rightHandLandmarks, raw.rightHandLandmarks, _velocityLM.rightHand),
-        leftHandLandmarks:  _predictList(_displayLM.leftHandLandmarks, raw.leftHandLandmarks, _velocityLM.leftHand),
+        poseLandmarks: _lerpList(_displayLM.poseLandmarks, raw.poseLandmarks, _LERP_ALPHA),
+        faceLandmarks: _lerpList(_displayLM.faceLandmarks, raw.faceLandmarks, _LERP_ALPHA),
+        rightHandLandmarks: _lerpList(_displayLM.rightHandLandmarks, raw.rightHandLandmarks, _LERP_ALPHA),
+        leftHandLandmarks: _lerpList(_displayLM.leftHandLandmarks, raw.leftHandLandmarks, _LERP_ALPHA),
         personCount: raw.personCount
       };
       return _displayLM;
@@ -1082,7 +1030,7 @@
           _offCvs.toBlob(function (blob) {
             fetch('/api/landmarks', { method: 'POST', body: blob })
               .then(function (r) { return r.json(); })
-              .then(function (lm) { _onServerUpdate(lm); })
+              .then(function (lm) { _latestLM = lm; })
               .catch(function () { })
               .finally(function () { _mpBusy = false; });
           }, 'image/jpeg', 0.6);
