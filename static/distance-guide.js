@@ -28,18 +28,18 @@ const DistanceGuide = (() => {
       return { color: COLOR_NEUTRAL, text: 'Position yourself in the outline', level: 'none', alpha: 0.30 };
     }
     if (shoulderRatio >= GREEN_MIN && shoulderRatio <= GREEN_MAX) {
-      return { color: COLOR_GREEN, text: 'Perfect Distance', level: 'green', alpha: 0.30 };
+      return { color: COLOR_GREEN, text: '\u2713 Perfect Distance', level: 'green', alpha: 0.30 };
     }
     if (shoulderRatio < GREEN_MIN && shoulderRatio >= YELLOW_MIN) {
-      return { color: COLOR_YELLOW, text: 'Move a bit closer', level: 'yellow', alpha: 0.50 };
+      return { color: COLOR_YELLOW, text: '\u2197 Move a bit closer', level: 'yellow', alpha: 0.50 };
     }
     if (shoulderRatio > GREEN_MAX && shoulderRatio <= YELLOW_MAX) {
-      return { color: COLOR_YELLOW, text: 'Step back a little', level: 'yellow', alpha: 0.50 };
+      return { color: COLOR_YELLOW, text: '\u2199 Step back a little', level: 'yellow', alpha: 0.50 };
     }
     if (shoulderRatio < YELLOW_MIN) {
-      return { color: COLOR_RED, text: 'Too far - move closer', level: 'red', alpha: 0.60 };
+      return { color: COLOR_RED, text: '\u26A0 Too far \u2013 move closer', level: 'red', alpha: 0.60 };
     }
-    return { color: COLOR_RED, text: 'Too close - step back', level: 'red', alpha: 0.60 };
+    return { color: COLOR_RED, text: '\u26A0 Too close \u2013 step back', level: 'red', alpha: 0.60 };
   }
 
   function measureShoulders(poseLandmarks) {
