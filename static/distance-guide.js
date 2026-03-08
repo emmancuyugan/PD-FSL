@@ -103,7 +103,7 @@ const DistanceGuide = (() => {
   function drawBadge(ctx, W, H, status) {
     ctx.save();
     var text = status.text;
-    var fontSize = Math.max(11, Math.min(14, W * 0.028));
+    var fontSize = Math.max(18, Math.min(24, W * 0.045));
     ctx.font = '700 ' + fontSize + 'px Inter, system-ui, sans-serif';
     // Position text at upper right
     var textX = W - fontSize * 8;
