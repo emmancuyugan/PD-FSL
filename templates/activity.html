@@ -1810,6 +1810,7 @@ window.addEventListener("load", () => {
   new ResizeObserver(resize).observe(videoEl);
   new ResizeObserver(resize).observe(skeletonCanvas.parentElement);
   resize();
+  camera.start();
 });
 </script>
 

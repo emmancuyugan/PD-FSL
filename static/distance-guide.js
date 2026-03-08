@@ -78,41 +78,23 @@ const DistanceGuide = (() => {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    var cx = 0.50 * W;
-
-    // --- Head (ellipse) ---
-    var headCY = 0.18 * H;
-    var headRX = 0.050 * W;
-    var headRY = 0.060 * H;
-    ctx.beginPath();
-    ctx.ellipse(cx, headCY, headRX, headRY, 0, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // --- Body silhouette: neck → shoulders → sides → bottom ---
-    var neckW   = 0.025 * W;
-    var neckTop = headCY + headRY;
-    var neckBot = 0.32 * H;
-    var shY     = 0.38 * H;
-    var shLX    = 0.34 * W;
-    var shRX    = 0.66 * W;
-    var bodyLX  = 0.36 * W;
-    var bodyRX  = 0.64 * W;
-    var botY    = H + 2;
+    var rectW = 0.36 * W;
+    var rectH = 0.70 * H;
+    var rectX = (W - rectW) / 2;
+    var rectY = 0.08 * H;
+    var r = Math.min(rectW, rectH) * 0.04;
 
     ctx.beginPath();
-    ctx.moveTo(cx - neckW, neckTop);
-    ctx.lineTo(cx - neckW, neckBot);
-    ctx.quadraticCurveTo(cx - neckW * 1.5, shY * 0.95, shLX, shY);
-    ctx.quadraticCurveTo(shLX - W * 0.01, shY + H * 0.06, bodyLX, shY + H * 0.14);
-    ctx.lineTo(bodyLX - W * 0.005, botY);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(cx + neckW, neckTop);
-    ctx.lineTo(cx + neckW, neckBot);
-    ctx.quadraticCurveTo(cx + neckW * 1.5, shY * 0.95, shRX, shY);
-    ctx.quadraticCurveTo(shRX + W * 0.01, shY + H * 0.06, bodyRX, shY + H * 0.14);
-    ctx.lineTo(bodyRX + W * 0.005, botY);
+    ctx.moveTo(rectX + r, rectY);
+    ctx.lineTo(rectX + rectW - r, rectY);
+    ctx.arcTo(rectX + rectW, rectY, rectX + rectW, rectY + r, r);
+    ctx.lineTo(rectX + rectW, rectY + rectH - r);
+    ctx.arcTo(rectX + rectW, rectY + rectH, rectX + rectW - r, rectY + rectH, r);
+    ctx.lineTo(rectX + r, rectY + rectH);
+    ctx.arcTo(rectX, rectY + rectH, rectX, rectY + rectH - r, r);
+    ctx.lineTo(rectX, rectY + r);
+    ctx.arcTo(rectX, rectY, rectX + r, rectY, r);
+    ctx.closePath();
     ctx.stroke();
 
     ctx.restore();

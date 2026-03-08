@@ -1274,6 +1274,7 @@ async function _doPredict(){
 
   function resize(){canvasEl.width=videoEl.clientWidth;canvasEl.height=videoEl.clientHeight;}
   new ResizeObserver(resize).observe(videoEl);resize();
+  camera.start();
 })();
 </script>
 
