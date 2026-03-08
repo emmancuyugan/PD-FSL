@@ -103,7 +103,6 @@ const DistanceGuide = (() => {
   function drawBadge(ctx, W, H, status) {
     ctx.save();
     var text = status.text;
-    // Make badge larger and move to upper right
     var fontSize = Math.max(18, Math.min(24, W * 0.045));
     ctx.font = '700 ' + fontSize + 'px Inter, system-ui, sans-serif';
     var metrics = ctx.measureText(text);
@@ -112,29 +111,32 @@ const DistanceGuide = (() => {
     var padY = fontSize * 0.7;
     var boxW = textW + padX * 2;
     var boxH = fontSize + padY * 2;
-    // Position in upper right
-    var boxX = W - boxW - (fontSize * 0.5);
-    var boxY = fontSize * 0.5;
+    // Draw rectangle at center
+    var rectX = (W - boxW) / 2;
+    var rectY = (H - boxH) / 2;
     var radius = boxH / 2;
 
     ctx.globalAlpha = status.level === 'green' ? 0.55 : 0.80;
 
     ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
     ctx.beginPath();
-    ctx.moveTo(boxX + radius, boxY);
-    ctx.lineTo(boxX + boxW - radius, boxY);
-    ctx.arcTo(boxX + boxW, boxY, boxX + boxW, boxY + radius, radius);
-    ctx.arcTo(boxX + boxW, boxY + boxH, boxX + boxW - radius, boxY + boxH, radius);
-    ctx.lineTo(boxX + radius, boxY + boxH);
-    ctx.arcTo(boxX, boxY + boxH, boxX, boxY + boxH - radius, radius);
-    ctx.arcTo(boxX, boxY, boxX + radius, boxY, radius);
+    ctx.moveTo(rectX + radius, rectY);
+    ctx.lineTo(rectX + boxW - radius, rectY);
+    ctx.arcTo(rectX + boxW, rectY, rectX + boxW, rectY + radius, radius);
+    ctx.arcTo(rectX + boxW, rectY + boxH, rectX + boxW - radius, rectY + boxH, radius);
+    ctx.lineTo(rectX + radius, rectY + boxH);
+    ctx.arcTo(rectX, rectY + boxH, rectX, rectY + boxH - radius, radius);
+    ctx.arcTo(rectX, rectY, rectX + radius, rectY, radius);
     ctx.closePath();
     ctx.fill();
 
+    // Draw feedback message at upper right
     ctx.fillStyle = status.color;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, boxX + boxW / 2, boxY + boxH / 2);
+    var msgX = W - boxW / 2 - (fontSize * 0.5);
+    var msgY = fontSize * 0.5 + boxH / 2;
+    ctx.fillText(text, msgX, msgY);
 
     ctx.restore();
   }
