@@ -105,9 +105,9 @@ const DistanceGuide = (() => {
     var text = status.text;
     var fontSize = Math.max(18, Math.min(24, W * 0.045));
     ctx.font = '700 ' + fontSize + 'px Inter, system-ui, sans-serif';
-    // Position text at upper right
-    var textX = W - fontSize * 8;
-    var textY = fontSize * 2;
+    // Position text at upper right corner
+    var textX = W - fontSize * 1.5;
+    var textY = fontSize * 0.5;
     ctx.globalAlpha = status.level === 'green' ? 0.55 : 0.80;
     ctx.fillStyle = status.color;
     ctx.textAlign = 'right';
