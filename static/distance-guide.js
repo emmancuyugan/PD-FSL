@@ -103,16 +103,18 @@ const DistanceGuide = (() => {
   function drawBadge(ctx, W, H, status) {
     ctx.save();
     var text = status.text;
-    var fontSize = Math.max(11, Math.min(14, W * 0.028));
+    // Make badge larger and move to upper right
+    var fontSize = Math.max(18, Math.min(24, W * 0.045));
     ctx.font = '700 ' + fontSize + 'px Inter, system-ui, sans-serif';
     var metrics = ctx.measureText(text);
     var textW = metrics.width;
-    var padX = fontSize * 0.8;
-    var padY = fontSize * 0.45;
+    var padX = fontSize * 1.2;
+    var padY = fontSize * 0.7;
     var boxW = textW + padX * 2;
     var boxH = fontSize + padY * 2;
-    var boxX = (W - boxW) / 2;
-    var boxY = 0.92 * H - boxH;
+    // Position in upper right
+    var boxX = W - boxW - (fontSize * 0.5);
+    var boxY = fontSize * 0.5;
     var radius = boxH / 2;
 
     ctx.globalAlpha = status.level === 'green' ? 0.55 : 0.80;
@@ -132,7 +134,7 @@ const DistanceGuide = (() => {
     ctx.fillStyle = status.color;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, W / 2, boxY + boxH / 2);
+    ctx.fillText(text, boxX + boxW / 2, boxY + boxH / 2);
 
     ctx.restore();
   }
