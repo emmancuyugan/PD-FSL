@@ -73,46 +73,83 @@ const DistanceGuide = (() => {
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.strokeStyle = color;
-    ctx.lineWidth = Math.max(2, W * 0.005);
+    ctx.lineWidth = Math.max(1.5, W * 0.004);
     ctx.setLineDash([Math.max(6, W * 0.015), Math.max(4, W * 0.01)]);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
     var cx = 0.50 * W;
 
-    // --- Head (ellipse) ---
-    var headCY = 0.18 * H;
-    var headRX = 0.050 * W;
-    var headRY = 0.060 * H;
+    // --- Head ---
+    var headCY = 0.14 * H;
+    var headRX = 0.042 * W;
+    var headRY = 0.052 * H;
     ctx.beginPath();
     ctx.ellipse(cx, headCY, headRX, headRY, 0, 0, Math.PI * 2);
     ctx.stroke();
 
-    // --- Body silhouette: neck → shoulders → sides → bottom ---
-    var neckW   = 0.025 * W;
+    // --- Neck ---
+    var neckW  = 0.022 * W;
     var neckTop = headCY + headRY;
-    var neckBot = 0.32 * H;
-    var shY     = 0.38 * H;
-    var shLX    = 0.34 * W;
-    var shRX    = 0.66 * W;
-    var bodyLX  = 0.36 * W;
-    var bodyRX  = 0.64 * W;
-    var botY    = H + 2;
-
+    var neckBot = 0.23 * H;
     ctx.beginPath();
     ctx.moveTo(cx - neckW, neckTop);
     ctx.lineTo(cx - neckW, neckBot);
-    ctx.quadraticCurveTo(cx - neckW * 1.5, shY * 0.95, shLX, shY);
-    ctx.quadraticCurveTo(shLX - W * 0.01, shY + H * 0.06, bodyLX, shY + H * 0.14);
-    ctx.lineTo(bodyLX - W * 0.005, botY);
     ctx.stroke();
-
     ctx.beginPath();
     ctx.moveTo(cx + neckW, neckTop);
     ctx.lineTo(cx + neckW, neckBot);
-    ctx.quadraticCurveTo(cx + neckW * 1.5, shY * 0.95, shRX, shY);
-    ctx.quadraticCurveTo(shRX + W * 0.01, shY + H * 0.06, bodyRX, shY + H * 0.14);
-    ctx.lineTo(bodyRX + W * 0.005, botY);
+    ctx.stroke();
+
+    // --- Shoulders ---
+    var shY  = 0.27 * H;
+    var shLX = 0.385 * W;
+    var shRX = 0.615 * W;
+    ctx.beginPath();
+    ctx.moveTo(cx - neckW, neckBot);
+    ctx.quadraticCurveTo(cx - neckW * 2, shY, shLX, shY);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx + neckW, neckBot);
+    ctx.quadraticCurveTo(cx + neckW * 2, shY, shRX, shY);
+    ctx.stroke();
+
+    // --- Torso ---
+    var hipY  = 0.73 * H;
+    var hipLX = 0.43 * W;
+    var hipRX = 0.57 * W;
+    ctx.beginPath();
+    ctx.moveTo(shLX, shY);
+    ctx.lineTo(hipLX, hipY);
+    ctx.lineTo(hipRX, hipY);
+    ctx.lineTo(shRX, shY);
+    ctx.stroke();
+
+    // --- Left arm ---
+    var lElbX = 0.30 * W,  lElbY = 0.42 * H;
+    var lHndX = 0.255 * W, lHndY = 0.54 * H;
+    ctx.beginPath();
+    ctx.moveTo(shLX, shY);
+    ctx.lineTo(lElbX, lElbY);
+    ctx.lineTo(lHndX, lHndY);
+    ctx.stroke();
+
+    // --- Right arm ---
+    var rElbX = 0.70 * W,  rElbY = 0.42 * H;
+    var rHndX = 0.745 * W, rHndY = 0.54 * H;
+    ctx.beginPath();
+    ctx.moveTo(shRX, shY);
+    ctx.lineTo(rElbX, rElbY);
+    ctx.lineTo(rHndX, rHndY);
+    ctx.stroke();
+
+    // --- Hand circles ---
+    var handR = Math.max(4, W * 0.018);
+    ctx.beginPath();
+    ctx.arc(lHndX, lHndY, handR, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(rHndX, rHndY, handR, 0, Math.PI * 2);
     ctx.stroke();
 
     ctx.restore();
@@ -130,7 +167,7 @@ const DistanceGuide = (() => {
     var boxW = textW + padX * 2;
     var boxH = fontSize + padY * 2;
     var boxX = (W - boxW) / 2;
-    var boxY = 0.92 * H - boxH;
+    var boxY = 0.79 * H;
     var radius = boxH / 2;
 
     ctx.globalAlpha = status.level === 'green' ? 0.55 : 0.80;
