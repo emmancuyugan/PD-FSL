@@ -1638,7 +1638,7 @@ window.addEventListener("load", () => {
   // Async server-side MediaPipe: camera renders at full speed,
   // landmarks update in background whenever the server responds.
   const _offCvs = document.createElement('canvas');
-  _offCvs.width = 480; _offCvs.height = 360;
+  _offCvs.width = 320; _offCvs.height = 240;
   const _offCtx = _offCvs.getContext('2d');
   let _latestLM = {};
   let _mpBusy = false;
@@ -1684,7 +1684,7 @@ window.addEventListener("load", () => {
       // Fire async landmark request if idle
       if (!_mpBusy) {
         _mpBusy = true;
-        _offCtx.drawImage(videoEl, 0, 0, 480, 360);
+        _offCtx.drawImage(videoEl, 0, 0, 320, 240);
         _offCvs.toBlob(function(blob) {
           fetch('/api/landmarks', { method: 'POST', body: blob })
             .then(function(r){ return r.json(); })

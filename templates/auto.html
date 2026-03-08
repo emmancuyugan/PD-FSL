@@ -947,42 +947,29 @@
       }
 
       const feat = packFeature(_displayLM);
-      if (running && !feedbackActive) {
-        if (feat) {
-          // OPTIMIZATION: Apply frame skipping for Jetson Orin Nano
-          frameCount++;
-          if (frameCount % frameSkip === 0) {
-            // Keep buffer at max size
-            if (buf.length < CAPTURE_MAX) buf.push(feat);
-            else { buf.shift(); buf.push(feat); }
-            frameInfo.textContent = 'Capturing: ' + Math.floor(buf.length) + ' frames';
-            frameInfo.style.display = 'block';
-
-            // Auto-trigger when buffer reaches 75% capacity
-            const threshold = Math.ceil(CAPTURE_MAX * 0.75);
-            if (buf.length >= threshold && !autoJudge) {
-              autoJudge = true;
-              setTimeout(() => predict(), 200);
-            }
-          }
-        } else if (buf.length > 0) {
-          // Hand dropped — reset accumulated frames AND countdown so next sign starts completely fresh
-          buf = [];
-          frameCount = 0;
-          autoJudge = false;
-          const fastMode = toggleSpeed.checked;
-          countdown = fastMode ? 3 : 5;
-          timerOverlay.textContent = countdown;
-          timerOverlay.style.background = 'var(--sunshine)';
-          frameInfo.textContent = 'Hand lost — reset';
+      if (running && !feedbackActive && feat) {
+        // OPTIMIZATION: Apply frame skipping for Jetson Orin Nano
+        frameCount++;
+        if (frameCount % frameSkip === 0) {
+          // Keep buffer at max size
+          if (buf.length < CAPTURE_MAX) buf.push(feat);
+          else { buf.shift(); buf.push(feat); }
+          frameInfo.textContent = 'Capturing: ' + Math.floor(buf.length) + ' frames';
           frameInfo.style.display = 'block';
+
+          // Auto-trigger when buffer reaches 75% capacity
+          const threshold = Math.ceil(CAPTURE_MAX * 0.75);
+          if (buf.length >= threshold && !autoJudge) {
+            autoJudge = true;
+            setTimeout(() => predict(), 200);
+          }
         }
       }
     }
     // Async server-side MediaPipe: camera renders at full speed,
     // landmarks update in background whenever the server responds.
     const _offCvs = document.createElement('canvas');
-    _offCvs.width = 480; _offCvs.height = 360;
+    _offCvs.width = 320; _offCvs.height = 240;
     const _offCtx = _offCvs.getContext('2d');
     let _latestLM = {};
     let _mpBusy = false;
@@ -1026,7 +1013,7 @@
         });
         if (!_mpBusy) {
           _mpBusy = true;
-          _offCtx.drawImage(videoEl, 0, 0, 480, 360);
+          _offCtx.drawImage(videoEl, 0, 0, 320, 240);
           _offCvs.toBlob(function (blob) {
             fetch('/api/landmarks', { method: 'POST', body: blob })
               .then(function (r) { return r.json(); })
@@ -1288,6 +1275,7 @@
       ghostFrames = null;
       ghostBadge.style.display = 'none';
       if (ghostTimer) clearTimeout(ghostTimer);
+      try { await camera.stop(); } catch (_) { }
       stopBtn.style.display = 'none'; startBtn.style.display = 'inline-block';
     };
 
