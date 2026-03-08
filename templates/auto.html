@@ -900,15 +900,19 @@
     const RH=res.rightHandLandmarks,LH=res.leftHandLandmarks;
     handsPresent=!!(RH||LH);
     if(showVisuals&&handsPresent){
-      const drawBox=(h,color)=>{
-        let minX=1,minY=1,maxX=0,maxY=0;
-        h.forEach(p=>{minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y);});
-        ctx.strokeStyle=color;ctx.lineWidth=4;
-        ctx.strokeRect(minX*canvasEl.width,minY*canvasEl.height,(maxX-minX)*canvasEl.width,(maxY-minY)*canvasEl.height);
-        h.forEach(p=>{ctx.beginPath();ctx.arc(p.x*canvasEl.width,p.y*canvasEl.height,6,0,2*Math.PI);ctx.fillStyle=color;ctx.fill();});
+      const drawHand=(landmarks,color)=>{
+        if(!landmarks||!landmarks.length)return;
+        const W=canvasEl.width,H=canvasEl.height;
+        ctx.strokeStyle=color;ctx.lineWidth=3;
+        for(const[a,b]of HAND_CONN){
+          const pa=landmarks[a],pb=landmarks[b];
+          if(pa&&pb){ctx.beginPath();ctx.moveTo(pa.x*W,pa.y*H);ctx.lineTo(pb.x*W,pb.y*H);ctx.stroke();}
+        }
+        ctx.fillStyle=color;
+        landmarks.forEach(p=>{ctx.beginPath();ctx.arc(p.x*W,p.y*H,5,0,2*Math.PI);ctx.fill();});
       };
-      if(RH)drawBox(RH,'rgba(6,214,160,0.9)');
-      if(LH)drawBox(LH,'rgba(255,107,157,0.9)');
+      if(RH)drawHand(RH,'rgba(6,214,160,0.9)');
+      if(LH)drawHand(LH,'rgba(255,107,157,0.9)');
     }
 
     const pose=res.poseLandmarks||[];
@@ -969,7 +973,7 @@
 
   // ── Smooth landmark interpolation (chase-lerp at render rate) ──
   let _displayLM = {};
-  const _LERP_ALPHA = 0.30; // lower = stronger smoothing (reduces thumb jitter)
+  const _LERP_ALPHA = 0.50; // higher = more responsive real-time tracking
   function _lerpList(prev, cur, a){
     if(!prev||!prev.length) return cur;
     if(!cur||!cur.length) return cur;
