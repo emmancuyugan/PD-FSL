@@ -807,6 +807,13 @@
 <script src="{{ url_for('static', filename='mediapipe/drawing_utils/drawing_utils.js') }}"></script>
 
 <!-- 3D Avatar Scripts -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "/static/vendor/three/three.module.js"
+  }
+}
+</script>
 <script type="module">
   window._avatarInstance = null;
   window._avatarMode = '3d';
@@ -818,7 +825,7 @@
       return null;
     }
     try {
-      const { AvatarPoser } = await import('/static/js/vrm-poser.js');
+      const { default: AvatarPoser } = await import('/static/js/vrm-poser.js');
       const avatar = new AvatarPoser(container, modelPath || 'static/models/boy.glb', {
         autoScale: true,
         autoCenter: true,
