@@ -136,50 +136,35 @@ class AvatarPoser {
   }
 
   async init3D() {
-    this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x0f172a);
+    try {
+      console.log('[AvatarPoser] init3D: Starting 3D initialization');
+      this.scene = new THREE.Scene();
+      this.scene.background = new THREE.Color(0x0f172a);
 
-    const aspect = this.container.clientWidth / this.container.clientHeight;
-    this.camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 100);
-    this.camera.position.set(0, 1.2, 2.5);
-    this.camera.lookAt(0, 1, 0);
+      const aspect = this.container.clientWidth / this.container.clientHeight;
+      this.camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 100);
+      this.camera.position.set(0, 1.2, 2.5);
+      this.camera.lookAt(0, 1, 0);
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.container.appendChild(this.renderer.domElement);
+      this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      this.renderer.shadowMap.enabled = true;
+      this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+      this.container.appendChild(this.renderer.domElement);
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    this.scene.add(ambientLight);
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      this.scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    directionalLight.position.set(2, 4, 3);
-    directionalLight.castShadow = true;
-    this.scene.add(directionalLight);
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+      directionalLight.position.set(2, 4, 3);
+      directionalLight.castShadow = true;
+      this.scene.add(directionalLight);
 
-    const fillLight = new THREE.DirectionalLight(0x4cc9f0, 0.4);
-    fillLight.position.set(-2, 2, -2);
-    this.scene.add(fillLight);
-
-    const groundGeo = new THREE.PlaneGeometry(4, 4);
-    const groundMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
-    const ground = new THREE.Mesh(groundGeo, groundMat);
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = 0;
-    ground.receiveShadow = true;
-    this.scene.add(ground);
-
-    const gridHelper = new THREE.GridHelper(4, 20, 0x334155, 0x1e293b);
-    this.scene.add(gridHelper);
-
-    await this.loadModel();
-
-    this.handleResize = this.handleResize.bind(this);
-    window.addEventListener('resize', this.handleResize);
-
-    this.animate();
+      console.log('[AvatarPoser] init3D: Scene, camera, renderer, and lights set up');
+    } catch (e) {
+      console.error('[AvatarPoser] init3D: Error during initialization', e);
+    }
   }
 
   async loadModel() {
@@ -489,7 +474,10 @@ class AvatarPoser {
    *   5. Fingers         (euler curl)
    */
   pose3DModel(landmarks) {
-    if (!this.model || !landmarks.poseLandmarks) return;
+    if (!this.model || !landmarks.poseLandmarks) {
+      console.warn('[AvatarPoser] pose3DModel: Model or poseLandmarks missing');
+      return;
+    }
 
     const pose = landmarks.poseLandmarks;
     const leftHand = landmarks.leftHandLandmarks;
@@ -500,6 +488,7 @@ class AvatarPoser {
     try {
       // 1. Reset to rest pose so each frame starts clean
       this._resetToRestPose();
+      console.log('[AvatarPoser] pose3DModel: Rest pose reset');
 
       const leftShoulder  = pose[11];
       const rightShoulder = pose[12];
@@ -511,23 +500,19 @@ class AvatarPoser {
 
       // 2. Spine / torso (euler-based tilt from shoulder line)
       this._poseSpine(leftShoulder, rightShoulder);
-
       // 3. Head / neck
       this._poseHead(nose, leftShoulder, rightShoulder);
-
       // 4. Arms (quaternion-based direction alignment)
       this._poseArmQ('L', leftShoulder, leftElbow, leftWrist, leftHand);
       this._poseArmQ('R', rightShoulder, rightElbow, rightWrist, rightHand);
-
       // 5. Fingers
       this._poseFingers('L', leftHand);
       this._poseFingers('R', rightHand);
-
       // Keep model facing the camera
       this.model.rotation.y = Math.PI;
-
+      console.log('[AvatarPoser] pose3DModel: Pose applied and model rotated');
     } catch (e) {
-      console.warn('[AvatarPoser] Posing error:', e);
+      console.error('[AvatarPoser] Posing error:', e);
     }
   }
 
