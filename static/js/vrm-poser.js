@@ -144,12 +144,13 @@ class AvatarPoser {
       const height = this.container.clientHeight || 480;
       
       this.scene = new THREE.Scene();
-      this.scene.background = new THREE.Color(0x0f172a);
+      this.scene.background = new THREE.Color(0x1a1a2e);
 
       const aspect = width / height;
       this.camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 100);
-      this.camera.position.set(0, 1.2, 2.5);
-      this.camera.lookAt(0, 1, 0);
+      // Position camera to view full body
+      this.camera.position.set(0, 1.2, 3.5);
+      this.camera.lookAt(0, 1.0, 0);
 
       this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       this.renderer.setSize(width, height);
@@ -229,19 +230,24 @@ class AvatarPoser {
 
             if (this.options.autoScale) {
               const maxDim = Math.max(size.x, size.y, size.z);
-              const scale = 1.5 / maxDim;
+              const scale = 1.6 / maxDim;
               this.model.scale.setScalar(scale);
             }
 
             if (this.options.autoCenter) {
+              // Center horizontally
               this.model.position.x = -center.x * this.model.scale.x;
-              this.model.position.y = -box.min.y * this.model.scale.y;
+              // Position so model is centered at y=1.0 (torso height in view)
+              const scaledHeight = size.y * this.model.scale.y;
+              this.model.position.y = (1.0 - center.y * this.model.scale.y);
+              // Center depth
               this.model.position.z = -center.z * this.model.scale.z;
             }
           }
 
-          // Rotate model to face the camera
-          this.model.rotation.y = Math.PI;
+          // Rotate model to face camera (adjust based on model orientation)
+          // Try without rotation first, or adjust based on model
+          this.model.rotation.y = 0;  // Model already faces -Z in Three.js default
 
           this.scene.add(this.model);
 
@@ -321,11 +327,12 @@ class AvatarPoser {
 
     this.animationId = requestAnimationFrame(() => this.animate());
 
-    // Subtle idle sway when not actively posing
-    if (this.model && !this._isPosing) {
-      const time = Date.now() * 0.001;
-      this.model.rotation.y = Math.PI + Math.sin(time * 0.5) * 0.1;
-    }
+    // Subtle idle sway when not actively posing - only if model is positioned correctly
+    // Disabled for now as it interferes with the posing
+    // if (this.model && !this._isPosing) {
+    //   const time = Date.now() * 0.001;
+    //   this.model.rotation.y = Math.sin(time * 0.5) * 0.05;
+    // }
 
     this.renderer.render(this.scene, this.camera);
   }
@@ -525,9 +532,10 @@ class AvatarPoser {
       // 5. Fingers
       this._poseFingers('L', leftHand);
       this._poseFingers('R', rightHand);
-      // Keep model facing the camera
-      this.model.rotation.y = Math.PI;
-      console.log('[AvatarPoser] pose3DModel: Pose applied and model rotated');
+      // Model already positioned to face camera in init3D
+      // Don't reset rotation every frame as it breaks positioning
+      // this.model.rotation.y = Math.PI;
+      // console.log('[AvatarPoser] pose3DModel: Pose applied');
     } catch (e) {
       console.error('[AvatarPoser] Posing error:', e);
     }
