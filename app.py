@@ -729,7 +729,7 @@ def predict_auto():
                 "closest_sign": closest_label,
                 "closest_confidence": round(closest_conf, 4),
                 "confidence": conf,
-                "message": f"❌ Incorrect — closest sign is {closest_label.replace('_', ' ')}"
+                "message": f"Incorrect — closest sign is {closest_label.replace('_', ' ')}"
             })
 
         else:
@@ -738,7 +738,7 @@ def predict_auto():
             return jsonify({
                 "prediction": label,
                 "confidence": conf,
-                "message": f"✅ Correct — {label.replace('_', ' ')}"
+                "message": f"Correct — {label.replace('_', ' ')}"
             })
 
     except Exception as e:
