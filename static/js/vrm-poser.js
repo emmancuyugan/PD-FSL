@@ -162,6 +162,10 @@ class AvatarPoser {
       this.scene.add(directionalLight);
 
       console.log('[AvatarPoser] init3D: Scene, camera, renderer, and lights set up');
+
+      // FIX: Load the model here
+      await this.loadModel();
+      console.log('[AvatarPoser] init3D: Model loaded and added to scene');
     } catch (e) {
       console.error('[AvatarPoser] init3D: Error during initialization', e);
     }
@@ -331,8 +335,13 @@ class AvatarPoser {
   // ─── Landmark processing ─────────────────────────────────────────
 
   updateLandmarks(landmarks) {
-    if (!landmarks) return;
-
+    if (!landmarks) {
+      console.warn('[AvatarPoser] updateLandmarks: No landmarks provided');
+      return;
+    }
+    if (!landmarks.poseLandmarks) {
+      console.warn('[AvatarPoser] updateLandmarks: No poseLandmarks in landmarks', landmarks);
+    }
     this.smoothedLandmarks = this.lerpLandmarks(
       this.smoothedLandmarks,
       landmarks,
