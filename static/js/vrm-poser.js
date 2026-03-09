@@ -201,11 +201,14 @@ class AvatarPoser {
             }
             if (child.isBone) {
               this.bones[child.name] = child;
+              if (!window._allBoneNames) window._allBoneNames = [];
+              window._allBoneNames.push(child.name);
             }
           });
 
           const boneNames = Object.keys(this.bones);
           console.log('[AvatarPoser] Found', boneNames.length, 'bones:', boneNames);
+          console.log('[AvatarPoser] All bone names in model:', window._allBoneNames);
 
           const missing = [];
           const found = [];
