@@ -1,14 +1,14 @@
 /**
  * VRM/GLTF Avatar Poser
- * 
+ *
  * Loads 3D models and poses them in real-time based on MediaPipe landmarks.
  * Used to replace the 2D skeleton feedback with a 3D avatar.
- * 
+ *
  * Usage:
  *   const poser = new AvatarPoser(containerElement, modelUrl);
  *   await poser.init();
- *   poser.updateLandmarks(mediaPipeResults); // Call with each frame's landmarks
- *   poser.dispose(); // Cleanup
+ *   poser.updateLandmarks(mediaPipeResults);
+ *   poser.dispose();
  */
 
 import * as THREE from '../vendor/three/three.module.js';
@@ -25,7 +25,6 @@ class AvatarPoser {
       ...options
     };
 
-    // Three.js components
     this.scene = null;
     this.camera = null;
     this.renderer = null;
@@ -33,17 +32,21 @@ class AvatarPoser {
     this.bones = {};
     this.animationId = null;
 
-    // Landmark smoothing
     this.smoothedLandmarks = null;
     this.smoothingFactor = 0.4;
 
-    // Canvas for fallback 2D skeleton
     this.canvas = null;
     this.ctx = null;
     this.is3DMode = true;
     this.use2DFallback = false;
+    this._isPosing = false;
 
-    // MediaPipe connections for fallback
+    // Rest pose data
+    this.restPose = {};                  // euler {x,y,z} per bone (for spine/head/finger posing)
+    this.restQuaternions = {};            // THREE.Quaternion per bone (local rest rotation)
+    this.boneWorldRestQuaternions = {};   // THREE.Quaternion per bone (world rest rotation)
+    this.boneRestDirections = {};         // THREE.Vector3 per bone (world-space direction to child)
+
     this.POSE_CONNECTIONS = [
       [11, 12], [11, 13], [13, 15], [15, 17], [15, 19], [15, 21], [17, 19],
       [12, 14], [14, 16], [16, 18], [16, 20], [16, 22], [18, 20],
@@ -55,34 +58,23 @@ class AvatarPoser {
       [0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20]
     ];
 
-    // Bone name mapping for the Blender model
-    // Spine chain: spine -> spine.001 -> spine.002 -> spine.003 (chest)
-    //              spine.003 -> spine.004 -> spine.005 -> spine.006 -> face
-    // Arms:  shoulder.L/R -> upper_arm.L/R -> forearm.L/R -> hand.L/R
-    // Fingers: palm.0X.L/R -> f_index/f_middle/f_ring/f_pinky.0X.L/R
-    //          palm.01.L/R -> thumb.0X.L/R
     this.BONE_NAMES = {
-      // Spine/torso
       hips: 'spine',
       spine1: 'spine.001',
       spine2: 'spine.002',
       chest: 'spine.003',
-      // Neck/head
       neck1: 'spine.004',
       neck2: 'spine.005',
       neck3: 'spine.006',
       head: 'face',
-      // Left arm
       shoulderL: 'shoulder.L',
       upperArmL: 'upper_arm.L',
       forearmL: 'forearm.L',
       handL: 'hand.L',
-      // Right arm
       shoulderR: 'shoulder.R',
       upperArmR: 'upper_arm.R',
       forearmR: 'forearm.R',
       handR: 'hand.R',
-      // Left hand fingers
       thumbL1: 'thumb.01.L',
       thumbL2: 'thumb.02.L',
       thumbL3: 'thumb.03.L',
@@ -98,7 +90,6 @@ class AvatarPoser {
       pinkyL1: 'f_pinky.01.L',
       pinkyL2: 'f_pinky.02.L',
       pinkyL3: 'f_pinky.03.L',
-      // Right hand fingers
       thumbR1: 'thumb.01.R',
       thumbR2: 'thumb.02.R',
       thumbR3: 'thumb.03.R',
@@ -115,9 +106,6 @@ class AvatarPoser {
       pinkyR2: 'f_pinky.02.R',
       pinkyR3: 'f_pinky.03.R',
     };
-
-    // Store initial bone rotations (rest pose) so we can apply deltas
-    this.restPose = {};
   }
 
   async init() {
@@ -129,28 +117,21 @@ class AvatarPoser {
   }
 
   async init3D() {
-    // Create scene
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x0f172a);
 
-    // Create camera
     const aspect = this.container.clientWidth / this.container.clientHeight;
     this.camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 100);
     this.camera.position.set(0, 1.2, 2.5);
     this.camera.lookAt(0, 1, 0);
 
-    // Create renderer
-    this.renderer = new THREE.WebGLRenderer({ 
-      antialias: true,
-      alpha: true 
-    });
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.container.appendChild(this.renderer.domElement);
 
-    // Lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     this.scene.add(ambientLight);
 
@@ -163,43 +144,34 @@ class AvatarPoser {
     fillLight.position.set(-2, 2, -2);
     this.scene.add(fillLight);
 
-    // Ground plane for reference
     const groundGeo = new THREE.PlaneGeometry(4, 4);
-    const groundMat = new THREE.MeshStandardMaterial({ 
-      color: 0x1e293b,
-      roughness: 0.8
-    });
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = 0;
     ground.receiveShadow = true;
     this.scene.add(ground);
 
-    // Grid helper
     const gridHelper = new THREE.GridHelper(4, 20, 0x334155, 0x1e293b);
     this.scene.add(gridHelper);
 
-    // Load model
     await this.loadModel();
 
-    // Handle resize
     this.handleResize = this.handleResize.bind(this);
     window.addEventListener('resize', this.handleResize);
 
-    // Start render loop
     this.animate();
   }
 
   async loadModel() {
     const loader = new GLTFLoader();
-    
+
     return new Promise((resolve, reject) => {
       loader.load(
         this.modelPath,
         (gltf) => {
           this.model = gltf.scene;
-          
-          // Setup model
+
           this.model.traverse((child) => {
             if (child.isMesh) {
               child.castShadow = true;
@@ -208,17 +180,14 @@ class AvatarPoser {
                 child.material.side = THREE.DoubleSide;
               }
             }
-            // Store bone references
             if (child.isBone) {
               this.bones[child.name] = child;
             }
           });
 
-          // Log all found bones for debugging
           const boneNames = Object.keys(this.bones);
           console.log('[AvatarPoser] Found', boneNames.length, 'bones:', boneNames);
 
-          // Verify which expected bones were found
           const missing = [];
           const found = [];
           for (const [key, boneName] of Object.entries(this.BONE_NAMES)) {
@@ -231,18 +200,6 @@ class AvatarPoser {
           console.log('[AvatarPoser] Matched bones:', found);
           if (missing.length > 0) {
             console.warn('[AvatarPoser] Missing expected bones:', missing);
-          }
-
-          // Store rest pose rotations
-          for (const [key, boneName] of Object.entries(this.BONE_NAMES)) {
-            const bone = this.bones[boneName];
-            if (bone) {
-              this.restPose[boneName] = {
-                x: bone.rotation.x,
-                y: bone.rotation.y,
-                z: bone.rotation.z
-              };
-            }
           }
 
           // Auto scale and center
@@ -264,7 +221,15 @@ class AvatarPoser {
             }
           }
 
+          // Rotate model to face the camera
+          this.model.rotation.y = Math.PI;
+
           this.scene.add(this.model);
+
+          // Compute and store rest pose data AFTER positioning/rotating
+          this.model.updateMatrixWorld(true);
+          this._storeRestPoseData();
+
           console.log('[AvatarPoser] Model loaded:', this.modelPath);
           resolve(this.model);
         },
@@ -276,12 +241,49 @@ class AvatarPoser {
         },
         (error) => {
           console.error('[AvatarPoser] Load error:', error);
-          console.log('[AvatarPoser] Falling back to 2D mode');
           this.use2DFallback = true;
           this.init2D().then(resolve).catch(reject);
         }
       );
     });
+  }
+
+  _storeRestPoseData() {
+    for (const [key, boneName] of Object.entries(this.BONE_NAMES)) {
+      const bone = this.bones[boneName];
+      if (!bone) continue;
+
+      // Euler rest pose (for spine/head/finger posing)
+      this.restPose[boneName] = {
+        x: bone.rotation.x,
+        y: bone.rotation.y,
+        z: bone.rotation.z
+      };
+
+      // Local rest quaternion
+      this.restQuaternions[boneName] = bone.quaternion.clone();
+
+      // World rest quaternion
+      const worldQuat = new THREE.Quaternion();
+      bone.getWorldQuaternion(worldQuat);
+      this.boneWorldRestQuaternions[boneName] = worldQuat;
+
+      // Rest direction: bone → first bone child (in world space)
+      const boneChild = bone.children.find(c => c.isBone);
+      if (boneChild) {
+        const bonePos = new THREE.Vector3();
+        const childPos = new THREE.Vector3();
+        bone.getWorldPosition(bonePos);
+        boneChild.getWorldPosition(childPos);
+        const dir = new THREE.Vector3().subVectors(childPos, bonePos);
+        if (dir.lengthSq() > 0.0001) {
+          this.boneRestDirections[boneName] = dir.normalize();
+        }
+      }
+    }
+
+    const dirCount = Object.keys(this.boneRestDirections).length;
+    console.log('[AvatarPoser] Stored rest directions for', dirCount, 'bones');
   }
 
   init2D() {
@@ -297,36 +299,30 @@ class AvatarPoser {
 
   animate() {
     if (this.use2DFallback || !this.renderer) return;
-    
+
     this.animationId = requestAnimationFrame(() => this.animate());
-    
+
+    // Subtle idle sway when not actively posing
     if (this.model && !this._isPosing) {
       const time = Date.now() * 0.001;
-      this.model.rotation.y = Math.sin(time * 0.5) * 0.1;
+      this.model.rotation.y = Math.PI + Math.sin(time * 0.5) * 0.1;
     }
 
     this.renderer.render(this.scene, this.camera);
   }
 
-  /**
-   * Helper to get a bone by its logical name from BONE_NAMES
-   */
   getBone(logicalName) {
     const boneName = this.BONE_NAMES[logicalName];
     return boneName ? this.bones[boneName] : null;
   }
 
-  /**
-   * Helper to get the rest pose for a bone
-   */
   getRest(logicalName) {
     const boneName = this.BONE_NAMES[logicalName];
     return boneName ? this.restPose[boneName] : null;
   }
 
-  /**
-   * Update the avatar pose based on MediaPipe landmarks
-   */
+  // ─── Landmark processing ─────────────────────────────────────────
+
   updateLandmarks(landmarks) {
     if (!landmarks) return;
 
@@ -353,7 +349,6 @@ class AvatarPoser {
         result[key] = curr[key] || prev[key];
         continue;
       }
-
       result[key] = curr[key].map((landmark, i) => {
         const prevLandmark = prev[key][i] || landmark;
         return {
@@ -366,14 +361,110 @@ class AvatarPoser {
     return result;
   }
 
+  // ─── Quaternion-based posing helpers ──────────────────────────────
+
   /**
-   * Pose the 3D model based on MediaPipe landmarks.
+   * Compute a world-space direction vector from two MediaPipe landmarks.
    *
-   * MediaPipe pose landmark indices:
-   *   0: nose, 11: left shoulder, 12: right shoulder,
-   *   13: left elbow, 14: right elbow,
-   *   15: left wrist, 16: right wrist,
-   *   23: left hip, 24: right hip
+   * MediaPipe coordinate system:
+   *   x: 0→1 left→right on screen
+   *   y: 0→1 top→bottom on screen
+   *   z: depth (smaller = closer to camera)
+   *
+   * Three.js world (camera at +Z looking at -Z):
+   *   +X = screen right, +Y = up, -Z = into screen
+   *
+   * Mapping: worldX = lm.x, worldY = -lm.y, worldZ = -lm.z
+   */
+  _landmarkDir(from, to) {
+    const dx = to.x - from.x;
+    const dy = -(to.y - from.y);
+    const dz = -((to.z || 0) - (from.z || 0));
+    const lenSq = dx * dx + dy * dy + dz * dz;
+    if (lenSq < 0.00001) return null;
+    const len = Math.sqrt(lenSq);
+    return new THREE.Vector3(dx / len, dy / len, dz / len);
+  }
+
+  /**
+   * Reset all mapped bones to their rest-pose quaternions.
+   */
+  _resetToRestPose() {
+    for (const boneName of Object.values(this.BONE_NAMES)) {
+      const bone = this.bones[boneName];
+      const restQ = this.restQuaternions[boneName];
+      if (bone && restQ) {
+        bone.quaternion.copy(restQ);
+      }
+    }
+    this.model.updateMatrixWorld(true);
+  }
+
+  /**
+   * Pose a bone so it points toward `targetWorldDir` (world space).
+   *
+   * Uses Quaternion.setFromUnitVectors to compute the rotation delta
+   * between the bone's rest direction and the target direction,
+   * then converts to the bone's local space.
+   *
+   * @param {string} boneName - e.g. 'upper_arm.L'
+   * @param {THREE.Vector3} targetWorldDir - normalised target direction in world space
+   * @param {number} blend - 0..1, how much to apply (1 = full, 0 = rest)
+   */
+  _poseBoneToDirection(boneName, targetWorldDir, blend = 1.0) {
+    const bone = this.bones[boneName];
+    if (!bone) return;
+
+    const restDir = this.boneRestDirections[boneName];
+    if (!restDir) return;
+
+    const restWorldQuat = this.boneWorldRestQuaternions[boneName];
+    if (!restWorldQuat) return;
+
+    // Guard against nearly-opposite directions (setFromUnitVectors is unstable there)
+    const dot = restDir.dot(targetWorldDir);
+    if (dot < -0.95) return;
+
+    // Delta rotation in world space: rotates restDir → targetWorldDir
+    const deltaQuat = new THREE.Quaternion().setFromUnitVectors(restDir, targetWorldDir);
+
+    // Target world quaternion = delta applied to rest world orientation
+    const targetWorldQuat = new THREE.Quaternion().multiplyQuaternions(deltaQuat, restWorldQuat);
+
+    // Convert to bone-local: localQuat = inverse(parentCurrentWorld) * targetWorld
+    const parentWorldQuat = new THREE.Quaternion();
+    if (bone.parent) {
+      bone.parent.getWorldQuaternion(parentWorldQuat);
+    }
+    const localQuat = new THREE.Quaternion()
+      .copy(parentWorldQuat)
+      .invert()
+      .multiply(targetWorldQuat);
+
+    // Blend between rest and target
+    if (blend < 1.0) {
+      const restLocal = this.restQuaternions[boneName];
+      if (restLocal) {
+        bone.quaternion.copy(restLocal).slerp(localQuat, blend);
+      } else {
+        bone.quaternion.copy(localQuat);
+      }
+    } else {
+      bone.quaternion.copy(localQuat);
+    }
+  }
+
+  // ─── Main 3D posing entry point ─────────────────────────────────
+
+  /**
+   * Pose the 3D model from MediaPipe landmark data.
+   *
+   * Processing order matters (parent bones before children):
+   *   1. Reset all bones to rest pose
+   *   2. Spine / torso  (euler)
+   *   3. Head / neck     (euler)
+   *   4. Arms            (quaternion — parent world quats now include spine changes)
+   *   5. Fingers         (euler curl)
    */
   pose3DModel(landmarks) {
     if (!this.model || !landmarks.poseLandmarks) return;
@@ -385,193 +476,178 @@ class AvatarPoser {
     this._isPosing = true;
 
     try {
-    const leftShoulder = pose[11];
-    const rightShoulder = pose[12];
-    const leftElbow = pose[13];
-    const rightElbow = pose[14];
-    const leftWrist = pose[15];
-    const rightWrist = pose[16];
-    const nose = pose[0];
+      // 1. Reset to rest pose so each frame starts clean
+      this._resetToRestPose();
 
-    // --- Torso / Spine rotation ---
-    if (leftShoulder && rightShoulder) {
-      const bodyTilt = Math.atan2(
-        rightShoulder.y - leftShoulder.y,
-        rightShoulder.x - leftShoulder.x
-      );
+      const leftShoulder  = pose[11];
+      const rightShoulder = pose[12];
+      const leftElbow     = pose[13];
+      const rightElbow    = pose[14];
+      const leftWrist     = pose[15];
+      const rightWrist    = pose[16];
+      const nose          = pose[0];
 
-      // Apply subtle rotation to spine bones
-      const spineBones = ['spine1', 'spine2', 'chest'];
-      spineBones.forEach(name => {
-        const bone = this.getBone(name);
-        const rest = this.getRest(name);
-        if (bone && rest) {
-          bone.rotation.z = rest.z - bodyTilt * 0.3;
-        }
-      });
-    }
+      // 2. Spine / torso (euler-based tilt from shoulder line)
+      this._poseSpine(leftShoulder, rightShoulder);
 
-    // --- Head / Neck orientation ---
-    if (nose && leftShoulder && rightShoulder) {
-      const neckX = (leftShoulder.x + rightShoulder.x) / 2;
-      const neckY = (leftShoulder.y + rightShoulder.y) / 2;
-      const neckZ = (leftShoulder.z + rightShoulder.z) / 2;
+      // 3. Head / neck
+      this._poseHead(nose, leftShoulder, rightShoulder);
 
-      const headAngleX = Math.atan2(nose.y - neckY, nose.z - neckZ);
-      const headAngleY = Math.atan2(nose.x - neckX, nose.z - neckZ);
+      // 4. Arms (quaternion-based direction alignment)
+      this._poseArmQ('L', leftShoulder, leftElbow, leftWrist, leftHand);
+      this._poseArmQ('R', rightShoulder, rightElbow, rightWrist, rightHand);
 
-      // Distribute rotation across neck bones and head
-      const neckBones = ['neck1', 'neck2', 'neck3'];
-      neckBones.forEach(name => {
-        const bone = this.getBone(name);
-        const rest = this.getRest(name);
-        if (bone && rest) {
-          bone.rotation.x = rest.x + headAngleX * 0.15;
-          bone.rotation.y = rest.y - headAngleY * 0.2;
-        }
-      });
+      // 5. Fingers
+      this._poseFingers('L', leftHand);
+      this._poseFingers('R', rightHand);
 
-      const headBone = this.getBone('head');
-      const headRest = this.getRest('head');
-      if (headBone && headRest) {
-        headBone.rotation.x = headRest.x + headAngleX * 0.2;
-        headBone.rotation.y = headRest.y - headAngleY * 0.3;
-      }
-    }
-
-    // --- Arms ---
-    this.poseArm('L', leftShoulder, leftElbow, leftWrist);
-    this.poseArm('R', rightShoulder, rightElbow, rightWrist);
-
-    // --- Hands / Fingers ---
-    this.poseHand('L', leftHand);
-    this.poseHand('R', rightHand);
+      // Keep model facing the camera
+      this.model.rotation.y = Math.PI;
 
     } catch (e) {
       console.warn('[AvatarPoser] Posing error:', e);
     }
   }
 
-  /**
-   * Pose an arm chain: shoulder -> upper_arm -> forearm -> hand
-   * @param {string} side - 'L' or 'R'
-   */
-  poseArm(side, shoulder, elbow, wrist) {
-    if (!shoulder || !elbow || !wrist) return;
+  // ─── Spine ───────────────────────────────────────────────────────
 
-    const upperArmKey = side === 'L' ? 'upperArmL' : 'upperArmR';
-    const forearmKey = side === 'L' ? 'forearmL' : 'forearmR';
-    const handKey = side === 'L' ? 'handL' : 'handR';
-    const shoulderKey = side === 'L' ? 'shoulderL' : 'shoulderR';
+  _poseSpine(leftShoulder, rightShoulder) {
+    if (!leftShoulder || !rightShoulder) return;
 
-    // Direction vectors
-    const upperArmDir = {
-      x: elbow.x - shoulder.x,
-      y: elbow.y - shoulder.y,
-      z: (elbow.z || 0) - (shoulder.z || 0)
-    };
-    
-    const forearmDir = {
-      x: wrist.x - elbow.x,
-      y: wrist.y - elbow.y,
-      z: (wrist.z || 0) - (elbow.z || 0)
-    };
+    // Body tilt from shoulder line angle
+    const bodyTilt = Math.atan2(
+      rightShoulder.y - leftShoulder.y,
+      rightShoulder.x - leftShoulder.x
+    );
 
-    // Upper arm: angle from shoulder to elbow
-    const upperArmAngleZ = Math.atan2(upperArmDir.y, upperArmDir.x);
-    const upperArmLen = Math.sqrt(upperArmDir.x ** 2 + upperArmDir.y ** 2 + upperArmDir.z ** 2);
-    const upperArmAngleX = Math.asin(Math.max(-1, Math.min(1, upperArmDir.z / (upperArmLen || 1))));
+    const spineBones = ['spine1', 'spine2', 'chest'];
+    spineBones.forEach(name => {
+      const bone = this.getBone(name);
+      const rest = this.getRest(name);
+      if (bone && rest) {
+        bone.rotation.z = rest.z - bodyTilt * 0.4;
+      }
+    });
+  }
 
-    const shoulderBone = this.getBone(shoulderKey);
-    const shoulderRest = this.getRest(shoulderKey);
-    if (shoulderBone && shoulderRest) {
-      // Slight shoulder raise/drop
-      shoulderBone.rotation.z = shoulderRest.z + (side === 'L' ? -1 : 1) * upperArmAngleZ * 0.15;
-    }
+  // ─── Head / Neck ────────────────────────────────────────────────
 
-    const upperArmBone = this.getBone(upperArmKey);
-    const upperArmRest = this.getRest(upperArmKey);
-    if (upperArmBone && upperArmRest) {
-      // Main arm swing
-      upperArmBone.rotation.z = upperArmRest.z + (side === 'L'
-        ? (upperArmAngleZ + Math.PI / 2) * 0.6
-        : (upperArmAngleZ - Math.PI / 2) * 0.6);
-      upperArmBone.rotation.x = upperArmRest.x - upperArmAngleX * 0.5;
-    }
+  _poseHead(nose, leftShoulder, rightShoulder) {
+    if (!nose || !leftShoulder || !rightShoulder) return;
 
-    // Forearm: angle from elbow to wrist
-    const forearmAngleZ = Math.atan2(forearmDir.y, forearmDir.x);
-    const elbowBend = forearmAngleZ - upperArmAngleZ;
+    const neckX = (leftShoulder.x + rightShoulder.x) / 2;
+    const neckY = (leftShoulder.y + rightShoulder.y) / 2;
 
-    const forearmBone = this.getBone(forearmKey);
-    const forearmRest = this.getRest(forearmKey);
-    if (forearmBone && forearmRest) {
-      forearmBone.rotation.z = forearmRest.z + elbowBend * 0.5;
-    }
+    // Tilt: nose offset from neck centre
+    const dx = nose.x - neckX;
+    const dy = -(nose.y - neckY); // flip Y
 
-    // Wrist/hand orientation
-    const handBone = this.getBone(handKey);
-    const handRest = this.getRest(handKey);
-    if (handBone && handRest) {
-      const wristAngle = Math.atan2(forearmDir.y, forearmDir.x);
-      handBone.rotation.z = handRest.z + wristAngle * 0.2;
+    // Head lean left/right
+    const headTiltZ = Math.atan2(dx, Math.abs(dy) + 0.05);
+
+    // Head nod up/down (positive dy = nose above neck = looking level or up)
+    const headNodX = Math.atan2(-dy, 0.25);
+
+    const neckBones = ['neck1', 'neck2', 'neck3'];
+    neckBones.forEach(name => {
+      const bone = this.getBone(name);
+      const rest = this.getRest(name);
+      if (bone && rest) {
+        bone.rotation.x = rest.x + headNodX * 0.12;
+        bone.rotation.z = rest.z - headTiltZ * 0.12;
+      }
+    });
+
+    const headBone = this.getBone('head');
+    const headRest = this.getRest('head');
+    if (headBone && headRest) {
+      headBone.rotation.x = headRest.x + headNodX * 0.2;
+      headBone.rotation.z = headRest.z - headTiltZ * 0.2;
     }
   }
 
-  /**
-   * Pose fingers based on MediaPipe hand landmarks.
-   *
-   * MediaPipe hand landmark indices:
-   *   0: wrist
-   *   1-4: thumb (CMC, MCP, IP, TIP)
-   *   5-8: index (MCP, PIP, DIP, TIP)
-   *   9-12: middle (MCP, PIP, DIP, TIP)
-   *   13-16: ring (MCP, PIP, DIP, TIP)
-   *   17-20: pinky (MCP, PIP, DIP, TIP)
-   *
-   * @param {string} side - 'L' or 'R'
-   */
-  poseHand(side, handLandmarks) {
+  // ─── Arms (quaternion-based) ────────────────────────────────────
+
+  _poseArmQ(side, shoulder, elbow, wrist, handLandmarks) {
+    if (!shoulder || !elbow || !wrist) return;
+
+    const upperArmName = this.BONE_NAMES[side === 'L' ? 'upperArmL' : 'upperArmR'];
+    const forearmName  = this.BONE_NAMES[side === 'L' ? 'forearmL'  : 'forearmR'];
+    const handName     = this.BONE_NAMES[side === 'L' ? 'handL'     : 'handR'];
+
+    // Upper arm: shoulder → elbow direction
+    const upperDir = this._landmarkDir(shoulder, elbow);
+    if (upperDir) {
+      this._poseBoneToDirection(upperArmName, upperDir);
+    }
+
+    // Forearm: elbow → wrist direction
+    const foreDir = this._landmarkDir(elbow, wrist);
+    if (foreDir) {
+      this._poseBoneToDirection(forearmName, foreDir);
+    }
+
+    // Hand: use hand landmarks wrist→middle-MCP if available, else follow forearm
+    if (handLandmarks && handLandmarks.length >= 10) {
+      const wristLm = handLandmarks[0];
+      const middleMcp = handLandmarks[9];
+      const handDir = this._landmarkDir(wristLm, middleMcp);
+      if (handDir) {
+        this._poseBoneToDirection(handName, handDir, 0.7);
+      }
+    } else if (foreDir) {
+      this._poseBoneToDirection(handName, foreDir, 0.3);
+    }
+  }
+
+  // ─── Fingers (euler curl) ───────────────────────────────────────
+
+  _poseFingers(side, handLandmarks) {
     if (!handLandmarks || handLandmarks.length < 21) return;
 
     const suffix = side;
-
-    // Finger definitions: [boneName prefix, base landmark index]
-    // Each finger has 3 bones mapping to 3 segments between 4 landmarks
     const fingers = [
-      { prefix: 'thumb',  boneKeys: [`thumb${suffix}1`, `thumb${suffix}2`, `thumb${suffix}3`],  landmarks: [1, 2, 3, 4] },
-      { prefix: 'index',  boneKeys: [`index${suffix}1`, `index${suffix}2`, `index${suffix}3`],  landmarks: [5, 6, 7, 8] },
-      { prefix: 'middle', boneKeys: [`middle${suffix}1`, `middle${suffix}2`, `middle${suffix}3`], landmarks: [9, 10, 11, 12] },
-      { prefix: 'ring',   boneKeys: [`ring${suffix}1`, `ring${suffix}2`, `ring${suffix}3`],   landmarks: [13, 14, 15, 16] },
-      { prefix: 'pinky',  boneKeys: [`pinky${suffix}1`, `pinky${suffix}2`, `pinky${suffix}3`],  landmarks: [17, 18, 19, 20] },
+      { boneKeys: [`thumb${suffix}1`,  `thumb${suffix}2`,  `thumb${suffix}3`],  landmarks: [1, 2, 3, 4] },
+      { boneKeys: [`index${suffix}1`,  `index${suffix}2`,  `index${suffix}3`],  landmarks: [5, 6, 7, 8] },
+      { boneKeys: [`middle${suffix}1`, `middle${suffix}2`, `middle${suffix}3`], landmarks: [9, 10, 11, 12] },
+      { boneKeys: [`ring${suffix}1`,   `ring${suffix}2`,   `ring${suffix}3`],   landmarks: [13, 14, 15, 16] },
+      { boneKeys: [`pinky${suffix}1`,  `pinky${suffix}2`,  `pinky${suffix}3`],  landmarks: [17, 18, 19, 20] },
     ];
 
     fingers.forEach(finger => {
       const lm = finger.landmarks.map(i => handLandmarks[i]);
       if (!lm[0] || !lm[1] || !lm[2] || !lm[3]) return;
 
-      // For each bone segment, calculate curl angle
       for (let i = 0; i < 3; i++) {
         const bone = this.getBone(finger.boneKeys[i]);
         const rest = this.getRest(finger.boneKeys[i]);
         if (!bone || !rest) continue;
 
-        // Direction of this segment vs next segment
-        const segDir = {
-          x: lm[i + 1].x - lm[i].x,
-          y: lm[i + 1].y - lm[i].y
-        };
-
-        // For curl, use the angle of the segment relative to the wrist-to-base direction
-        const curl = Math.atan2(segDir.y, segDir.x);
-        bone.rotation.z = rest.z + curl * 0.3;
+        if (i < 2) {
+          // Compute bend angle between consecutive segments
+          const seg1x = lm[i + 1].x - lm[i].x;
+          const seg1y = -(lm[i + 1].y - lm[i].y);
+          const seg2x = lm[i + 2].x - lm[i + 1].x;
+          const seg2y = -(lm[i + 2].y - lm[i + 1].y);
+          const cross = seg1x * seg2y - seg1y * seg2x;
+          const dot   = seg1x * seg2x + seg1y * seg2y;
+          const bend  = Math.atan2(cross, dot);
+          bone.rotation.z = rest.z + bend * 0.6;
+        } else {
+          // Last segment: use absolute angle as fallback
+          const segDir = {
+            x: lm[i + 1].x - lm[i].x,
+            y: -(lm[i + 1].y - lm[i].y)
+          };
+          const curl = Math.atan2(segDir.y, segDir.x);
+          bone.rotation.z = rest.z + curl * 0.3;
+        }
       }
     });
   }
 
-  /**
-   * Draw 2D skeleton fallback
-   */
+  // ─── 2D skeleton fallback ───────────────────────────────────────
+
   draw2DSkeleton(landmarks) {
     if (!this.ctx || !this.canvas) return;
 
@@ -584,11 +660,8 @@ class AvatarPoser {
 
     const drawPoint = (point, color, radius = 6) => {
       if (!point) return;
-      const x = point.x * w;
-      const y = point.y * h;
-      
       ctx.beginPath();
-      ctx.arc(x, y, radius, 0, 2 * Math.PI);
+      ctx.arc(point.x * w, point.y * h, radius, 0, 2 * Math.PI);
       ctx.fillStyle = color;
       ctx.fill();
     };
@@ -604,59 +677,40 @@ class AvatarPoser {
       ctx.stroke();
     };
 
-    // Draw pose connections
     if (landmarks.poseLandmarks) {
       ctx.shadowBlur = 12;
       ctx.shadowColor = 'rgba(167, 139, 250, 0.6)';
-      
       this.POSE_CONNECTIONS.forEach(([start, end]) => {
-        const startPoint = landmarks.poseLandmarks[start];
-        const endPoint = landmarks.poseLandmarks[end];
-        if (startPoint && endPoint) {
-          drawLine(startPoint, endPoint, 'rgba(167, 139, 250, 0.9)');
-        }
+        const s = landmarks.poseLandmarks[start];
+        const e = landmarks.poseLandmarks[end];
+        if (s && e) drawLine(s, e, 'rgba(167, 139, 250, 0.9)');
       });
-
-      landmarks.poseLandmarks.forEach(lm => {
-        drawPoint(lm, 'rgba(167, 139, 250, 1)');
-      });
+      landmarks.poseLandmarks.forEach(lm => drawPoint(lm, 'rgba(167, 139, 250, 1)'));
     }
 
-    // Draw face (sparse)
     if (landmarks.faceLandmarks) {
       landmarks.faceLandmarks.forEach((lm, i) => {
-        if (i % 10 === 0) {
-          drawPoint(lm, 'rgba(255, 140, 66, 0.8)', 3);
-        }
+        if (i % 10 === 0) drawPoint(lm, 'rgba(255, 140, 66, 0.8)', 3);
       });
     }
 
-    // Draw hands
     const drawHand = (handLandmarks, color) => {
       if (!handLandmarks || handLandmarks.length === 0) return;
-
       this.HAND_CONNECTIONS.forEach(([start, end]) => {
-        const startPoint = handLandmarks[start];
-        const endPoint = handLandmarks[end];
-        if (startPoint && endPoint) {
-          drawLine(startPoint, endPoint, color);
-        }
+        const s = handLandmarks[start];
+        const e = handLandmarks[end];
+        if (s && e) drawLine(s, e, color);
       });
-
-      handLandmarks.forEach(lm => {
-        drawPoint(lm, color, 5);
-      });
+      handLandmarks.forEach(lm => drawPoint(lm, color, 5));
     };
 
-    if (landmarks.rightHandLandmarks) {
-      drawHand(landmarks.rightHandLandmarks, 'rgba(76, 201, 240, 0.95)');
-    }
-    if (landmarks.leftHandLandmarks) {
-      drawHand(landmarks.leftHandLandmarks, 'rgba(6, 214, 160, 0.95)');
-    }
+    if (landmarks.rightHandLandmarks) drawHand(landmarks.rightHandLandmarks, 'rgba(76, 201, 240, 0.95)');
+    if (landmarks.leftHandLandmarks)  drawHand(landmarks.leftHandLandmarks,  'rgba(6, 214, 160, 0.95)');
 
     ctx.shadowBlur = 0;
   }
+
+  // ─── Resize / dispose ───────────────────────────────────────────
 
   handleResize() {
     if (this.use2DFallback) {
@@ -666,10 +720,8 @@ class AvatarPoser {
       }
       return;
     }
-
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
-
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
@@ -680,7 +732,6 @@ class AvatarPoser {
       cancelAnimationFrame(this.animationId);
       this.animationId = null;
     }
-
     window.removeEventListener('resize', this.handleResize);
 
     if (this.renderer) {
@@ -706,6 +757,9 @@ class AvatarPoser {
     this.model = null;
     this.bones = {};
     this.restPose = {};
+    this.restQuaternions = {};
+    this.boneWorldRestQuaternions = {};
+    this.boneRestDirections = {};
 
     if (this.canvas && this.container.contains(this.canvas)) {
       this.container.removeChild(this.canvas);
@@ -714,6 +768,7 @@ class AvatarPoser {
     this.renderer = null;
     this.scene = null;
     this.camera = null;
+    this._isPosing = false;
 
     console.log('[AvatarPoser] Disposed');
   }
