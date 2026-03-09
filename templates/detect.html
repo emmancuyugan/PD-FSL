@@ -97,8 +97,8 @@
     position: relative;
     z-index: 1;
     width: 100%;
-    min-height: 100vh;
-    padding: 40px 20px;
+    min-height: calc(100vh - 64px);
+    padding: 12px 20px;
     max-width: 1200px;
     margin: 0 auto;
   }
@@ -107,9 +107,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 40px;
+    margin-bottom: 10px;
     flex-wrap: wrap;
-    gap: 20px;
+    gap: 8px;
     animation: slideDown 0.6s ease-out;
   }
 
@@ -119,32 +119,33 @@
   }
 
   .header-info h1 {
-    font-size: 48px;
+    font-size: 26px;
     font-weight: 900;
     background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
   }
 
   .header-info p {
-    font-size: 16px;
+    font-size: 14px;
     color: #666;
-    line-height: 1.6;
+    line-height: 1.4;
   }
 
   .new-challenge-btn {
-    padding: 16px 32px;
+    padding: 10px 20px;
     background: linear-gradient(135deg, var(--orange), var(--sunshine));
     color: var(--white);
     border: none;
-    border-radius: 20px;
-    font-size: 18px;
+    border-radius: 12px;
+    font-size: 13px;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 4px 16px rgba(255, 140, 66, 0.3);
+    box-shadow: 0 2px 6px rgba(255, 140, 66, 0.3);
     transition: all 0.3s ease;
+    min-height: 40px;
   }
 
   .new-challenge-btn:hover {
@@ -155,11 +156,11 @@
   .target-card {
     background: linear-gradient(135deg, var(--orange), var(--sunshine));
     color: var(--white);
-    padding: 40px;
-    border-radius: 25px;
+    padding: 14px 18px;
+    border-radius: 14px;
     text-align: center;
-    margin-bottom: 40px;
-    box-shadow: 0 8px 24px var(--shadow);
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px var(--shadow);
     animation: scaleIn 0.6s ease-out 0.2s backwards;
   }
 
@@ -169,45 +170,45 @@
   }
 
   .target-label {
-    font-size: 16px;
+    font-size: 13px;
     opacity: 0.9;
-    margin-bottom: 12px;
+    margin-bottom: 4px;
     font-weight: 700;
   }
 
   .target-phrase {
-    font-size: 48px;
+    font-size: 28px;
     font-weight: 900;
-    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
   }
 
   .camera-section {
     background: var(--white);
-    border-radius: 25px;
-    padding: 30px;
-    margin-bottom: 30px;
-    box-shadow: 0 8px 24px var(--shadow);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px var(--shadow);
     animation: scaleIn 0.6s ease-out 0.4s backwards;
   }
 
   .camera-label {
-    font-size: 18px;
+    font-size: 13px;
     color: #666;
-    margin-bottom: 16px;
+    margin-bottom: 6px;
     font-weight: 700;
   }
 
   #cam {
     width: 100%;
-    height: 400px;
+    height: 340px;
     object-fit: cover;
-    border-radius: 20px;
+    border-radius: 12px;
     background: #000;
-    box-shadow: 0 4px 16px var(--shadow);
+    box-shadow: 0 2px 8px var(--shadow);
   }
 
   .controls-section {
-    margin-bottom: 30px;
+    margin-bottom: 10px;
     animation: fadeIn 0.6s ease-out 0.6s backwards;
   }
 
@@ -218,20 +219,21 @@
 
   .button-row {
     display: flex;
-    gap: 16px;
-    margin-bottom: 16px;
+    gap: 8px;
+    margin-bottom: 8px;
   }
 
   .control-btn {
     flex: 1;
-    padding: 16px;
+    padding: 12px;
     border: none;
-    border-radius: 15px;
-    font-size: 18px;
+    border-radius: 12px;
+    font-size: 14px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 12px var(--shadow);
+    box-shadow: 0 2px 6px var(--shadow);
+    min-height: 44px;
   }
 
   .control-btn:hover {
@@ -257,48 +259,50 @@
 
   .demo-section {
     background: var(--off-white);
-    border-radius: 20px;
-    padding: 24px;
-    border: 3px dashed #DDD;
+    border-radius: 12px;
+    padding: 10px 14px;
+    border: 2px dashed #DDD;
     animation: fadeIn 0.6s ease-out 0.8s backwards;
   }
 
   .demo-summary {
     color: #666;
     cursor: pointer;
-    padding: 8px;
-    font-size: 16px;
+    padding: 6px;
+    font-size: 13px;
     font-weight: 700;
   }
 
   .demo-content {
-    margin-top: 20px;
+    margin-top: 8px;
     display: flex;
-    gap: 12px;
+    gap: 6px;
     flex-wrap: wrap;
   }
 
   .demo-select, .demo-input {
     flex: 1;
-    min-width: 200px;
-    padding: 12px 16px;
+    min-width: 140px;
+    padding: 8px 12px;
     border: 2px solid var(--grass-green);
-    border-radius: 12px;
-    font-size: 16px;
+    border-radius: 10px;
+    font-size: 13px;
     font-weight: 600;
+    min-height: 36px;
   }
 
   .demo-btn {
-    padding: 12px 24px;
+    padding: 8px 16px;
     background: linear-gradient(135deg, var(--lavender), var(--deep-blue));
     color: var(--white);
     border: none;
-    border-radius: 12px;
-    font-size: 16px;
+    border-radius: 10px;
+    font-size: 13px;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(167, 139, 250, 0.3);
+    box-shadow: 0 2px 6px rgba(167, 139, 250, 0.3);
     transition: all 0.3s ease;
+    min-height: 36px;
   }
 
   .demo-btn:hover {
@@ -308,27 +312,27 @@
 
   .feedback-section {
     background: var(--white);
-    border-radius: 25px;
-    padding: 40px;
-    box-shadow: 0 8px 24px var(--shadow);
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 2px 8px var(--shadow);
     animation: fadeIn 0.6s ease-out 1s backwards;
   }
 
   .feedback-title {
-    font-size: 32px;
+    font-size: 16px;
     font-weight: 900;
     background: linear-gradient(135deg, var(--deep-blue), var(--sky-blue));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 24px;
+    margin-bottom: 8px;
   }
 
   .feedback-box {
-    padding: 20px;
-    border-radius: 15px;
-    margin-bottom: 24px;
-    font-size: 18px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    font-size: 14px;
     font-weight: 700;
     display: none;
   }
@@ -350,62 +354,62 @@
   }
 
   .reteach-title {
-    font-size: 24px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--deep-blue);
-    margin-bottom: 20px;
+    margin-bottom: 8px;
   }
 
   .video-container {
     background: #000;
-    border-radius: 20px;
-    padding: 16px;
-    margin-bottom: 24px;
-    box-shadow: 0 4px 16px var(--shadow);
+    border-radius: 12px;
+    padding: 8px;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 8px var(--shadow);
   }
 
   #reteachVideo {
     width: 100%;
-    border-radius: 15px;
+    border-radius: 10px;
   }
 
   .steps-container {
     background: var(--off-white);
-    padding: 24px;
-    border-radius: 20px;
-    border: 3px dashed #DDD;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 2px dashed #DDD;
   }
 
   .steps-title {
-    font-size: 20px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--deep-blue);
-    margin-bottom: 16px;
+    margin-bottom: 6px;
   }
 
   #reteachSteps {
     margin: 0;
-    padding-left: 24px;
+    padding-left: 20px;
   }
 
   #reteachSteps li {
-    font-size: 16px;
+    font-size: 14px;
     color: #666;
-    line-height: 1.8;
-    margin-bottom: 12px;
+    line-height: 1.6;
+    margin-bottom: 4px;
   }
 
   @media (max-width: 768px) {
     .header-info h1 {
-      font-size: 32px;
+      font-size: 18px;
     }
 
     .target-phrase {
-      font-size: 32px;
+      font-size: 18px;
     }
 
     #cam {
-      height: 300px;
+      height: 200px;
     }
 
     .button-row {

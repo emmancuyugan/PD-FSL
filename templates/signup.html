@@ -97,15 +97,15 @@
   .signup-section {
     position: relative;
     z-index: 1;
-    min-height: 100vh;
+    min-height: calc(100vh - 64px);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 40px 20px;
+    padding: 16px 20px;
   }
 
   .signup-container {
-    max-width: 500px;
+    max-width: 420px;
     width: 100%;
     animation: popUp 0.6s ease-out;
   }
@@ -117,23 +117,23 @@
 
   .signup-card {
     background: var(--white);
-    border-radius: 30px;
-    padding: 50px;
+    border-radius: 20px;
+    padding: 28px 32px;
     text-align: center;
-    box-shadow: 0 12px 40px var(--shadow);
+    box-shadow: 0 4px 20px var(--shadow);
   }
 
   .signup-icon {
-    width: 100px;
-    height: 100px;
-    margin: 0 auto 24px;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 14px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--coral), var(--orange));
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 48px;
-    box-shadow: 0 8px 24px rgba(255, 107, 157, 0.3);
+    font-size: 30px;
+    box-shadow: 0 4px 14px rgba(255, 107, 157, 0.3);
     animation: bounce 0.6s ease-out 0.2s backwards;
   }
 
@@ -144,26 +144,27 @@
   }
 
   .signup-title {
-    font-size: 40px;
+    font-size: 26px;
     font-weight: 900;
     background: linear-gradient(135deg, var(--coral), var(--orange));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 12px;
+    margin-bottom: 6px;
   }
 
   .signup-subtitle {
-    font-size: 16px;
+    font-size: 14px;
     color: #666;
-    margin-bottom: 32px;
+    margin-bottom: 18px;
   }
 
   .flash-message {
-    padding: 16px 20px;
-    border-radius: 15px;
-    margin-bottom: 24px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    margin-bottom: 10px;
     font-weight: 700;
+    font-size: 11px;
     animation: slideDown 0.4s ease-out;
   }
 
@@ -185,27 +186,28 @@
   }
 
   .form-group {
-    margin-bottom: 24px;
+    margin-bottom: 12px;
     text-align: left;
   }
 
   .form-label {
     display: block;
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 700;
     color: #333;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
 
   .form-input {
     width: 100%;
-    padding: 16px 20px;
-    border: 3px solid var(--coral);
-    border-radius: 15px;
-    font-size: 16px;
+    padding: 12px 16px;
+    border: 2px solid var(--coral);
+    border-radius: 12px;
+    font-size: 15px;
     font-weight: 600;
     transition: all 0.3s ease;
     background: var(--white);
+    min-height: 44px;
   }
 
   .form-input:focus {
@@ -222,17 +224,18 @@
 
   .submit-btn {
     width: 100%;
-    padding: 18px;
-    font-size: 20px;
+    padding: 14px;
+    font-size: 16px;
     font-weight: 700;
     border: none;
-    border-radius: 15px;
+    border-radius: 12px;
     background: linear-gradient(135deg, var(--coral), var(--orange));
     color: var(--white);
     cursor: pointer;
-    box-shadow: 0 6px 20px rgba(255, 107, 157, 0.3);
+    box-shadow: 0 3px 10px rgba(255, 107, 157, 0.3);
     transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    margin-bottom: 24px;
+    margin-bottom: 12px;
+    min-height: 48px;
   }
 
   .submit-btn:hover {
@@ -245,30 +248,31 @@
   }
 
   .login-section {
-    margin-top: 24px;
-    padding-top: 24px;
+    margin-top: 10px;
+    padding-top: 10px;
     border-top: 2px solid #EEE;
   }
 
   .login-text {
-    font-size: 16px;
+    font-size: 13px;
     color: #666;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
 
   .login-link {
     display: inline-block;
     width: 100%;
-    padding: 14px;
+    padding: 12px;
     background: var(--white);
     color: var(--deep-blue);
     text-decoration: none;
-    border-radius: 15px;
-    border: 3px solid var(--deep-blue);
+    border-radius: 12px;
+    border: 2px solid var(--deep-blue);
     font-weight: 700;
-    font-size: 16px;
+    font-size: 14px;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 8px var(--shadow);
+    box-shadow: 0 1px 4px var(--shadow);
+    min-height: 44px;
   }
 
   .login-link:hover {
@@ -279,11 +283,11 @@
 
   .back-link {
     display: inline-block;
-    margin-top: 24px;
+    margin-top: 12px;
     color: var(--deep-blue);
     text-decoration: none;
     font-weight: 700;
-    font-size: 16px;
+    font-size: 13px;
     transition: all 0.2s ease;
   }
 
@@ -293,17 +297,17 @@
 
   @media (max-width: 768px) {
     .signup-card {
-      padding: 40px 30px;
+      padding: 16px 18px;
     }
 
     .signup-title {
-      font-size: 32px;
+      font-size: 18px;
     }
 
     .signup-icon {
-      width: 80px;
-      height: 80px;
-      font-size: 40px;
+      width: 44px;
+      height: 44px;
+      font-size: 22px;
     }
   }
 </style>

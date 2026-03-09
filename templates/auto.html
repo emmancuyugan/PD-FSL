@@ -86,11 +86,12 @@
     position: relative;
     z-index: 1;
     width: 100%;
-    min-height: 100vh;
+    height: calc(100vh - 64px);
     display: flex;
     flex-direction: column;
-    padding: 20px;
-    gap: 20px;
+    padding: 8px 12px;
+    gap: 8px;
+    overflow: hidden;
   }
 
   .header {
@@ -98,45 +99,48 @@
     justify-content: space-between;
     align-items: center;
     background: var(--white);
-    padding: 15px 25px;
-    border-radius: 30px;
-    box-shadow: 0 8px 24px var(--shadow);
+    padding: 8px 16px;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px var(--shadow);
+    flex-shrink: 0;
   }
 
   .logo {
-    font-size: 32px;
+    font-size: 18px;
     font-weight: 700;
     background: linear-gradient(135deg, var(--deep-blue), var(--lavender), var(--coral));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    letter-spacing: -1px;
+    letter-spacing: -0.5px;
   }
 
   .status-badge {
-    padding: 12px 28px;
+    padding: 6px 14px;
     background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
     color: var(--white);
-    border-radius: 20px;
+    border-radius: 10px;
     font-weight: 700;
-    font-size: 20px;
-    box-shadow: 0 4px 12px rgba(6, 214, 160, 0.3);
+    font-size: 12px;
+    box-shadow: 0 2px 6px rgba(6, 214, 160, 0.3);
   }
 
   .main-content {
     display: flex;
-    gap: 20px;
+    gap: 8px;
     flex: 1;
     min-height: 0;
+    overflow: hidden;
   }
 
   .camera-section {
     flex: 2;
     position: relative;
     background: var(--white);
-    border-radius: 30px;
-    box-shadow: 0 8px 32px var(--shadow);
+    border-radius: 14px;
+    box-shadow: 0 2px 10px var(--shadow);
     overflow: hidden;
+    min-height: 0;
   }
 
   .camera-wrapper {
@@ -144,7 +148,7 @@
     width: 100%;
     height: 100%;
     background: #000;
-    border-radius: 30px;
+    border-radius: 14px;
     overflow: hidden;
   }
 
@@ -152,7 +156,7 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 30px;
+    border-radius: 14px;
   }
 
   #overlay {
@@ -162,99 +166,99 @@
   }
 
   .live-badge {
-    padding: 12px 24px;
-    border-radius: 20px;
+    padding: 4px 10px;
+    border-radius: 10px;
     font-weight: 700;
-    font-size: 20px;
+    font-size: 11px;
     display: none;
-    box-shadow: 0 4px 16px rgba(255, 107, 157, 0.5);
+    box-shadow: 0 2px 6px rgba(255, 107, 157, 0.5);
     background: var(--coral);
     color: var(--white);
   }
 
   .live-dot {
     display: inline-block;
-    width: 12px;
-    height: 12px;
+    width: 8px;
+    height: 8px;
     background: var(--white);
     border-radius: 50%;
-    margin-right: 8px;
+    margin-right: 4px;
   }
 
   .result-overlay {
     position: absolute;
-    top: 20px;
+    top: 8px;
     left: 50%;
     transform: translateX(-50%);
     background: rgba(0, 0, 0, 0.85);
     color: var(--white);
-    padding: 16px 32px;
-    border-radius: 24px;
-    font-size: 28px;
+    padding: 6px 16px;
+    border-radius: 12px;
+    font-size: 16px;
     font-weight: 700;
     display: none;
     z-index: 10;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(10px);
   }
 
   .timer-overlay {
     position: absolute;
-    top: 20px;
-    right: 20px;
+    top: 8px;
+    right: 8px;
     background: var(--sunshine);
     color: #333;
-    padding: 20px 28px;
-    border-radius: 20px;
-    font-size: 40px;
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-size: 20px;
     font-weight: 700;
     display: none;
     z-index: 10;
-    box-shadow: 0 8px 24px rgba(255, 217, 61, 0.5);
-    min-width: 80px;
+    box-shadow: 0 4px 12px rgba(255, 217, 61, 0.5);
+    min-width: 40px;
     text-align: center;
   }
 
   .fps-counter {
     position: absolute;
-    bottom: 20px;
-    left: 20px;
+    bottom: 8px;
+    left: 8px;
     background: rgba(0, 0, 0, 0.7);
     color: var(--grass-green);
-    padding: 8px 14px;
-    border-radius: 10px;
-    font-size: 14px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 10px;
     font-weight: 700;
     font-family: 'Courier New', monospace;
     z-index: 11;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-    min-width: 60px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    min-width: 40px;
     text-align: center;
   }
 
   .ghost-badge {
     position: absolute;
-    top: 100px;
-    right: 20px;
+    top: 40px;
+    right: 8px;
     background: var(--lavender);
     color: var(--white);
-    padding: 12px 20px;
-    border-radius: 20px;
-    font-size: 18px;
+    padding: 4px 10px;
+    border-radius: 10px;
+    font-size: 10px;
     font-weight: 700;
     display: none;
     z-index: 10;
-    box-shadow: 0 4px 16px rgba(167, 139, 250, 0.5);
+    box-shadow: 0 2px 6px rgba(167, 139, 250, 0.5);
   }
 
   .settings-panel {
     position: absolute;
-    top: 20px;
-    left: 20px;
+    top: 8px;
+    left: 8px;
     background: rgba(255, 255, 255, 0.95);
-    padding: 20px;
-    border-radius: 20px;
-    box-shadow: 0 4px 16px var(--shadow);
+    padding: 8px 10px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px var(--shadow);
     z-index: 9;
     backdrop-filter: blur(10px);
   }
@@ -262,8 +266,8 @@
   .setting-item {
     display: flex;
     align-items: center;
-    margin-bottom: 12px;
-    font-size: 16px;
+    margin-bottom: 4px;
+    font-size: 13px;
     font-weight: 600;
     color: #333;
     cursor: pointer;
@@ -275,35 +279,36 @@
   }
 
   .setting-item input[type="checkbox"] {
-    width: 24px;
-    height: 24px;
-    margin-right: 10px;
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
     cursor: pointer;
     accent-color: var(--grass-green);
   }
 
   .control-buttons {
     position: absolute;
-    bottom: 20px;
+    bottom: 8px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 16px;
+    gap: 8px;
     z-index: 10;
   }
 
   .big-button {
-    padding: 20px 48px;
-    font-size: 24px;
+    padding: 10px 28px;
+    font-size: 14px;
     font-weight: 700;
     border: none;
-    border-radius: 25px;
+    border-radius: 14px;
     cursor: pointer;
-    box-shadow: 0 6px 20px var(--shadow);
+    box-shadow: 0 2px 8px var(--shadow);
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
     transition: none;
+    min-height: 44px;
   }
 
   .start-btn {
@@ -318,26 +323,28 @@
   }
 
   .sidebar {
-    flex: 1;
+    flex: 0 0 340px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 8px;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   .card {
     background: var(--white);
-    border-radius: 25px;
-    padding: 25px;
-    box-shadow: 0 8px 24px var(--shadow);
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 2px 8px var(--shadow);
     display: flex;
     flex-direction: column;
   }
 
   .card-title {
-    font-size: 18px;
+    font-size: 13px;
     font-weight: 700;
     color: #666;
-    margin-bottom: 12px;
+    margin-bottom: 6px;
   }
 
   .detection-card {
@@ -345,28 +352,28 @@
   }
 
   .detected-sign {
-    font-size: 48px;
+    font-size: 28px;
     font-weight: 700;
     background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 8px;
-    min-height: 60px;
+    margin-bottom: 6px;
+    min-height: 36px;
     display: flex;
     align-items: center;
   }
 
   .detection-status {
-    font-size: 24px;
+    font-size: 13px;
     font-weight: 700;
     color: #888;
   }
 
   .frame-count {
-    font-size: 16px;
+    font-size: 12px;
     color: #999;
-    margin-top: 8px;
+    margin-top: 4px;
     display: none;
   }
 
@@ -380,12 +387,12 @@
   .history-content {
     flex: 1;
     background: var(--off-white);
-    border-radius: 15px;
-    padding: 15px;
+    border-radius: 10px;
+    padding: 10px;
     overflow-y: auto;
-    font-size: 14px;
-    margin-bottom: 16px;
-    border: 3px dashed #DDD;
+    font-size: 13px;
+    margin-bottom: 8px;
+    border: 2px dashed #DDD;
   }
 
   .history-content::-webkit-scrollbar {
@@ -403,15 +410,16 @@
 
   .clear-btn {
     width: 100%;
-    padding: 16px;
+    padding: 10px;
     background: linear-gradient(135deg, var(--orange), var(--sunshine));
     color: var(--white);
     border: none;
-    border-radius: 15px;
-    font-size: 18px;
+    border-radius: 10px;
+    font-size: 13px;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 4px 16px rgba(255, 140, 66, 0.3);
+    box-shadow: 0 2px 6px rgba(255, 140, 66, 0.3);
+    min-height: 40px;
   }
 
   .confetti {
@@ -420,31 +428,31 @@
 
   @media (max-width: 1024px) {
     .app-container {
-      padding: 15px;
-      gap: 15px;
+      padding: 6px;
+      gap: 6px;
     }
 
     .logo {
-      font-size: 24px;
+      font-size: 14px;
     }
 
     .status-badge {
-      font-size: 16px;
-      padding: 10px 20px;
+      font-size: 10px;
+      padding: 3px 10px;
     }
 
     .big-button {
-      padding: 16px 36px;
-      font-size: 20px;
+      padding: 6px 18px;
+      font-size: 12px;
     }
 
     .detected-sign {
-      font-size: 36px;
+      font-size: 20px;
     }
   }
 
   .app-container {
-    height: 100vh;
+    height: calc(100vh - 64px);
     min-height: 0;
   }
 
@@ -454,7 +462,7 @@
 
   .sidebar {
     min-height: 0;
-    overflow: hidden;
+    overflow-y: auto;
   }
 
   .camera-section {
@@ -490,7 +498,7 @@
 <div class="app-container">
   <div class="header">
     <div class="logo">FSL Learning</div>
-    <div style="display: flex; align-items: center; gap: 16px;">
+    <div style="display: flex; align-items: center; gap: 8px;">
       <div class="live-badge" id="recBadge">
         <span class="live-dot"></span>LIVE
       </div>
@@ -512,7 +520,7 @@
 
         <div class="ghost-badge" id="ghostBadge">Ghost Helper ON</div>
 
-        <div id="personWarning" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,107,157,0.95);color:#fff;padding:16px 32px;border-radius:20px;font-size:22px;font-weight:700;display:none;z-index:25;text-align:center;box-shadow:0 8px 24px rgba(255,107,157,0.5);pointer-events:none;"></div>
+        <div id="personWarning" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,107,157,0.95);color:#fff;padding:8px 16px;border-radius:12px;font-size:13px;font-weight:700;display:none;z-index:25;text-align:center;box-shadow:0 4px 12px rgba(255,107,157,0.5);pointer-events:none;"></div>
 
         <div class="settings-panel">
           <div class="setting-item">
