@@ -138,16 +138,21 @@ class AvatarPoser {
   async init3D() {
     try {
       console.log('[AvatarPoser] init3D: Starting 3D initialization');
+      
+      // Ensure container has dimensions
+      const width = this.container.clientWidth || 640;
+      const height = this.container.clientHeight || 480;
+      
       this.scene = new THREE.Scene();
       this.scene.background = new THREE.Color(0x0f172a);
 
-      const aspect = this.container.clientWidth / this.container.clientHeight;
+      const aspect = width / height;
       this.camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 100);
       this.camera.position.set(0, 1.2, 2.5);
       this.camera.lookAt(0, 1, 0);
 
       this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+      this.renderer.setSize(width, height);
       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       this.renderer.shadowMap.enabled = true;
       this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -166,6 +171,9 @@ class AvatarPoser {
       // FIX: Load the model here
       await this.loadModel();
       console.log('[AvatarPoser] init3D: Model loaded and added to scene');
+
+      // Start the render loop
+      this.animate();
     } catch (e) {
       console.error('[AvatarPoser] init3D: Error during initialization', e);
     }
