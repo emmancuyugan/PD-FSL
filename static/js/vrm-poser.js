@@ -531,7 +531,10 @@ class AvatarPoser {
   // ─── Spine ───────────────────────────────────────────────────────
 
   _poseSpine(leftShoulder, rightShoulder) {
-    if (!leftShoulder || !rightShoulder) return;
+    if (!leftShoulder || !rightShoulder) {
+      console.warn('[AvatarPoser] _poseSpine: Missing shoulders', { leftShoulder, rightShoulder });
+      return;
+    }
 
     // Body tilt from shoulder line angle
     const bodyTilt = Math.atan2(
@@ -543,8 +546,15 @@ class AvatarPoser {
     spineBones.forEach(name => {
       const bone = this.getBone(name);
       const rest = this.getRest(name);
+      if (!bone) {
+        console.warn(`[AvatarPoser] _poseSpine: Bone not found: ${name}`);
+      }
+      if (!rest) {
+        console.warn(`[AvatarPoser] _poseSpine: Rest not found: ${name}`);
+      }
       if (bone && rest) {
         bone.rotation.z = rest.z - bodyTilt * 0.4;
+        console.log(`[AvatarPoser] _poseSpine: Updated bone ${name}`);
       }
     });
   }
@@ -588,7 +598,10 @@ class AvatarPoser {
   // ─── Arms (quaternion-based) ────────────────────────────────────
 
   _poseArmQ(side, shoulder, elbow, wrist, handLandmarks) {
-    if (!shoulder || !elbow || !wrist) return;
+    if (!shoulder || !elbow || !wrist) {
+      console.warn(`[AvatarPoser] _poseArmQ(${side}): Missing joints`, { shoulder, elbow, wrist });
+      return;
+    }
 
     const upperArmName = this.BONE_NAMES[side === 'L' ? 'upperArmL' : 'upperArmR'];
     const forearmName  = this.BONE_NAMES[side === 'L' ? 'forearmL'  : 'forearmR'];
@@ -598,12 +611,18 @@ class AvatarPoser {
     const upperDir = this._landmarkDir(shoulder, elbow);
     if (upperDir) {
       this._poseBoneToDirection(upperArmName, upperDir);
+      console.log(`[AvatarPoser] _poseArmQ(${side}): Updated upper arm ${upperArmName}`);
+    } else {
+      console.warn(`[AvatarPoser] _poseArmQ(${side}): No upper arm direction`);
     }
 
     // Forearm: elbow → wrist direction
     const foreDir = this._landmarkDir(elbow, wrist);
     if (foreDir) {
       this._poseBoneToDirection(forearmName, foreDir);
+      console.log(`[AvatarPoser] _poseArmQ(${side}): Updated forearm ${forearmName}`);
+    } else {
+      console.warn(`[AvatarPoser] _poseArmQ(${side}): No forearm direction`);
     }
 
     // Hand: use hand landmarks wrist→middle-MCP if available, else follow forearm
@@ -613,9 +632,15 @@ class AvatarPoser {
       const handDir = this._landmarkDir(wristLm, middleMcp);
       if (handDir) {
         this._poseBoneToDirection(handName, handDir, 0.7);
+        console.log(`[AvatarPoser] _poseArmQ(${side}): Updated hand ${handName} (hand landmarks)`);
+      } else {
+        console.warn(`[AvatarPoser] _poseArmQ(${side}): No hand direction from hand landmarks`);
       }
     } else if (foreDir) {
       this._poseBoneToDirection(handName, foreDir, 0.3);
+      console.log(`[AvatarPoser] _poseArmQ(${side}): Updated hand ${handName} (forearm direction)`);
+    } else {
+      console.warn(`[AvatarPoser] _poseArmQ(${side}): No hand direction`);
     }
   }
 
