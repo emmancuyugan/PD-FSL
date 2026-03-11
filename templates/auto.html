@@ -609,6 +609,7 @@
   const BASE_CAPTURE_MS = 5500;  // Increased to ensure enough frames
   let CAPTURE_MS = BASE_CAPTURE_MS;
   let buf=[],running=false,handsPresent=false,frameCount=0,showVisuals=true,showTimer=true,showResults=true;
+  let lastPersonCount=1; // Track latest person count for prediction gating
   let frameSkip=2;
   let autoJudge=false;  // Track auto-trigger to prevent multiple calls
   let predicting=false; // Lock: true while predict() is in-flight
@@ -867,6 +868,7 @@
     // Person detection warnings
     const pc = res.personCount;
     if(pc !== undefined){
+      lastPersonCount = pc;
       if(pc === 0){
         personWarning.textContent = 'No one detected';
         personWarning.style.display = 'block';
@@ -1014,21 +1016,25 @@ async function predict(){
     try { await _doPredict(); } finally { predicting = false; }
 }
 async function _doPredict(){
-    if(buf.length < 5){
+    // No hands detected OR hands detected but no person found
+    if(buf.length < 5 || lastPersonCount !== 1){
       if(showResults){
         const now = new Date().toLocaleTimeString();
-        gestureOverlay.textContent = 'No hands detected';
+        const msg = buf.length < 5 ? 'No hands detected' : 'Hands detected but no person found';
+        const color = buf.length < 5 ? 'rgba(255,140,66,0.9)' : 'rgba(255,107,157,0.9)';
+        const colorVar = buf.length < 5 ? 'var(--orange)' : 'var(--pink)';
+        gestureOverlay.textContent = msg;
         gestureOverlay.style.display = 'block';
-        gestureOverlay.style.background = 'rgba(255,140,66,0.9)';
+        gestureOverlay.style.background = color;
         detLabel.textContent = '—';
-        detStatus.textContent = 'No hands detected';
+        detStatus.textContent = msg;
 
         const histEntry = document.createElement('div');
         histEntry.style.marginBottom = '8px';
         histEntry.style.padding = '8px';
         histEntry.style.borderRadius = '8px';
         histEntry.style.background = 'rgba(255,255,255,0.6)';
-        histEntry.innerHTML = `<strong style="color:var(--orange);">${now}</strong>: No hands detected`;
+        histEntry.innerHTML = `<strong style="color:${colorVar};">${now}</strong>: ${msg}`;
         if(historyEl.children.length===1 && historyEl.children[0].style.color==='#999'){
           historyEl.innerHTML='';
         }
