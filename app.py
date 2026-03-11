@@ -331,8 +331,7 @@ def run_inference(x):
     return probs
 
 
-def log_top3(probs, tag="INFERENCE"):
-    """Print top-3 predictions with confidence to the terminal."""
+def log_top3(probs, tag="INFERENCE"): # Print top 3 predictions for debugging
     top3_idx = np.argsort(probs)[::-1][:3]
     print(f"[{tag}] Top-3 predictions:")
     for rank, idx in enumerate(top3_idx, 1):
@@ -382,8 +381,7 @@ def results():
         for r in rows
     ]
 
-    # ---- Daily summaries ----
-    daily = (db.session.query(
+    daily = (db.session.query( # Daily summaries
                 func.date(PracticeResult.created_at).label("day"),
                 func.count(PracticeResult.id).label("count")
             )
@@ -514,7 +512,7 @@ def api_save_result():
 
 @app.route("/ping", methods=["GET"])
 def ping():
-    return jsonify({"message": "Backend is reachable ✅"})
+    return jsonify({"message": "Backend is reachable"})
 
 @app.route("/api/landmarks", methods=["POST"])
 def api_landmarks():
@@ -545,7 +543,6 @@ def api_landmarks():
         "personCount":       _face_count_cache,
     })
 
-# ── Server-side ghost landmark cache (persisted to disk) ──────────
 _GHOST_CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ghost_cache.json")
 
 def _load_ghost_cache():
@@ -651,7 +648,7 @@ def predict():
         label = CLASSES[pred_idx]
         
         conf = float(np.max(probs))
-
+        
         NOT_FSL_THRESHOLD = 0.90
 
         if conf < NOT_FSL_THRESHOLD:
