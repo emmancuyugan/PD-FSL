@@ -338,6 +338,10 @@ def log_top3(probs, tag="INFERENCE"): # Print top 3 predictions for debugging
         print(f"  {rank}. {CLASSES[idx]:.<30s} {probs[idx]*100:6.2f}%")
 
 @app.route("/")
+def launch():
+    return render_template("splash.html")
+
+@app.route("/home")
 def home():
     return render_template("index.html")
 
