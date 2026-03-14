@@ -12,6 +12,7 @@ numpy<2
 Pillow
 mediapipe
 opencv-python-headless
+python-osc
 
 # Jetson-only
 # tensorrt
