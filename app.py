@@ -507,17 +507,6 @@ def _load_sign_calibration(expected_label: str):
     return calibration
 
 
-def _sign_hand_usage(expected_label: str):
-    calibration = _load_sign_calibration(expected_label)
-    if calibration:
-        use_left = calibration.get("left_presence", 0.0) >= 0.25
-        use_right = calibration.get("right_presence", 0.0) >= 0.25
-        if not use_left and not use_right:
-            use_right = True
-        return use_left, use_right
-    return False, True
-
-
 def _build_corrective_feedback(live_seq: np.ndarray, expected_label: str):
     if live_seq.ndim != 2 or live_seq.shape[1] < 200:
         return None
@@ -541,7 +530,6 @@ def _build_corrective_feedback(live_seq: np.ndarray, expected_label: str):
 
     cues = []
     status = "good"
-    uses_left_hand, uses_right_hand = _sign_hand_usage(expected_label)
 
     def _label_key(lbl: str):
         parts = str(lbl).lower().split("_", 1)
@@ -613,9 +601,9 @@ def _build_corrective_feedback(live_seq: np.ndarray, expected_label: str):
 
     if left_presence < 0.10 and right_presence < 0.10:
         cues.append((3.5, "Keep at least one hand fully visible to the camera."))
-    elif uses_left_hand and left_presence < 0.08:
+    elif left_presence < 0.08:
         cues.append((2.2, "Keep your left hand visible to the camera."))
-    elif uses_right_hand and right_presence < 0.08:
+    elif right_presence < 0.08:
         cues.append((2.2, "Keep your right hand visible to the camera."))
 
     metric_median = float(np.median(metric_values))

@@ -1391,7 +1391,17 @@ window.addEventListener("load", () => {
   }
 
   function adaptMirrorCue(message) {
-    return message || '';
+    if (!message) return '';
+    return message
+      .replace(/\bLEFT\b/g, '__TMP_LEFT__')
+      .replace(/\bRIGHT\b/g, 'LEFT')
+      .replace(/__TMP_LEFT__/g, 'RIGHT')
+      .replace(/\bLeft\b/g, '__TmpLeft__')
+      .replace(/\bRight\b/g, 'Left')
+      .replace(/__TmpLeft__/g, 'Right')
+      .replace(/\bleft\b/g, '__tmp_left__')
+      .replace(/\bright\b/g, 'left')
+      .replace(/__tmp_left__/g, 'right');
   }
 
   function showCameraCue(message) {
