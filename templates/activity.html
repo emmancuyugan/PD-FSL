@@ -722,7 +722,7 @@
           <span class="skeleton-label">Skeleton AI</span>
           <button class="feedback-close-btn" id="feedbackCloseBtn" title="Close feedback" style="display: none;">✕</button>
           <canvas id="skeletonCanvas"></canvas>
-          <video id="feedbackVideo" class="feedback-video" playsinline controls muted></video>
+          <video id="feedbackVideo" class="feedback-video" playsinline muted></video>
         </div>
 
         <div class="prep-overlay" id="prepOverlay">Get Ready…</div>
@@ -747,7 +747,14 @@
             <span>Fast Mode (3 Seconds)</span>
           </div>
           <div class="setting-item" style="margin-top: 4px;">
-            <span style="margin-right: 8px;">Feedback:</span>
+            <span style="margin-right: 8px;">Source:</span>
+            <select id="feedbackSourceSelect" style="border: 1px solid #ddd; border-radius: 6px; padding: 2px 6px; font-size: 12px; font-weight: 700; margin-right: 8px;">
+              <option value="3d">3D</option>
+              <option value="learn">Learn</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <span style="margin-right: 8px;">3D Model:</span>
             <select id="feedbackGenderSelect" style="border: 1px solid #ddd; border-radius: 6px; padding: 2px 6px; font-size: 12px; font-weight: 700;">
               <option value="boy">Boy</option>
               <option value="girl">Girl</option>
@@ -900,14 +907,25 @@ window.addEventListener("load", () => {
   const toggleTimer   = document.getElementById('toggleTimer');
   const toggleResults = document.getElementById('toggleResults');
   const toggleSpeed   = document.getElementById('toggleSpeed');
+  const feedbackSourceSelect = document.getElementById('feedbackSourceSelect');
   const feedbackGenderSelect = document.getElementById('feedbackGenderSelect');
 
-  let feedbackGender = localStorage.getItem('activityFeedbackGender') || 'boy';
+  let feedbackSource = localStorage.getItem('activityFeedbackSource') || '3d';
+  let feedbackGender = localStorage.getItem('activityFeedbackGender') || 'girl';
+  feedbackSourceSelect.value = feedbackSource;
   feedbackGenderSelect.value = feedbackGender;
+  feedbackSourceSelect.onchange = () => {
+    feedbackSource = feedbackSourceSelect.value;
+    localStorage.setItem('activityFeedbackSource', feedbackSource);
+    feedbackGenderSelect.disabled = feedbackSource !== '3d';
+    feedbackGenderSelect.style.opacity = feedbackSource === '3d' ? '1' : '0.6';
+  };
   feedbackGenderSelect.onchange = () => {
     feedbackGender = feedbackGenderSelect.value;
     localStorage.setItem('activityFeedbackGender', feedbackGender);
   };
+  feedbackGenderSelect.disabled = feedbackSource !== '3d';
+  feedbackGenderSelect.style.opacity = feedbackSource === '3d' ? '1' : '0.6';
 
   let showVisuals = true;
   let showTimer   = true;
@@ -1026,6 +1044,14 @@ window.addEventListener("load", () => {
     const prefixMap = { numbers: 'number' };
     const prefix = prefixMap[category] || category;
     return `/static/video/3d_feedback/${category}/${feedbackGender}_${prefix}_${key}.mp4`;
+  }
+
+  function getLearnFeedbackUrl(label) {
+    const category = inferCategory(label);
+    const key = normLabel(label);
+    const prefixMap = { numbers: 'number' };
+    const prefix = prefixMap[category] || category;
+    return `/static/learn_videos/${prefix}_${key}.mp4`;
   }
 
   function packFeature(res){
@@ -1465,14 +1491,16 @@ window.addEventListener("load", () => {
     showSkeletonDisplay();
     document.getElementById("feedbackCloseBtn").style.display = 'flex';
 
-    const feedbackUrl = get3DFeedbackUrl(targetGesture);
+    const feedbackUrl = feedbackSource === '3d' ? get3DFeedbackUrl(targetGesture) : getLearnFeedbackUrl(targetGesture);
     if (await fileExists(feedbackUrl)) {
-      document.querySelector('.skeleton-label').textContent = '3D Feedback';
+      document.querySelector('.skeleton-label').textContent = 'Feedback Guide';
       skeletonCanvas.style.display = 'none';
       feedbackVideo.style.display = 'block';
+      feedbackVideo.controls = false;
+      feedbackVideo.loop = true;
       feedbackVideo.src = feedbackUrl;
       feedbackVideo.currentTime = 0;
-      document.getElementById("assistHint").textContent = 'Playing 3D feedback video.';
+      document.getElementById("assistHint").textContent = feedbackSource === '3d' ? 'Playing 3D feedback guide.' : 'Playing learn video guide.';
       try {
         await feedbackVideo.play();
       } catch (_e) {
@@ -1883,6 +1911,10 @@ window.addEventListener("load", () => {
   new ResizeObserver(resize).observe(videoEl);
   new ResizeObserver(resize).observe(skeletonCanvas.parentElement);
   resize();
+
+  camera.start().catch(err => {
+    console.warn('Auto camera start failed:', err);
+  });
 });
 </script>
 
