@@ -1272,13 +1272,6 @@ window.addEventListener("load", () => {
     return normLabel(predicted);
   }
 
-  function getCorrectiveHint(j){
-    const fb = j?.corrective_feedback;
-    if (!fb || !fb.message) return '';
-    if (fb.status === 'too_low' || fb.status === 'too_high') return fb.message;
-    return '';
-  }
-
   async function predictOnce(silent=false){
     // No hands detected OR hands detected but no person found
     if (buf.length < 5 || lastPersonCount !== 1) {
@@ -1356,7 +1349,7 @@ window.addEventListener("load", () => {
           const assistRow = document.getElementById("assistRow");
           const assistHint = document.getElementById("assistHint");
           assistRow.style.display = 'block';
-          assistHint.textContent = getCorrectiveHint(j) || 'Watch the overlay, then try again.';
+          assistHint.textContent = 'Watch the overlay, then try again.';
           // Save incorrect result
           await saveResult("Incorrect", j?.confidence || null);
         }
