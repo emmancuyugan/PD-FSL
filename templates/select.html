@@ -382,6 +382,8 @@
     gap: 8px;
     min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 2px;
   }
 
   .card {
@@ -391,6 +393,21 @@
     box-shadow: 0 2px 8px var(--shadow);
     display: flex;
     flex-direction: column;
+    min-height: 0;
+  }
+
+  .selection-card {
+    flex: 0 0 auto;
+    max-height: 52%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .status-card {
+    flex: 1 1 auto;
+    min-height: 220px;
+    overflow-y: auto;
   }
 
   .card-title {
@@ -702,6 +719,10 @@
     .stat-value {
       font-size: 20px;
     }
+
+    .selection-card {
+      max-height: 50%;
+    }
   }
 </style>
 
@@ -762,7 +783,7 @@
 
     <div class="sidebar">
       <!-- Selection Card -->
-      <div class="card">
+      <div class="card selection-card">
         <div class="card-title">Selection</div>
         
         <div class="selection-grid">
@@ -779,28 +800,6 @@
           <div class="input-group">
             <label>Gesture</label>
             <select id="gestureSelect"></select>
-          </div>
-        </div>
-
-        <div class="toggle-panel">
-          <div class="toggle-title">Display Options</div>
-          <div class="toggle-grid">
-            <label class="toggle-item">
-              <input type="checkbox" id="toggleVisuals" checked>
-              <span>Landmarks</span>
-            </label>
-            <label class="toggle-item">
-              <input type="checkbox" id="toggleTimer" checked>
-              <span>Timer</span>
-            </label>
-            <label class="toggle-item">
-              <input type="checkbox" id="toggleResults" checked>
-              <span>Results</span>
-            </label>
-            <label class="toggle-item">
-              <input type="checkbox" id="toggleSpeed">
-              <span>Fast Mode (3 Seconds)</span>
-            </label>
           </div>
         </div>
 
@@ -821,10 +820,32 @@
             </select>
           </div>
         </div>
+
+        <div class="toggle-panel" style="margin-top: 6px;">
+          <div class="toggle-title">Display Options</div>
+          <div class="toggle-grid">
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleVisuals" checked>
+              <span>Landmarks</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleTimer" checked>
+              <span>Timer</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleResults" checked>
+              <span>Results</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleSpeed">
+              <span>Fast Mode (3 Seconds)</span>
+            </label>
+          </div>
+        </div>
       </div>
 
       <!-- Status Card -->
-      <div class="card">
+      <div class="card status-card">
         <div class="card-title">Status & Results</div>
 
         <div class="timer-display" id="timerOverlay">5</div>
