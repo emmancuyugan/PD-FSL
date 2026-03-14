@@ -1046,14 +1046,22 @@ window.addEventListener("load", () => {
     if(state === 'yellow') return 'Good distance, but preferably adjust a bit';
     return 'Too far or too close';
   }
-  function drawDistanceGuide(state){
+  function drawDistanceGuide(state, anchors){
     const color = getDistanceGuideColor(state);
-    const unit = Math.min(canvasEl.width, canvasEl.height) * guideScaleMultiplier;
-    const cx = canvasEl.width * 0.5;
-    const topY = canvasEl.height * (0.05 - (guideScaleMultiplier - 1.0) * 0.03);
-    const headR = unit * 0.115;
+    const hasShoulders = anchorsValid(anchors);
+    const shoulderNorm = hasShoulders ? dist2D(anchors.L_SH, anchors.R_SH) : null;
+    const shoulderPx = hasShoulders ? Math.max(1, shoulderNorm * canvasEl.width) : null;
+    const unit = hasShoulders
+      ? Math.max(70, shoulderPx * 1.15 * guideScaleMultiplier)
+      : Math.min(canvasEl.width, canvasEl.height) * 0.34 * guideScaleMultiplier;
+    const rawCx = hasShoulders ? ((anchors.L_SH.x + anchors.R_SH.x) * 0.5 * canvasEl.width) : (canvasEl.width * 0.5);
+    const cx = Math.max(unit * 0.55, Math.min(canvasEl.width - unit * 0.55, rawCx));
+    const shoulderY = hasShoulders
+      ? ((anchors.L_SH.y + anchors.R_SH.y) * 0.5 * canvasEl.height + unit * 0.02)
+      : (canvasEl.height * (0.38 - (guideScaleMultiplier - 1.0) * 0.03));
+    const headR = unit * 0.22;
+    const topY = Math.max(8, shoulderY - (headR * 2 + unit * 0.08));
     const neckY = topY + headR * 2 + unit * 0.01;
-    const shoulderY = neckY + unit * 0.11;
     const neckHalfW = unit * 0.085;
     const shoulderHalfW = unit * 0.33;
     const chestDrop = unit * 0.16;
@@ -1830,7 +1838,7 @@ window.addEventListener("load", () => {
     const rawDistanceM = estimateDistanceMeters(anchors, canvasEl.width);
     const distanceM = smoothDistanceEstimate(rawDistanceM);
     const distanceState = getDistanceGuideState(distanceM, pc);
-    drawDistanceGuide(distanceState);
+    drawDistanceGuide(distanceState, anchors);
     refreshDistanceValueUi(distanceM, distanceState);
 
     if (showVisuals) {
