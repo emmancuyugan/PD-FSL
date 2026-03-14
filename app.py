@@ -202,8 +202,8 @@ server_holistic = _mp_holistic_mod.Holistic(
     model_complexity= 2,          
     smooth_landmarks=True,
     refine_face_landmarks=False,
-    min_detection_confidence=0.55,
-    min_tracking_confidence=0.55,
+    min_detection_confidence=0.40,
+    min_tracking_confidence=0.40,
 )
 
 # Separate Holistic for ghost/demo video processing — static mode so each
