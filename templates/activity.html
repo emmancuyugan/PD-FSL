@@ -919,6 +919,11 @@ window.addEventListener("load", () => {
     localStorage.setItem('activityFeedbackSource', feedbackSource);
     feedbackGenderSelect.disabled = feedbackSource !== '3d';
     feedbackGenderSelect.style.opacity = feedbackSource === '3d' ? '1' : '0.6';
+    if (feedbackSource === '3d') {
+      feedbackGender = 'girl';
+      feedbackGenderSelect.value = feedbackGender;
+      localStorage.setItem('activityFeedbackGender', feedbackGender);
+    }
   };
   feedbackGenderSelect.onchange = () => {
     feedbackGender = feedbackGenderSelect.value;

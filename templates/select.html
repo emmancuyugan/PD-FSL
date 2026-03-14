@@ -979,6 +979,11 @@ window.addEventListener("load", () => {
     localStorage.setItem('selectFeedbackSource', feedbackSource);
     feedbackGenderSelect.disabled = feedbackSource !== '3d';
     feedbackGenderSelect.style.opacity = feedbackSource === '3d' ? '1' : '0.6';
+    if (feedbackSource === '3d') {
+      feedbackGender = 'girl';
+      feedbackGenderSelect.value = feedbackGender;
+      localStorage.setItem('selectFeedbackGender', feedbackGender);
+    }
   };
   feedbackGenderSelect.onchange = () => {
     feedbackGender = feedbackGenderSelect.value;
@@ -2002,12 +2007,11 @@ window.addEventListener("load", () => {
   
   resize();
   window.addEventListener('resize', resize);
+
+  startPreviewIfNeeded().catch(err => {
+    console.warn('Auto camera start failed:', err);
+  });
 });
 </script>
 
 {% endblock %}
-
-  camera.start().catch(err => {
-    console.warn('Auto camera start failed:', err);
-  });
-</document_content>
