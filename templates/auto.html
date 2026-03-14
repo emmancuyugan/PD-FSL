@@ -847,7 +847,9 @@
 
   function getCorrectiveHint(j){
     const fb = j?.corrective_feedback;
-    if (!fb || !fb.message) return '';
+    if (!fb) return '';
+    if (fb.status === 'mute') return null;
+    if (!fb.message) return '';
     return fb.status === 'good' ? '' : fb.message;
   }
 
@@ -1234,12 +1236,12 @@ async function _doPredict(){
                 `<strong style="color:var(--coral);">${now}</strong>: ✗ Incorrect (closest: ${cleanLabel(j.closest_sign)||'—'})`;
 
             gestureOverlay.textContent =
-            cue || `✗ Try Again! Hint: ${cleanLabel(j.closest_sign)||'—'}`;
+              cue === null ? '✗ Try Again!' : (cue || `✗ Try Again! Hint: ${cleanLabel(j.closest_sign)||'—'}`);
             gestureOverlay.style.display='block';
             gestureOverlay.style.background='rgba(255,107,157,0.9)';
 
             detLabel.textContent = cleanLabel(j.closest_sign)||'—';
-          detStatus.textContent = cue || 'Try again!';
+            detStatus.textContent = cue === null ? 'Try again!' : (cue || 'Try again!');
 
             if(j.closest_sign && !loadingGhost){
                 loadingGhost = true;
