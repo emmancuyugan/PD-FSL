@@ -283,14 +283,51 @@ def prepare_sequence(data_json):
 
 
 KEYPOINTS_ROOT = resource_path("KEYPOINTS")
-_dy_fore_left_idx = [4 + 6 * i for i in range(6)]
-_dy_fore_right_idx = [40 + 6 * i for i in range(6)]
 _keypoints_folder_map = {}
 _sign_calibration_cache = {}
+
+_METRIC_OFFSET = {
+    "dx_chin": 0,
+    "dy_fore": 4,
+}
 
 
 def _canon_name(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "", str(text).lower())
+
+
+def _resolve_expected_label(data: dict) -> str | None:
+    if not isinstance(data, dict):
+        return None
+
+    expected = data.get("expected")
+    if isinstance(expected, str) and expected.strip():
+        return expected.strip()
+
+    target = data.get("target") or data.get("label")
+    if not isinstance(target, str) or not target.strip():
+        return None
+
+    aliases = {
+        "1": "one", "2": "two", "3": "three", "4": "four", "5": "five",
+        "mom": "mother", "nanay": "mother",
+        "dad": "father", "tatay": "father",
+        "lola": "grandmother", "grandma": "grandmother",
+        "lolo": "grandfather", "grandpa": "grandfather",
+        "dontunderstand": "understand",
+    }
+    needle = _canon_name(target)
+    needle = aliases.get(needle, needle)
+
+    for class_label in CLASSES:
+        cls_key = _canon_name(class_label)
+        if cls_key == needle:
+            return class_label
+        parts = class_label.split("_", 1)
+        if len(parts) == 2 and _canon_name(parts[1]) == needle:
+            return class_label
+
+    return None
 
 
 def _init_keypoints_folder_map():
@@ -312,26 +349,42 @@ def _resolve_sign_folder(expected_label: str):
     return _keypoints_folder_map.get(_canon_name(expected_label))
 
 
-def _extract_dy_fore_values(seq: np.ndarray) -> np.ndarray:
-    if seq.ndim != 2 or seq.shape[1] < 200:
+def _extract_metric_values(
+    seq: np.ndarray,
+    metric: str,
+    *,
+    use_abs: bool = False,
+    hand: str = "both",
+) -> np.ndarray:
+    if seq.ndim != 2 or seq.shape[1] < 200 or metric not in _METRIC_OFFSET:
         return np.array([], dtype=np.float32)
 
     derived = seq[:, 126:198]
     flags = seq[:, 198:200]
-    values = []
+    offset = _METRIC_OFFSET[metric]
+    out = []
 
     for i in range(seq.shape[0]):
         has_left = flags[i, 0] > 0.5
         has_right = flags[i, 1] > 0.5
 
-        if has_left:
-            values.extend(derived[i, _dy_fore_left_idx].tolist())
-        if has_right:
-            values.extend(derived[i, _dy_fore_right_idx].tolist())
+        include_left = hand in ("both", "left")
+        include_right = hand in ("both", "right")
 
-    if not values:
+        if has_left and include_left:
+            for j in range(6):
+                v = derived[i, j * 6 + offset]
+                out.append(abs(v) if use_abs else v)
+
+        if has_right and include_right:
+            base = 36
+            for j in range(6):
+                v = derived[i, base + j * 6 + offset]
+                out.append(abs(v) if use_abs else v)
+
+    if not out:
         return np.array([], dtype=np.float32)
-    return np.array(values, dtype=np.float32)
+    return np.array(out, dtype=np.float32)
 
 
 def _load_sign_calibration(expected_label: str):
@@ -350,28 +403,79 @@ def _load_sign_calibration(expected_label: str):
         if f.lower().endswith(".npy")
     ]
 
-    all_values = []
+    dy_fore_values = []
+    dy_fore_left_values = []
+    dy_fore_right_values = []
+    abs_dx_values = []
+    abs_dx_left_values = []
+    abs_dx_right_values = []
+    left_presence = []
+    right_presence = []
+
     for path in npy_files:
         try:
             arr = np.load(path)
-            vals = _extract_dy_fore_values(arr)
-            if vals.size:
-                all_values.append(vals)
+            if arr.ndim != 2 or arr.shape[1] < 200:
+                continue
+
+            dy_fore = _extract_metric_values(arr, "dy_fore")
+            dy_fore_left = _extract_metric_values(arr, "dy_fore", hand="left")
+            dy_fore_right = _extract_metric_values(arr, "dy_fore", hand="right")
+            abs_dx = _extract_metric_values(arr, "dx_chin", use_abs=True)
+            abs_dx_left = _extract_metric_values(arr, "dx_chin", use_abs=True, hand="left")
+            abs_dx_right = _extract_metric_values(arr, "dx_chin", use_abs=True, hand="right")
+
+            if dy_fore.size:
+                dy_fore_values.append(dy_fore)
+            if dy_fore_left.size:
+                dy_fore_left_values.append(dy_fore_left)
+            if dy_fore_right.size:
+                dy_fore_right_values.append(dy_fore_right)
+            if abs_dx.size:
+                abs_dx_values.append(abs_dx)
+            if abs_dx_left.size:
+                abs_dx_left_values.append(abs_dx_left)
+            if abs_dx_right.size:
+                abs_dx_right_values.append(abs_dx_right)
+
+            flags = arr[:, 198:200]
+            left_presence.append(float(np.mean(flags[:, 0] > 0.5)))
+            right_presence.append(float(np.mean(flags[:, 1] > 0.5)))
         except Exception:
             continue
 
-    if not all_values:
+    if not dy_fore_values:
         _sign_calibration_cache[key] = None
         return None
 
-    merged = np.concatenate(all_values)
-    q25, q50, q75 = np.percentile(merged, [25, 50, 75])
+    def _make_band(values: np.ndarray, margin: float):
+        if values.size == 0:
+            return None
+        q25, q50, q75 = np.percentile(values, [25, 50, 75])
+        return {
+            "low": float(q25 - margin),
+            "high": float(q75 + margin),
+            "center": float(q50),
+        }
+
+    dy_fore_merged = np.concatenate(dy_fore_values)
+    dy_fore_left_merged = np.concatenate(dy_fore_left_values) if dy_fore_left_values else np.array([], dtype=np.float32)
+    dy_fore_right_merged = np.concatenate(dy_fore_right_values) if dy_fore_right_values else np.array([], dtype=np.float32)
+    dx_merged = np.concatenate(abs_dx_values) if abs_dx_values else np.array([], dtype=np.float32)
+    dx_left_merged = np.concatenate(abs_dx_left_values) if abs_dx_left_values else np.array([], dtype=np.float32)
+    dx_right_merged = np.concatenate(abs_dx_right_values) if abs_dx_right_values else np.array([], dtype=np.float32)
+
     calibration = {
         "label": expected_label,
-        "low": float(q25 - 0.03),
-        "high": float(q75 + 0.03),
-        "center": float(q50),
-        "samples": int(merged.size),
+        "dy_fore": _make_band(dy_fore_merged, 0.03),
+        "dy_fore_left": _make_band(dy_fore_left_merged, 0.03),
+        "dy_fore_right": _make_band(dy_fore_right_merged, 0.03),
+        "abs_dx_chin": _make_band(dx_merged, 0.02) if dx_merged.size else None,
+        "abs_dx_chin_left": _make_band(dx_left_merged, 0.02),
+        "abs_dx_chin_right": _make_band(dx_right_merged, 0.02),
+        "left_presence": float(np.mean(left_presence)) if left_presence else 0.0,
+        "right_presence": float(np.mean(right_presence)) if right_presence else 0.0,
+        "samples": int(dy_fore_merged.size),
     }
     _sign_calibration_cache[key] = calibration
     return calibration
@@ -385,48 +489,138 @@ def _build_corrective_feedback(live_seq: np.ndarray, expected_label: str):
     if not calibration:
         return None
 
-    live_vals = _extract_dy_fore_values(live_seq)
-    if live_vals.size < 6:
+    if live_seq.shape[1] < 200:
+        return None
+
+    live_flags = live_seq[:, 198:200]
+    live_left_presence = float(np.mean(live_flags[:, 0] > 0.5))
+    live_right_presence = float(np.mean(live_flags[:, 1] > 0.5))
+
+    live_dy_fore = _extract_metric_values(live_seq, "dy_fore")
+    live_dy_fore_left = _extract_metric_values(live_seq, "dy_fore", hand="left")
+    live_dy_fore_right = _extract_metric_values(live_seq, "dy_fore", hand="right")
+    live_abs_dx = _extract_metric_values(live_seq, "dx_chin", use_abs=True)
+    live_abs_dx_left = _extract_metric_values(live_seq, "dx_chin", use_abs=True, hand="left")
+    live_abs_dx_right = _extract_metric_values(live_seq, "dx_chin", use_abs=True, hand="right")
+
+    if live_dy_fore.size < 6:
         return {
             "available": True,
             "source": "npy",
             "status": "insufficient_live_data",
-            "message": "Keep both hands visible for clearer height feedback.",
+            "message": "Keep your signing hand visible for clearer corrective feedback.",
         }
 
-    live_median = float(np.median(live_vals))
-    low = calibration["low"]
-    high = calibration["high"]
+    cues = []
+    status = "good"
 
-    if live_median > high:
-        severity = live_median - calibration["center"]
-        msg = (
-            "Raise your hand much higher to forehead level."
-            if severity > 0.20
-            else "Raise your hand slightly to forehead level."
-        )
-        status = "too_low"
-    elif live_median < low:
-        severity = calibration["center"] - live_median
-        msg = (
-            "Lower your hand much closer to forehead level."
-            if severity > 0.20
-            else "Lower your hand slightly to forehead level."
-        )
-        status = "too_high"
+    def _band_delta(value: float, band: dict):
+        if value > band["high"]:
+            return value - band["high"], "high"
+        if value < band["low"]:
+            return band["low"] - value, "low"
+        return 0.0, "inside"
+
+    def _pick_side_delta(left_values: np.ndarray, right_values: np.ndarray, left_band: dict, right_band: dict):
+        best = None
+        if left_band and left_values.size >= 3:
+            left_median = float(np.median(left_values))
+            left_delta, left_side = _band_delta(left_median, left_band)
+            best = {
+                "name": "left",
+                "delta": left_delta,
+                "side": left_side,
+                "median": left_median,
+            }
+        if right_band and right_values.size >= 3:
+            right_median = float(np.median(right_values))
+            right_delta, right_side = _band_delta(right_median, right_band)
+            if (best is None) or (right_delta > best["delta"]):
+                best = {
+                    "name": "right",
+                    "delta": right_delta,
+                    "side": right_side,
+                    "median": right_median,
+                }
+        return best
+
+    if calibration["left_presence"] > 0.65 and live_left_presence < 0.35:
+        cues.append((2.5, "Keep your left signing hand visible to the camera."))
+    if calibration["right_presence"] > 0.65 and live_right_presence < 0.35:
+        cues.append((2.5, "Keep your right signing hand visible to the camera."))
+
+    dy_band = calibration["dy_fore"]
+    dy_left_band = calibration.get("dy_fore_left") or dy_band
+    dy_right_band = calibration.get("dy_fore_right") or dy_band
+    dy_live = float(np.median(live_dy_fore))
+    dy_span = max(1e-3, dy_band["high"] - dy_band["low"])
+
+    height_pick = _pick_side_delta(live_dy_fore_left, live_dy_fore_right, dy_left_band, dy_right_band)
+    if height_pick and height_pick["delta"] > 0:
+        hand_text = "left hand" if height_pick["name"] == "left" else "right hand"
+        side_band = dy_left_band if height_pick["name"] == "left" else dy_right_band
+        span = max(1e-3, side_band["high"] - side_band["low"])
+        severity = height_pick["delta"] / span
+        if height_pick["side"] == "high":
+            status = "too_low"
+            msg = f"Raise your {hand_text} higher toward forehead level."
+            if severity > 1.7:
+                msg = f"Raise your {hand_text} much higher toward forehead level."
+            cues.append((2.2 + severity, msg))
+        elif height_pick["side"] == "low":
+            status = "too_high"
+            msg = f"Lower your {hand_text} slightly toward forehead level."
+            if severity > 1.7:
+                msg = f"Lower your {hand_text} more toward forehead level."
+            cues.append((2.2 + severity, msg))
+
+    dx_band = calibration.get("abs_dx_chin")
+    dx_left_band = calibration.get("abs_dx_chin_left") or dx_band
+    dx_right_band = calibration.get("abs_dx_chin_right") or dx_band
+    dx_live = None
+    if dx_band and live_abs_dx.size >= 6:
+        dx_live = float(np.median(live_abs_dx))
+
+    center_pick = _pick_side_delta(live_abs_dx_left, live_abs_dx_right, dx_left_band, dx_right_band)
+    if center_pick and center_pick["delta"] > 0:
+        hand_text = "left hand" if center_pick["name"] == "left" else "right hand"
+        side_band = dx_left_band if center_pick["name"] == "left" else dx_right_band
+        span = max(1e-3, side_band["high"] - side_band["low"])
+        sev = center_pick["delta"] / span
+        if center_pick["side"] == "high":
+            cues.append((1.4 + sev, f"Move your {hand_text} closer to the center of your face."))
+        elif center_pick["side"] == "low":
+            cues.append((1.2 + sev, f"Move your {hand_text} slightly farther from the center of your face."))
+
+    cues.sort(key=lambda item: item[0], reverse=True)
+
+    if not cues:
+        msg = "Good form. Keep the same hand height and position."
     else:
-        msg = "Great hand height — you are near forehead level."
-        status = "good"
+        unique_msgs = []
+        for _, text in cues:
+            if text not in unique_msgs:
+                unique_msgs.append(text)
+            if len(unique_msgs) >= 2:
+                break
+        msg = " ".join(unique_msgs)
+        if status == "good":
+            status = "adjust"
 
     return {
         "available": True,
         "source": "npy",
         "status": status,
         "message": msg,
-        "live_median": live_median,
-        "target_low": low,
-        "target_high": high,
-        "target_center": calibration["center"],
+        "live_median_dy_fore": dy_live,
+        "target_low_dy_fore": dy_band["low"],
+        "target_high_dy_fore": dy_band["high"],
+        "target_center_dy_fore": dy_band["center"],
+        "live_median_abs_dx_chin": dx_live,
+        "expected_left_presence": calibration["left_presence"],
+        "expected_right_presence": calibration["right_presence"],
+        "live_left_presence": live_left_presence,
+        "live_right_presence": live_right_presence,
     }
 
 def get_demo_video_path(label):
@@ -786,7 +980,7 @@ def api_ghost_landmarks():
 def predict():
     try:
         data = request.get_json(force=True)
-        expected_label = data.get("expected") if isinstance(data, dict) else None
+        expected_label = _resolve_expected_label(data)
         if "sequence" in data:
             x = prepare_sequence({"sequence": data["sequence"]})
         elif "features" in data:
@@ -932,6 +1126,8 @@ def assess():
     try:
         data = request.get_json(force=True)
         x = prepare_sequence(data)
+        live_seq = x.squeeze(0).cpu().float().numpy()
+        expected_label = _resolve_expected_label(data)
 
         probs = run_inference(x)
         log_top3(probs, tag="ASSESS")
@@ -941,11 +1137,18 @@ def assess():
         save_progress(label, float(np.max(probs)))
 
         demo_path = get_demo_video_path(label)
-        return jsonify({
+        payload = {
             "label": label,
             "probabilities": probs.tolist(),
             "demo": demo_path
-        })
+        }
+
+        if expected_label:
+            corrective_feedback = _build_corrective_feedback(live_seq, expected_label)
+            if corrective_feedback:
+                payload["corrective_feedback"] = corrective_feedback
+
+        return jsonify(payload)
     except Exception as e:
         print(f"[ERROR] Assessment failed: {e}")
         return jsonify({"error": f"Assessment failed: {str(e)}"}), 500
