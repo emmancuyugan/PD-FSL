@@ -1102,16 +1102,6 @@ async function _doPredict(){
             detLabel.textContent = '—';
             detStatus.textContent = 'No hands detected';
 
-        }else if(j.prediction==='No movement' || j.message==='No movement'){
-          histEntry.innerHTML =
-            `<strong style="color:var(--sunshine);">${now}</strong>: No movement`;
-          gestureOverlay.textContent = 'No movement';
-          gestureOverlay.style.display = 'block';
-          gestureOverlay.style.background = 'rgba(255,217,61,0.9)';
-          gestureOverlay.style.color = '#333';
-          detLabel.textContent = '—';
-          detStatus.textContent = 'No movement';
-
         }else if(j.prediction==='Not in FSL dataset'){
             histEntry.innerHTML =
                 `<strong style="color:var(--lavender);">${now}</strong>: ❓ Not in FSL dataset`;

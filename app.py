@@ -695,26 +695,6 @@ def predict_auto():
         else:
             x = prepare_sequence({"features": data["features"]})
 
-        # Auto-only guard: avoid predicting a sign when the captured sequence
-        # is essentially static (hand present but no meaningful movement).
-        seq = x[0] if isinstance(x, np.ndarray) and x.ndim == 3 else x
-        if isinstance(seq, np.ndarray) and seq.ndim == 2 and seq.shape[0] > 1:
-            deltas = np.diff(seq, axis=0)
-            step_l2 = np.linalg.norm(deltas, axis=1)
-            mean_motion = float(np.mean(step_l2))
-            max_motion = float(np.max(step_l2))
-
-            AUTO_MIN_MEAN_MOTION = 0.10
-            AUTO_MIN_MAX_MOTION = 0.25
-            if mean_motion < AUTO_MIN_MEAN_MOTION and max_motion < AUTO_MIN_MAX_MOTION:
-                print(
-                    f"[AUTO] No movement (mean_motion={mean_motion:.4f}, max_motion={max_motion:.4f})"
-                )
-                return jsonify({
-                    "prediction": "No movement",
-                    "message": "No movement"
-                })
-
         probs = run_inference(x)
         log_top3(probs, tag="AUTO")
 
