@@ -848,7 +848,8 @@
   function getCorrectiveHint(j){
     const fb = j?.corrective_feedback;
     if (!fb || !fb.message) return '';
-    return fb.status === 'good' ? '' : fb.message;
+    if (fb.status === 'too_low' || fb.status === 'too_high') return fb.message;
+    return '';
   }
 
   function normLabel(s){
