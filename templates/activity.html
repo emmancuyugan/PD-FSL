@@ -806,55 +806,6 @@
 <script src="{{ url_for('static', filename='mediapipe/camera_utils/camera_utils.js') }}"></script>
 <script src="{{ url_for('static', filename='mediapipe/drawing_utils/drawing_utils.js') }}"></script>
 
-<!-- 3D Avatar Scripts -->
-<script type="importmap">
-{
-  "imports": {
-    "three": "/static/vendor/three/three.module.js"
-  }
-}
-</script>
-<script type="module">
-  window._avatarInstance = null;
-  window._avatarMode = '3d';
-  
-  window.init3DAvatar = async function(containerId, modelPath) {
-    const container = document.getElementById(containerId);
-    if (!container) {
-      console.error('[Avatar] Container not found:', containerId);
-      return null;
-    }
-    try {
-      const { default: AvatarPoser } = await import('/static/js/vrm-poser.js');
-      const avatar = new AvatarPoser(container, modelPath || 'static/models/boy.glb', {
-        autoScale: true,
-        autoCenter: true,
-        smoothingFactor: 0.4
-      });
-      await avatar.init();
-      console.log('[Avatar] 3D Avatar initialized');
-      return avatar;
-    } catch (e) {
-      console.error('[Avatar] Failed to init 3D avatar:', e);
-      return null;
-    }
-  };
-  
-  window.updateAvatarLandmarks = function(avatar, landmarks) {
-    if (!avatar) return;
-    avatar.updateLandmarks({
-      poseLandmarks: landmarks.pose || [],
-      faceLandmarks: landmarks.face || [],
-      leftHandLandmarks: landmarks.leftHand || [],
-      rightHandLandmarks: landmarks.rightHand || []
-    });
-  };
-  
-  window.disposeAvatar = function(avatar) {
-    if (avatar) avatar.dispose();
-  };
-</script>
-
 <script>
 window.addEventListener("load", () => {
   const ENABLE_CONFETTI = false; // keep look, disable expensive confetti
@@ -1457,10 +1408,6 @@ window.addEventListener("load", () => {
     }).catch(() => false);
   }
 
-  // 3D Avatar integration
-  let avatarInstance = null;
-  let avatarAnimationRunning = false;
-  
   async function triggerShowHow() {
     if(!targetGesture) return;
     
@@ -1483,7 +1430,7 @@ window.addEventListener("load", () => {
       ghostFrames = _preloadedFrames;
       ghostReady = true;
       ok = true;
-      document.getElementById("assistHint").textContent = 'Loading 3D avatar...';
+      document.getElementById("assistHint").textContent = 'Loading skeleton guide...';
     } else if (_ghostPreloadPromise && _ghostPreloadLabel === signLabel) {
       document.getElementById("assistHint").textContent = 'Loading skeleton guide…';
       ok = await _ghostPreloadPromise;
@@ -1495,59 +1442,7 @@ window.addEventListener("load", () => {
       ok = await loadGhostFor(targetGesture);
     }
     
-    if (ok && window._avatarMode === '3d') {
-      // Try to initialize 3D avatar
-      try {
-        skeletonCanvas.style.display = 'none';
-        if (!avatarInstance) {
-          avatarInstance = await window.init3DAvatar('skeletonDisplay', 'static/models/boy.glb');
-        }
-        
-        if (avatarInstance) {
-          showGhostUI(true);
-          document.getElementById("assistHint").textContent = '3D Avatar loaded! Watch and follow.';
-          document.querySelector('.skeleton-label').textContent = '3D Avatar';
-          
-          const animateAvatar = () => {
-            if(ghostEnabled && ghostReady && ghostFrames && ghostFrames.length && avatarInstance){
-              const total=ghostFrames.length;
-              ghostIdx+=ghostPlaybackSpeed; 
-              if(ghostIdx>=total) ghostIdx=0;
-              const frameIdx = Math.floor(ghostIdx) % total;
-              const frame = ghostFrames[frameIdx];
-              
-              window.updateAvatarLandmarks(avatarInstance, {
-                pose: frame.pose,
-                face: frame.face,
-                leftHand: frame.leftHand,
-                rightHand: frame.rightHand
-              });
-              
-              ghostAnimationId = requestAnimationFrame(animateAvatar);
-            } else {
-              ghostAnimationId = null;
-            }
-          };
-          animateAvatar();
-          
-          if (ghostTimer) clearTimeout(ghostTimer);
-          ghostTimer=setTimeout(async () => {
-            dismissFeedback();
-            await camera.start();
-          }, GHOST_DURATION_MS);
-        } else {
-          throw new Error('Avatar init failed');
-        }
-      } catch(e) {
-        console.warn('[Avatar] 3D failed, falling back to 2D:', e);
-        skeletonCanvas.style.display = 'block';
-        if (avatarInstance) {
-          window.disposeAvatar(avatarInstance);
-          avatarInstance = null;
-        }
-        triggerShowHow2D();
-      }
-    } else {
+    if (ok) {
       triggerShowHow2D();
     }
   }
@@ -1591,11 +1486,6 @@ window.addEventListener("load", () => {
     }
     if (ghostTimer) { clearTimeout(ghostTimer); ghostTimer = null; }
     skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
-    // Dispose 3D avatar to prevent memory leak
-    if (avatarInstance) {
-      window.disposeAvatar(avatarInstance);
-      avatarInstance = null;
-    }
     skeletonCanvas.style.display = 'block';
     showCameraDisplay();
   }
@@ -1860,11 +1750,6 @@ window.addEventListener("load", () => {
     if(ghostAnimationId) {
       cancelAnimationFrame(ghostAnimationId);
       ghostAnimationId = null;
-    }
-    // Dispose 3D avatar on reset
-    if (avatarInstance) {
-      window.disposeAvatar(avatarInstance);
-      avatarInstance = null;
     }
     skeletonCanvas.style.display = 'block';
     skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
