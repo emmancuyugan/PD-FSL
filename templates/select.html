@@ -221,6 +221,14 @@
     display: block;
   }
 
+  .feedback-video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #000;
+    display: none;
+  }
+
   .pip-camera {
     position: absolute;
     width: 100%;
@@ -735,6 +743,7 @@
           <span class="skeleton-label">Skeleton AI</span>
           <button class="feedback-close-btn" id="feedbackCloseBtn" title="Close feedback" style="display: none;">✕</button>
           <canvas id="skeletonCanvas"></canvas>
+          <video id="feedbackVideo" class="feedback-video" playsinline controls muted></video>
         </div>
 
         <div class="prep-overlay" id="prepOverlay">Get Ready…</div>
@@ -792,6 +801,17 @@
               <input type="checkbox" id="toggleSpeed">
               <span>Fast Mode (3 Seconds)</span>
             </label>
+          </div>
+        </div>
+
+        <div class="toggle-panel" style="margin-top: 6px;">
+          <div class="toggle-title">3D Feedback</div>
+          <div class="input-group">
+            <label for="feedbackGenderSelect">Feedback Video</label>
+            <select id="feedbackGenderSelect">
+              <option value="boy">Boy</option>
+              <option value="girl">Girl</option>
+            </select>
           </div>
         </div>
       </div>
@@ -913,6 +933,7 @@ window.addEventListener("load", () => {
   const videoEl = document.getElementById("mainCamera");
   const canvasEl = document.getElementById("overlayCanvas");
   const skeletonCanvas = document.getElementById("skeletonCanvas");
+  const feedbackVideo = document.getElementById("feedbackVideo");
   const ctx = canvasEl.getContext("2d");
   const skeletonCtx = skeletonCanvas.getContext("2d");
   const fpsCounter = document.getElementById("fpsCounter");
@@ -939,6 +960,14 @@ window.addEventListener("load", () => {
   const toggleTimer   = document.getElementById('toggleTimer');
   const toggleResults = document.getElementById('toggleResults');
   const toggleSpeed   = document.getElementById('toggleSpeed');
+  const feedbackGenderSelect = document.getElementById('feedbackGenderSelect');
+
+  let feedbackGender = localStorage.getItem('selectFeedbackGender') || 'boy';
+  feedbackGenderSelect.value = feedbackGender;
+  feedbackGenderSelect.onchange = () => {
+    feedbackGender = feedbackGenderSelect.value;
+    localStorage.setItem('selectFeedbackGender', feedbackGender);
+  };
 
   let showVisuals = true;
   let showTimer   = true;
@@ -1042,6 +1071,23 @@ window.addEventListener("load", () => {
     if (["boy","girl"].includes(l)) return "relationship";
     if (["correct","no","understand","wrong","yes"].includes(l)) return "survival";
     return "colors";
+  }
+
+  async function fileExists(url) {
+    try {
+      const res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+      return res.ok;
+    } catch (_e) {
+      return false;
+    }
+  }
+
+  function get3DFeedbackUrl(label) {
+    const category = inferCategory(label);
+    const key = normLabel(label);
+    const prefixMap = { numbers: 'number' };
+    const prefix = prefixMap[category] || category;
+    return `/static/video/3d_feedback/${category}/${feedbackGender}_${prefix}_${key}.mp4`;
   }
 
   function packFeature(res){
@@ -1220,7 +1266,7 @@ window.addEventListener("load", () => {
           const assistRow = document.getElementById("assistRow");
           const assistHint = document.getElementById("assistHint");
           assistRow.style.display = 'block';
-          assistHint.textContent = 'Watch the skeleton guide, then try again!';
+          assistHint.textContent = 'Watch the feedback guide, then try again!';
           // Save incorrect result
           await saveResult("Incorrect", j?.confidence || null);
         }
@@ -1471,6 +1517,34 @@ window.addEventListener("load", () => {
     showSkeletonDisplay();
     document.getElementById("feedbackCloseBtn").style.display = 'flex';
 
+    const feedbackUrl = get3DFeedbackUrl(targetGesture);
+    if (await fileExists(feedbackUrl)) {
+      document.querySelector('.skeleton-label').textContent = '3D Feedback';
+      skeletonCanvas.style.display = 'none';
+      feedbackVideo.style.display = 'block';
+      feedbackVideo.src = feedbackUrl;
+      feedbackVideo.currentTime = 0;
+      document.getElementById("assistHint").textContent = 'Playing 3D feedback video.';
+      try {
+        await feedbackVideo.play();
+      } catch (_e) {
+      }
+
+      if (ghostTimer) clearTimeout(ghostTimer);
+      ghostTimer=setTimeout(async () => {
+        dismissFeedback();
+        await camera.start();
+      }, GHOST_DURATION_MS);
+      return;
+    }
+
+    feedbackVideo.pause();
+    feedbackVideo.removeAttribute('src');
+    feedbackVideo.load();
+    feedbackVideo.style.display = 'none';
+    skeletonCanvas.style.display = 'block';
+    document.querySelector('.skeleton-label').textContent = 'Skeleton AI';
+
     // Use preloaded data if available
     let ok = false;
     if (_preloadedFrames && _ghostPreloadLabel === targetGesture) {
@@ -1532,8 +1606,13 @@ window.addEventListener("load", () => {
       ghostAnimationId = null;
     }
     if (ghostTimer) { clearTimeout(ghostTimer); ghostTimer = null; }
+    feedbackVideo.pause();
+    feedbackVideo.removeAttribute('src');
+    feedbackVideo.load();
+    feedbackVideo.style.display = 'none';
     skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
     skeletonCanvas.style.display = 'block';
+    document.querySelector('.skeleton-label').textContent = 'Skeleton AI';
     showCameraDisplay();
   }
 

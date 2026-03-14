@@ -353,6 +353,32 @@
     margin-bottom: 10px;
   }
 
+  .video-mode-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .video-mode-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #666;
+    margin-bottom: 4px;
+  }
+
+  .video-mode-group select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 2px solid var(--grass-green);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    background: var(--white);
+    color: #333;
+  }
+
   .select-btn {
     padding: 8px 12px;
     background: var(--white);
@@ -453,6 +479,10 @@
     .category-relationship .items-grid,
     .category-survival .items-grid {
       grid-template-columns: repeat(2, 1fr);
+    }
+
+    .video-mode-controls {
+      grid-template-columns: 1fr;
     }
   }
 </style>
@@ -584,6 +614,23 @@
 
       <p id="videoDescription" style="color:#666;margin-bottom:24px;"></p>
 
+      <div class="video-mode-controls">
+        <div class="video-mode-group">
+          <label for="learnSourceSelect">Video Source</label>
+          <select id="learnSourceSelect">
+            <option value="tutorial">Tutorial Videos</option>
+            <option value="3d">3D Model Feedback</option>
+          </select>
+        </div>
+        <div class="video-mode-group" id="learnGenderGroup" style="display:none;">
+          <label for="learnGenderSelect">3D Feedback Type</label>
+          <select id="learnGenderSelect">
+            <option value="boy">Boy</option>
+            <option value="girl">Girl</option>
+          </select>
+        </div>
+      </div>
+
       <div id="videoButtons" class="selection-buttons"></div>
 
       <div class="video-container">
@@ -637,6 +684,65 @@
 
   const titleCase = s => s.charAt(0).toUpperCase() + s.slice(1);
   const formatLabel = s => s.replace(/dontunderstand/i, "Don't Understand");
+  const SOURCE_TUTORIAL = 'tutorial';
+  const SOURCE_3D = '3d';
+
+  const learnSourceSelect = document.getElementById('learnSourceSelect');
+  const learnGenderSelect = document.getElementById('learnGenderSelect');
+  const learnGenderGroup = document.getElementById('learnGenderGroup');
+
+  let learnVideoSource = localStorage.getItem('learnVideoSource') || SOURCE_TUTORIAL;
+  let learnFeedbackGender = localStorage.getItem('learnFeedbackGender') || 'boy';
+  let currentCategoryKey = null;
+  let currentItemKey = null;
+
+  function updateLearnModeControls() {
+    learnSourceSelect.value = learnVideoSource;
+    learnGenderSelect.value = learnFeedbackGender;
+    learnGenderGroup.style.display = learnVideoSource === SOURCE_3D ? 'block' : 'none';
+  }
+
+  async function fileExists(url) {
+    try {
+      const res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+      return res.ok;
+    } catch (_e) {
+      return false;
+    }
+  }
+
+  async function resolveLearnVideoSrc(category, item) {
+    const prefixMap = { numbers: 'number' };
+    const filePrefix = prefixMap[category] || category;
+
+    const tutorialSrc = `/static/learn_videos/${filePrefix}_${item}.mp4`;
+    if (learnVideoSource === SOURCE_TUTORIAL) {
+      return tutorialSrc;
+    }
+
+    const feedbackSrc = `/static/video/3d_feedback/${category}/${learnFeedbackGender}_${filePrefix}_${item}.mp4`;
+    const exists = await fileExists(feedbackSrc);
+    return exists ? feedbackSrc : tutorialSrc;
+  }
+
+  updateLearnModeControls();
+
+  learnSourceSelect.addEventListener('change', async () => {
+    learnVideoSource = learnSourceSelect.value;
+    localStorage.setItem('learnVideoSource', learnVideoSource);
+    updateLearnModeControls();
+    if (currentCategoryKey && currentItemKey) {
+      await loadVideo(currentCategoryKey, currentItemKey, document.querySelector('#videoButtons .select-btn.active'));
+    }
+  });
+
+  learnGenderSelect.addEventListener('change', async () => {
+    learnFeedbackGender = learnGenderSelect.value;
+    localStorage.setItem('learnFeedbackGender', learnFeedbackGender);
+    if (learnVideoSource === SOURCE_3D && currentCategoryKey && currentItemKey) {
+      await loadVideo(currentCategoryKey, currentItemKey, document.querySelector('#videoButtons .select-btn.active'));
+    }
+  });
 
   let VIDEO = null;
   async function loadManifest(){
@@ -663,6 +769,8 @@
     const cat = CATEGORIES[categoryKey];
     if (!cat) return;
 
+    currentCategoryKey = categoryKey;
+
     document.querySelector('.categories-grid').style.display = 'none';
     document.querySelector('.categories-grid-bottom').style.display = 'none';
     document.getElementById('videoView').style.display = 'block';
@@ -685,10 +793,14 @@
       buttonsContainer.appendChild(btn);
     });
 
+    updateLearnModeControls();
     loadVideo(categoryKey, cat.items[0], buttonsContainer.children[0]);
   }
 
   async function loadVideo(category, item, btnElement) {
+    currentCategoryKey = category;
+    currentItemKey = item;
+
     document.querySelectorAll('#videoButtons .select-btn').forEach(b => {
       b.classList.remove('active');
     });
@@ -700,10 +812,7 @@
     // Pause current video before switching
     video.pause();
 
-    // Map category keys to file prefixes (numbers -> number)
-    const prefixMap = { numbers: 'number' };
-    const prefix = prefixMap[category] || category;
-    const src = `/static/learn_videos/${prefix}_${item}.mp4`;
+    const src = await resolveLearnVideoSrc(category, item);
 
     const poster = posterFromSrc(src);
 
