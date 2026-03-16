@@ -845,6 +845,13 @@
 
         <div class="toggle-panel" style="margin-top: 6px;">
           <div class="toggle-title">Distance Calibration</div>
+          <div style="font-size: 11px; color: #666; margin-top: 2px;">Guide Size:
+            <select id="guideSizeSelect" style="border: 1px solid #ddd; border-radius: 6px; padding: 2px 6px; font-size: 11px; font-weight: 700; margin-left: 6px;">
+              <option value="small">Small</option>
+              <option value="medium" selected>Medium</option>
+              <option value="large">Large</option>
+            </select>
+          </div>
           <div style="font-size: 12px; color: #444; font-weight: 700;">Distance: <span id="distanceValueLabel">-- m</span></div>
           <div style="font-size: 11px; color: #666; margin-top: 2px;" id="distanceHintLabel">Too far or too close</div>
           <div style="font-size: 11px; color: #666; margin-top: 2px;">Baseline: <span id="distanceBaselineLabel">Default</span></div>
@@ -988,7 +995,9 @@ window.addEventListener("load", () => {
   const YELLOW_NEAR_MAX_M = 0.35;
   const YELLOW_FAR_MIN_M = 0.39;
   const YELLOW_FAR_MAX_M = 0.41;
+  const GUIDE_SIZE_KEY = 'selectGuideSize';
   let smoothedDistanceM = null;
+  let guideScaleMultiplier = 1.0;
 
   const startBtn = document.getElementById("startBtn");
   const resetBtn = document.getElementById("resetBtn");
@@ -1016,6 +1025,7 @@ window.addEventListener("load", () => {
   const toggleSpeed   = document.getElementById('toggleSpeed');
   const feedbackSourceSelect = document.getElementById('feedbackSourceSelect');
   const feedbackGenderSelect = document.getElementById('feedbackGenderSelect');
+  const guideSizeSelect = document.getElementById('guideSizeSelect');
 
   let feedbackSource = localStorage.getItem('selectFeedbackSource') || '3d';
   let feedbackGender = localStorage.getItem('selectFeedbackGender') || 'girl';
@@ -1038,6 +1048,19 @@ window.addEventListener("load", () => {
   };
   feedbackGenderSelect.disabled = feedbackSource !== '3d';
   feedbackGenderSelect.style.opacity = feedbackSource === '3d' ? '1' : '0.6';
+
+  function getGuideScale(size){
+    if(size === 'small') return 0.88;
+    if(size === 'large') return 1.16;
+    return 1.0;
+  }
+  const savedGuideSize = localStorage.getItem(GUIDE_SIZE_KEY) || 'medium';
+  guideSizeSelect.value = ['small','medium','large'].includes(savedGuideSize) ? savedGuideSize : 'medium';
+  guideScaleMultiplier = getGuideScale(guideSizeSelect.value);
+  guideSizeSelect.onchange = () => {
+    guideScaleMultiplier = getGuideScale(guideSizeSelect.value);
+    localStorage.setItem(GUIDE_SIZE_KEY, guideSizeSelect.value);
+  };
 
   let showVisuals = true;
   let showTimer   = true;
@@ -1108,9 +1131,9 @@ window.addEventListener("load", () => {
   }
   function drawDistanceGuide(state){
     const color = getDistanceGuideColor(state);
-    const unit = Math.min(canvasEl.width, canvasEl.height);
+    const unit = Math.min(canvasEl.width, canvasEl.height) * guideScaleMultiplier;
     const cx = canvasEl.width * 0.5;
-    const topY = canvasEl.height * 0.08;
+    const topY = canvasEl.height * (0.08 - (guideScaleMultiplier - 1.0) * 0.045);
     const headR = unit * 0.075;
     const shoulderW = unit * 0.36;
     const shoulderY = topY + headR * 2 + unit * 0.02;
