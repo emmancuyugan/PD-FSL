@@ -845,13 +845,6 @@
     return t.split(' ').map(w => w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
   }
 
-  function getCorrectiveHint(j){
-    const fb = j?.corrective_feedback;
-    if (!fb || !fb.message) return '';
-    if (fb.status === 'too_low' || fb.status === 'too_high') return fb.message;
-    return '';
-  }
-
   function normLabel(s){
     if(!s)return "";
     let x=String(s).toLowerCase();
@@ -1230,17 +1223,16 @@ async function _doPredict(){
             detStatus.textContent = 'Sign not recognized in FSL';
 
         }else if(j.prediction==='Incorrect'){
-          const cue = getCorrectiveHint(j);
             histEntry.innerHTML =
                 `<strong style="color:var(--coral);">${now}</strong>: ✗ Incorrect (closest: ${cleanLabel(j.closest_sign)||'—'})`;
 
             gestureOverlay.textContent =
-            cue || `✗ Try Again! Hint: ${cleanLabel(j.closest_sign)||'—'}`;
+                `✗ Try Again! Hint: ${cleanLabel(j.closest_sign)||'—'}`;
             gestureOverlay.style.display='block';
             gestureOverlay.style.background='rgba(255,107,157,0.9)';
 
             detLabel.textContent = cleanLabel(j.closest_sign)||'—';
-          detStatus.textContent = cue || 'Try again!';
+            detStatus.textContent = 'Try again!';
 
             if(j.closest_sign && !loadingGhost){
                 loadingGhost = true;
