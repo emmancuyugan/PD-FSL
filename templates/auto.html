@@ -1261,29 +1261,26 @@ async function _doPredict(){
             }
 
         }else{
-            if(j.prediction==="Survival_Don't Understand"){
-              histEntry.innerHTML = `<strong style="color:var(--coral);">${now}</strong>: ❓ Unrecognized sign, please try again.`;
-              gestureOverlay.textContent = 'Unrecognized sign, please try again.';
-              gestureOverlay.style.display='block';
-              gestureOverlay.style.background='rgba(255,107,157,0.9)';
-              detLabel.textContent = '—';
-              detStatus.textContent = 'Unrecognized sign';
-            }else{
-              histEntry.innerHTML = `<strong style="color:var(--grass-green);">${now}</strong>: ✓ ${cleanLabel(j.prediction)||'—'}`;
-              gestureOverlay.textContent = `✓ Great Job! ${cleanLabel(j.prediction)||'—'}`;
-              gestureOverlay.style.display='block';
-              gestureOverlay.style.background='rgba(6,214,160,0.9)';
-              detLabel.textContent = cleanLabel(j.prediction)||'—';
-              detStatus.textContent = 'Correct! Keep going!';
-              celebrate();
-              ghostEnabled=false;
-              ghostReady=false;
-              ghostFrames=null;
-              if(ghostTimer) clearTimeout(ghostTimer);
-              ghostBadge.style.display='none';
-              // Preload ghost in background for this sign (in case user tries again)
-              preloadGhostFor(j.prediction);
-            }
+            histEntry.innerHTML =
+                `<strong style="color:var(--grass-green);">${now}</strong>: ✓ ${cleanLabel(j.prediction)||'—'}`;
+
+            gestureOverlay.textContent =
+                `✓ Great Job! ${cleanLabel(j.prediction)||'—'}`;
+            gestureOverlay.style.display='block';
+            gestureOverlay.style.background='rgba(6,214,160,0.9)';
+
+            detLabel.textContent = cleanLabel(j.prediction)||'—';
+            detStatus.textContent = 'Correct! Keep going!';
+            celebrate();
+
+            ghostEnabled=false;
+            ghostReady=false;
+            ghostFrames=null;
+            if(ghostTimer) clearTimeout(ghostTimer);
+            ghostBadge.style.display='none';
+
+            // Preload ghost in background for this sign (in case user tries again)
+            preloadGhostFor(j.prediction);
         }
 
         if(historyEl.children.length===1 && historyEl.children[0].style.color==='#999'){
