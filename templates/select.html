@@ -1699,7 +1699,8 @@ window.addEventListener("load", () => {
       document.getElementById("assistHint").textContent = feedbackSource === '3d' ? 'Playing 3D feedback guide.' : 'Playing learn video guide.';
       try {
         await feedbackVideo.play();
-      } catch (_e) {}
+      } catch (_e) {
+      }
 
       if (ghostTimer) clearTimeout(ghostTimer);
       ghostTimer=setTimeout(async () => {
