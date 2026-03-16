@@ -638,6 +638,7 @@
   };
 
   const titleCase = s => s.charAt(0).toUpperCase() + s.slice(1);
+  const formatLabel = s => s.replace(/dontunderstand/i, "Don't Understand");
   let currentCategoryKey = null;
   let currentItemKey = null;
 
