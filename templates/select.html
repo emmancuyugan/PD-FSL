@@ -1386,9 +1386,7 @@ window.addEventListener("load", () => {
 
   function getCorrectiveHint(j){
     const fb = j?.corrective_feedback;
-    if (!fb) return '';
-    if (fb.status === 'mute') return null;
-    if (!fb.message) return '';
+    if (!fb || !fb.message) return '';
     return fb.status === 'good' ? '' : adaptMirrorCue(fb.message);
   }
 
@@ -1488,8 +1486,8 @@ window.addEventListener("load", () => {
           const assistHint = document.getElementById("assistHint");
           const cue = getCorrectiveHint(j);
           assistRow.style.display = 'block';
-          assistHint.textContent = cue === null ? '' : (cue || 'Watch the feedback guide, then try again!');
-          setAssistCue(cue || '');
+          assistHint.textContent = cue || 'Watch the feedback guide, then try again!';
+          setAssistCue(cue);
           showCameraCue(cue);
           // Save incorrect result
           await saveResult("Incorrect", j?.confidence || null);

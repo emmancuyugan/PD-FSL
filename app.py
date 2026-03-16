@@ -530,8 +530,6 @@ def _build_corrective_feedback(live_seq: np.ndarray, expected_label: str):
     dy_chin = _extract_metric_values(live_seq, "dy_chin")
     dy_lip = _extract_metric_values(live_seq, "dy_lip")
     dx_signed = _extract_metric_values(live_seq, "dx_chin")
-    dy_chin_right = _extract_metric_values(live_seq, "dy_chin", hand="right")
-    dx_signed_right = _extract_metric_values(live_seq, "dx_chin", hand="right")
 
     if dy_fore.size < 6:
         return {
@@ -557,37 +555,37 @@ def _build_corrective_feedback(live_seq: np.ndarray, expected_label: str):
         if category == "numbers":
             return {
                 "metric": "dy_chin",
-                "band": (0.14, 0.44),
+                "band": (0.12, 0.42),
                 "target": "just below your chin",
                 "side": "right",
-                "side_min": 0.20,
-                "metric_hand": "right",
+                "side_min": 0.10,
             }
 
         if category == "colors":
             if name == "white":
                 return {"metric": "dy_chin", "band": (0.45, 0.85), "target": "at chest level"}
             if name in {"red", "pink"}:
-                return {"metric": "dy_lip", "band": (-0.04, 0.06), "target": "at lip level"}
+                return {"metric": "dy_lip", "band": (-0.08, 0.10), "target": "at lip level"}
             if name in {"blue", "green", "yellow", "orange"}:
                 return {"metric": "dy_chin", "band": (0.12, 0.45), "target": "below your chin"}
             return {"metric": "dy_fore", "band": (-0.12, 0.12), "target": "at forehead level"}
 
         if category == "family":
             if name in {"father", "grandfather"}:
-                return {"metric": "dy_fore", "band": (-0.08, 0.08), "target": "at forehead level"}
+                return {"metric": "dy_fore", "band": (-0.12, 0.12), "target": "at forehead level"}
             if name in {"mother", "grandmother"}:
                 return {"metric": "dy_chin", "band": (-0.10, 0.14), "target": "at chin level"}
             if name in {"daughter", "son"}:
-                return {"no_comment": True}
+                return {"metric": "dy_chin", "band": (0.06, 0.30), "target": "slightly below your chin"}
 
         if category == "relationship":
-            return {"no_comment": True}
+            if name == "boy":
+                return {"metric": "dy_fore", "band": (-0.12, 0.12), "target": "at forehead level"}
+            if name == "girl":
+                return {"metric": "dy_chin", "band": (0.12, 0.45), "target": "below your chin"}
 
         if category == "survival":
-            if name == "correct":
-                return {"metric": "dy_chin", "band": (0.45, 0.85), "target": "at chest level"}
-            if name in {"no", "yes"}:
+            if name in {"correct", "no", "yes"}:
                 return {"metric": "dy_chin", "band": (0.20, 0.62), "target": "below your chin"}
             if name == "understand":
                 return {"metric": "dy_lip", "band": (-0.02, 0.22), "target": "around cheek level"}
@@ -598,24 +596,12 @@ def _build_corrective_feedback(live_seq: np.ndarray, expected_label: str):
 
     profile = _profile_for_sign(expected_label)
 
-    if profile.get("no_comment"):
-        return {
-            "available": True,
-            "source": "rule",
-            "status": "mute",
-            "message": "",
-        }
-
     metric_name = profile["metric"]
     metric_values = {
         "dy_fore": dy_fore,
         "dy_chin": dy_chin,
         "dy_lip": dy_lip,
     }.get(metric_name, dy_fore)
-
-    if profile.get("metric_hand") == "right":
-        if metric_name == "dy_chin" and dy_chin_right.size >= 3:
-            metric_values = dy_chin_right
 
     if metric_values.size < 6:
         return {
@@ -651,9 +637,9 @@ def _build_corrective_feedback(live_seq: np.ndarray, expected_label: str):
         else:
             cues.append((2.4, f"Lower your hand slightly so it lands {target_text}."))
 
-    if profile.get("side") == "right" and dx_signed_right.size >= 3:
+    if profile.get("side") == "right" and dx_signed.size >= 6:
         side_min = float(profile.get("side_min", 0.10))
-        dx_signed_median = float(np.median(dx_signed_right))
+        dx_signed_median = float(np.median(dx_signed))
         if dx_signed_median < side_min:
             cues.append((3.1, "Keep your right hand just below your chin on the right side of your face."))
 
