@@ -540,14 +540,6 @@
             <input type="checkbox" id="toggleSpeed">
             <span>Fast Mode (3 Seconds)</span>
           </div>
-          <div class="setting-item" style="margin-top: 4px;">
-            <span style="margin-right: 8px;">Guide Size:</span>
-            <select id="guideSizeSelect" style="border: 1px solid #ddd; border-radius: 6px; padding: 2px 6px; font-size: 12px; font-weight: 700;">
-              <option value="small">Small</option>
-              <option value="medium" selected>Medium</option>
-              <option value="large">Large</option>
-            </select>
-          </div>
         </div>
 
         <div class="control-buttons">
@@ -599,9 +591,7 @@
   const YELLOW_NEAR_MAX_M = 0.35;
   const YELLOW_FAR_MIN_M = 0.39;
   const YELLOW_FAR_MAX_M = 0.41;
-  const GUIDE_SIZE_KEY = 'autoGuideSize';
   let smoothedDistanceM = null;
-  let guideScaleMultiplier = 1.0;
   const startBtn=document.getElementById('startBtn');
   const stopBtn=document.getElementById('stopBtn');
   const clearBtn=document.getElementById('clearBtn');
@@ -620,7 +610,6 @@
   const ghostBadge=document.getElementById('ghostBadge');
   const personWarning=document.getElementById('personWarning');
   const distanceHintBadge=document.getElementById('distanceHintBadge');
-  const guideSizeSelect=document.getElementById('guideSizeSelect');
 
   const PREDICT_URL=location.origin+'/predict_auto';
   const SAVE_URL=location.origin+'/api/save_result';
@@ -638,19 +627,6 @@
   let predicting=false; // Lock: true while predict() is in-flight
   let feedbackActive=false; // True while feedback overlay is showing — pauses accumulation
   let predictInterval=null,tickInterval=null,countdown=5;
-
-  function getGuideScale(size){
-    if(size === 'small') return 0.88;
-    if(size === 'large') return 1.16;
-    return 1.0;
-  }
-  const savedGuideSize = localStorage.getItem(GUIDE_SIZE_KEY) || 'medium';
-  guideSizeSelect.value = ['small','medium','large'].includes(savedGuideSize) ? savedGuideSize : 'medium';
-  guideScaleMultiplier = getGuideScale(guideSizeSelect.value);
-  guideSizeSelect.onchange = () => {
-    guideScaleMultiplier = getGuideScale(guideSizeSelect.value);
-    localStorage.setItem(GUIDE_SIZE_KEY, guideSizeSelect.value);
-  };
 
   const HAND_CONN=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20]];
 
@@ -774,9 +750,9 @@
   }
   function drawDistanceGuide(state){
     const color = getDistanceGuideColor(state);
-    const unit = Math.min(canvasEl.width, canvasEl.height) * guideScaleMultiplier;
+    const unit = Math.min(canvasEl.width, canvasEl.height);
     const cx = canvasEl.width * 0.5;
-    const topY = canvasEl.height * (0.08 - (guideScaleMultiplier - 1.0) * 0.045);
+    const topY = canvasEl.height * 0.08;
     const headR = unit * 0.075;
     const shoulderW = unit * 0.36;
     const shoulderY = topY + headR * 2 + unit * 0.02;
