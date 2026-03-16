@@ -709,19 +709,29 @@
     // Pause current video before switching
     video.pause();
 
-    const prefixMap = { numbers: 'number' };
-    const prefix = prefixMap[category] || category;
-    const src = `/static/learn_videos/${prefix}_${item}.mp4`;
+    // Try to use manifest.json for video path
+    let src = null;
+    let manifest = await loadManifest();
+    let manifestKey = item.toLowerCase();
+    let manifestCat = category.toLowerCase();
+    if (manifest && manifest[manifestCat] && manifest[manifestCat][manifestKey] && manifest[manifestCat][manifestKey].length > 0) {
+      // Use the first video in the manifest for this sign
+      src = manifest[manifestCat][manifestKey][0];
+    } else {
+      // Fallback to static path
+      const prefixMap = { numbers: 'number' };
+      const prefix = prefixMap[category] || category;
+      src = `/static/learn_videos/${prefix}_${item}.mp4`;
+    }
 
     const poster = posterFromSrc(src);
 
     // Set video properties for smooth playback
     video.playbackRate = 1.0;
     video.defaultPlaybackRate = 1.0;
-    
     video.src = src;
     video.poster = poster;
-    
+
     // Load and prepare video, then autoplay when ready
     video.load();
     video.addEventListener('loadedmetadata', function onLoaded() {
