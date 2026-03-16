@@ -507,22 +507,35 @@ def _load_sign_calibration(expected_label: str):
 
 
 def _build_corrective_feedback(live_seq: np.ndarray, expected_label: str):
-    if live_seq.ndim != 2 or live_seq.shape[1] < 200:
+    if live_seq.ndim != 2:
         return None
 
-    flags = live_seq[:, 198:200]
-    left_presence = float(np.mean(flags[:, 0] > 0.5))
-    right_presence = float(np.mean(flags[:, 1] > 0.5))
+    calibration = _load_sign_calibration(expected_label)
+    if not calibration:
+        return None
 
-    dy_fore = _extract_metric_values(live_seq, "dy_fore")
-    dy_chin = _extract_metric_values(live_seq, "dy_chin")
-    dx_signed = _extract_metric_values(live_seq, "dx_chin")
-    dx_abs = _extract_metric_values(live_seq, "dx_chin", use_abs=True)
+    if live_seq.shape[1] < 200:
+        return None
 
-    if dy_fore.size < 6:
+    live_flags = live_seq[:, 198:200]
+    live_left_presence = float(np.mean(live_flags[:, 0] > 0.5))
+    live_right_presence = float(np.mean(live_flags[:, 1] > 0.5))
+
+    live_dy_fore = _extract_metric_values(live_seq, "dy_fore")
+    live_dy_chin = _extract_metric_values(live_seq, "dy_chin")
+    live_dy_fore_left = _extract_metric_values(live_seq, "dy_fore", hand="left")
+    live_dy_fore_right = _extract_metric_values(live_seq, "dy_fore", hand="right")
+    live_abs_dx = _extract_metric_values(live_seq, "dx_chin", use_abs=True)
+    live_dx_signed = _extract_metric_values(live_seq, "dx_chin")
+    live_abs_dx_left = _extract_metric_values(live_seq, "dx_chin", use_abs=True, hand="left")
+    live_abs_dx_right = _extract_metric_values(live_seq, "dx_chin", use_abs=True, hand="right")
+    live_dx_signed_left = _extract_metric_values(live_seq, "dx_chin", hand="left")
+    live_dx_signed_right = _extract_metric_values(live_seq, "dx_chin", hand="right")
+
+    if live_dy_fore.size < 6:
         return {
             "available": True,
-            "source": "rule",
+            "source": "npy",
             "status": "insufficient_live_data",
             "message": "Keep your signing hand visible for clearer corrective feedback.",
         }
@@ -530,71 +543,140 @@ def _build_corrective_feedback(live_seq: np.ndarray, expected_label: str):
     cues = []
     status = "good"
 
-    if left_presence < 0.10 and right_presence < 0.10:
-        cues.append((3.5, "Keep at least one hand fully visible to the camera."))
-    elif left_presence < 0.08:
-        cues.append((2.2, "Keep your left hand visible to the camera."))
-    elif right_presence < 0.08:
-        cues.append((2.2, "Keep your right hand visible to the camera."))
+    def _band_delta(value: float, band: dict):
+        if value > band["high"]:
+            return value - band["high"], "high"
+        if value < band["low"]:
+            return band["low"] - value, "low"
+        return 0.0, "inside"
 
-    dy_fore_median = float(np.median(dy_fore))
-    LOW_FOREHEAD = -0.10
-    HIGH_FOREHEAD = 0.15
+    def _pick_side_delta(left_values: np.ndarray, right_values: np.ndarray, left_band: dict, right_band: dict):
+        best = None
+        if left_band and left_values.size >= 3:
+            left_median = float(np.median(left_values))
+            left_delta, left_side = _band_delta(left_median, left_band)
+            best = {
+                "name": "left",
+                "delta": left_delta,
+                "side": left_side,
+                "median": left_median,
+            }
+        if right_band and right_values.size >= 3:
+            right_median = float(np.median(right_values))
+            right_delta, right_side = _band_delta(right_median, right_band)
+            if (best is None) or (right_delta > best["delta"]):
+                best = {
+                    "name": "right",
+                    "delta": right_delta,
+                    "side": right_side,
+                    "median": right_median,
+                }
+        return best
 
-    if dy_fore_median > HIGH_FOREHEAD:
-        status = "too_low"
-        if dy_fore_median > 0.30:
-            cues.append((3.0, "Raise your hand much higher to forehead level."))
-        else:
-            cues.append((2.4, "Raise your hand slightly to forehead level."))
-    elif dy_fore_median < LOW_FOREHEAD:
-        status = "too_high"
-        if dy_fore_median < -0.30:
-            cues.append((3.0, "Lower your hand much closer to forehead level."))
-        else:
-            cues.append((2.4, "Lower your hand slightly to forehead level."))
+    if calibration["left_presence"] > 0.65 and live_left_presence < 0.35:
+        cues.append((2.5, "Keep your left signing hand visible to the camera."))
+    if calibration["right_presence"] > 0.65 and live_right_presence < 0.35:
+        cues.append((2.5, "Keep your right signing hand visible to the camera."))
 
-    if dx_abs.size >= 6:
-        dx_abs_median = float(np.median(dx_abs))
-        if dx_abs_median > 0.65:
-            cues.append((1.8, "Move your hand closer to the center of your face."))
-        elif dx_abs_median < 0.08:
-            cues.append((1.4, "Move your hand a little to the side of your face."))
+    dy_band = calibration["dy_fore"]
+    dy_chin_band = calibration.get("dy_chin")
+    dy_left_band = calibration.get("dy_fore_left") or dy_band
+    dy_right_band = calibration.get("dy_fore_right") or dy_band
+    dy_live = float(np.median(live_dy_fore))
+    dy_span = max(1e-3, dy_band["high"] - dy_band["low"])
+
+    height_pick = _pick_side_delta(live_dy_fore_left, live_dy_fore_right, dy_left_band, dy_right_band)
+    if height_pick and height_pick["delta"] > 0:
+        hand_text = "left hand" if height_pick["name"] == "left" else "right hand"
+        side_band = dy_left_band if height_pick["name"] == "left" else dy_right_band
+        span = max(1e-3, side_band["high"] - side_band["low"])
+        severity = height_pick["delta"] / span
+        if height_pick["side"] == "high":
+            status = "too_low"
+            msg = f"Raise your {hand_text} higher toward forehead level."
+            if severity > 1.7:
+                msg = f"Raise your {hand_text} much higher toward forehead level."
+            cues.append((2.2 + severity, msg))
+        elif height_pick["side"] == "low":
+            status = "too_high"
+            msg = f"Lower your {hand_text} slightly toward forehead level."
+            if severity > 1.7:
+                msg = f"Lower your {hand_text} more toward forehead level."
+            cues.append((2.2 + severity, msg))
+
+    dx_band = calibration.get("abs_dx_chin")
+    dx_signed_band = calibration.get("dx_chin_signed")
+    dx_left_band = calibration.get("abs_dx_chin_left") or dx_band
+    dx_right_band = calibration.get("abs_dx_chin_right") or dx_band
+    dx_signed_left_band = calibration.get("dx_chin_signed_left") or dx_signed_band
+    dx_signed_right_band = calibration.get("dx_chin_signed_right") or dx_signed_band
+    dx_live = None
+    if dx_band and live_abs_dx.size >= 6:
+        dx_live = float(np.median(live_abs_dx))
+
+    center_pick = _pick_side_delta(live_abs_dx_left, live_abs_dx_right, dx_left_band, dx_right_band)
+    if center_pick and center_pick["delta"] > 0:
+        hand_text = "left hand" if center_pick["name"] == "left" else "right hand"
+        side_band = dx_left_band if center_pick["name"] == "left" else dx_right_band
+        span = max(1e-3, side_band["high"] - side_band["low"])
+        sev = center_pick["delta"] / span
+        if center_pick["side"] == "high":
+            cues.append((1.4 + sev, f"Move your {hand_text} closer to the center of your face."))
+        elif center_pick["side"] == "low":
+            cues.append((1.2 + sev, f"Move your {hand_text} slightly farther from the center of your face."))
 
     is_number_sign = str(expected_label).lower().startswith("numbers_")
     if is_number_sign:
-        if dy_chin.size >= 6:
-            dy_chin_median = float(np.median(dy_chin))
-            if dy_chin_median < 0.06:
-                cues.append((3.4, "For number signs, keep your hand below your chin."))
-        if dx_signed.size >= 6:
-            dx_signed_median = float(np.median(dx_signed))
-            if dx_signed_median < 0.10:
-                cues.append((3.1, "For number signs, place your hand on the right side of your face."))
+        number_hand_pick = _pick_side_delta(live_dy_fore_left, live_dy_fore_right, dy_left_band, dy_right_band)
+        hand_text = "right hand"
+        if number_hand_pick and number_hand_pick.get("name") in ("left", "right"):
+            hand_text = f"{number_hand_pick['name']} hand"
+
+        if dy_chin_band and live_dy_chin.size >= 6:
+            dy_chin_live = float(np.median(live_dy_chin))
+            chin_delta, chin_side = _band_delta(dy_chin_live, dy_chin_band)
+            chin_span = max(1e-3, dy_chin_band["high"] - dy_chin_band["low"])
+            chin_sev = chin_delta / chin_span
+            if chin_side == "low":
+                cues.append((3.2 + chin_sev, f"For number signs, keep your {hand_text} below your chin."))
+            elif chin_side == "high":
+                cues.append((2.3 + chin_sev, f"For number signs, raise your {hand_text} slightly closer under your chin."))
+
+        number_side_pick = _pick_side_delta(live_dx_signed_left, live_dx_signed_right, dx_signed_left_band, dx_signed_right_band)
+        if number_side_pick and number_side_pick["delta"] > 0:
+            side_band = dx_signed_left_band if number_side_pick["name"] == "left" else dx_signed_right_band
+            target_side = "right" if side_band and side_band["center"] >= 0 else "left"
+            cues.append((3.0 + number_side_pick["delta"], f"For number signs, position your {hand_text} on the {target_side} side of your face."))
 
     cues.sort(key=lambda item: item[0], reverse=True)
 
     if not cues:
-        message = "Good form. Keep the same hand height and position."
+        msg = "Good form. Keep the same hand height and position."
     else:
-        picked = []
+        unique_msgs = []
         for _, text in cues:
-            if text not in picked:
-                picked.append(text)
-            if len(picked) >= 2:
+            if text not in unique_msgs:
+                unique_msgs.append(text)
+            if len(unique_msgs) >= 2:
                 break
-        message = " ".join(picked)
+        msg = " ".join(unique_msgs)
         if status == "good":
             status = "adjust"
 
     return {
         "available": True,
-        "source": "rule",
+        "source": "npy",
         "status": status,
-        "message": message,
-        "live_dy_fore": dy_fore_median,
-        "live_left_presence": left_presence,
-        "live_right_presence": right_presence,
+        "message": msg,
+        "live_median_dy_fore": dy_live,
+        "target_low_dy_fore": dy_band["low"],
+        "target_high_dy_fore": dy_band["high"],
+        "target_center_dy_fore": dy_band["center"],
+        "live_median_abs_dx_chin": dx_live,
+        "expected_left_presence": calibration["left_presence"],
+        "expected_right_presence": calibration["right_presence"],
+        "live_left_presence": live_left_presence,
+        "live_right_presence": live_right_presence,
     }
 
 def get_demo_video_path(label):
