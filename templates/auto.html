@@ -513,9 +513,18 @@
         <canvas id="overlay"></canvas>
 
         <div class="fps-counter" id="fpsCounter">FPS: 0</div>
-        <div id="distanceHintBadge" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);color:var(--grass-green);padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;font-family:'Courier New', monospace;z-index:21;box-shadow:0 1px 4px rgba(0,0,0,0.5);min-width:122px;text-align:left;line-height:1.25;">
-          <div>Distance: <span id="distanceValueLabel">-- m</span></div>
-          <div id="distanceHintLabel">Too far or too close</div>
+        <div id="distanceHintBadge" style="position:absolute;top:10px;right:10px;background:rgba(255,255,255,0.92);border:1px solid rgba(255,255,255,0.5);border-radius:12px;padding:8px 10px;min-width:190px;z-index:21;box-shadow:0 4px 10px rgba(0,0,0,0.2);backdrop-filter:blur(3px);">
+          <div style="font-size:11px;font-weight:800;color:#666;letter-spacing:0.2px;">Distance Calibration</div>
+          <div style="font-size:11px;color:#666;margin-top:4px;">Guide Size:
+            <select id="guideSizeSelect" style="border:1px solid #ddd;border-radius:6px;padding:2px 6px;font-size:11px;font-weight:700;margin-left:6px;">
+              <option value="small">Small</option>
+              <option value="medium" selected>Medium</option>
+              <option value="large">Large</option>
+            </select>
+          </div>
+          <div style="font-size:12px;color:#444;font-weight:700;margin-top:3px;">Distance: <span id="distanceValueLabel">-- m</span></div>
+          <div id="distanceHintLabel" style="font-size:11px;color:#666;margin-top:2px;">Too far or too close</div>
+          <div style="font-size:11px;color:#666;margin-top:2px;">Baseline: <span id="distanceBaselineLabel">Default</span></div>
         </div>
 
         <div class="result-overlay" id="gestureOverlay">—</div>
@@ -594,6 +603,7 @@
   const YELLOW_NEAR_MAX_M = 0.35;
   const YELLOW_FAR_MIN_M = 0.39;
   const YELLOW_FAR_MAX_M = 0.41;
+  const GUIDE_SIZE_KEY = 'autoGuideSize';
   let smoothedDistanceM = null;
   let guideScaleMultiplier = 1.0;
   const startBtn=document.getElementById('startBtn');
@@ -616,6 +626,8 @@
   const distanceHintBadge=document.getElementById('distanceHintBadge');
   const distanceValueLabel=document.getElementById('distanceValueLabel');
   const distanceHintLabel=document.getElementById('distanceHintLabel');
+  const distanceBaselineLabel=document.getElementById('distanceBaselineLabel');
+  const guideSizeSelect=document.getElementById('guideSizeSelect');
 
   const PREDICT_URL=location.origin+'/predict_auto';
   const SAVE_URL=location.origin+'/api/save_result';
@@ -633,6 +645,19 @@
   let predicting=false; // Lock: true while predict() is in-flight
   let feedbackActive=false; // True while feedback overlay is showing — pauses accumulation
   let predictInterval=null,tickInterval=null,countdown=5;
+
+  function getGuideScale(size){
+    if(size === 'small') return 0.88;
+    if(size === 'large') return 1.16;
+    return 1.0;
+  }
+  const savedGuideSize = localStorage.getItem(GUIDE_SIZE_KEY) || 'medium';
+  guideSizeSelect.value = ['small','medium','large'].includes(savedGuideSize) ? savedGuideSize : 'medium';
+  guideScaleMultiplier = getGuideScale(guideSizeSelect.value);
+  guideSizeSelect.onchange = () => {
+    guideScaleMultiplier = getGuideScale(guideSizeSelect.value);
+    localStorage.setItem(GUIDE_SIZE_KEY, guideSizeSelect.value);
+  };
 
   const HAND_CONN=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20]];
 
@@ -754,14 +779,18 @@
     if(!Number.isFinite(distanceM)) return '-- m';
     return distanceM.toFixed(2) + ' m';
   }
+  function refreshDistanceBaselineUi(){
+    distanceBaselineLabel.textContent = FIXED_BASELINE_M.toFixed(2) + ' m';
+  }
   function refreshDistanceValueUi(distanceM, state){
     const color = state === 'green' ? 'var(--grass-green)' : (state === 'yellow' ? 'var(--orange)' : 'var(--coral)');
     distanceValueLabel.textContent = formatDistance(distanceM);
     distanceValueLabel.style.color = color;
     distanceHintLabel.textContent = getDistanceGuideMessage(state);
     distanceHintLabel.style.color = color;
-    distanceHintBadge.style.color = color;
+    distanceHintBadge.style.borderColor = state === 'green' ? 'rgba(6,214,160,0.45)' : (state === 'yellow' ? 'rgba(255,217,61,0.5)' : 'rgba(255,107,157,0.45)');
   }
+  refreshDistanceBaselineUi();
   function drawDistanceGuide(state, anchors){
     const color = getDistanceGuideColor(state);
     const hasShoulders = anchorsValid(anchors);

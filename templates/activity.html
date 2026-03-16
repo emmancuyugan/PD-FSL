@@ -715,9 +715,22 @@
           <video id="mainCamera" autoplay playsinline muted></video>
           <canvas id="overlayCanvas"></canvas>
           <div class="fps-counter" id="fpsCounter">FPS: 0</div>
-          <div id="distanceHintBadge" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);color:var(--grass-green);padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;font-family:'Courier New', monospace;z-index:21;box-shadow:0 1px 4px rgba(0,0,0,0.5);min-width:122px;text-align:left;line-height:1.25;">
-            <div>Distance: <span id="distanceValueLabel">-- m</span></div>
-            <div id="distanceHintLabel">Too far or too close</div>
+          <div style="position:absolute;top:10px;right:10px;background:rgba(255,255,255,0.92);border:1px solid rgba(255,255,255,0.5);border-radius:12px;padding:8px 10px;min-width:190px;z-index:21;box-shadow:0 4px 10px rgba(0,0,0,0.2);backdrop-filter:blur(3px);">
+            <div style="font-size:11px;font-weight:800;color:#666;letter-spacing:0.2px;">Distance Calibration</div>
+            <div style="font-size:11px;color:#666;margin-top:4px;">Guide Size:
+              <select id="guideSizeSelect" style="border:1px solid #ddd;border-radius:6px;padding:2px 6px;font-size:11px;font-weight:700;margin-left:6px;">
+                <option value="small">Small</option>
+                <option value="medium" selected>Medium</option>
+                <option value="large">Large</option>
+              </select>
+            </div>
+            <div style="font-size:12px;color:#444;font-weight:700;margin-top:3px;">Distance: <span id="distanceValueLabel">-- m</span></div>
+            <div id="distanceHintLabel" style="font-size:11px;color:#666;margin-top:2px;">Too far or too close</div>
+            <div style="font-size:11px;color:#666;margin-top:2px;">Baseline: <span id="distanceBaselineLabel">Default</span></div>
+            <div style="display:flex;gap:6px;margin-top:6px;">
+              <button id="setDistanceBaselineBtn" type="button" style="border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;background:linear-gradient(135deg, var(--grass-green), var(--sky-blue));color:var(--white);cursor:pointer;">Set Baseline</button>
+              <button id="resetDistanceBaselineBtn" type="button" style="border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;background:linear-gradient(135deg, var(--orange), var(--sunshine));color:var(--white);cursor:pointer;">Reset</button>
+            </div>
           </div>
         </div>
 
@@ -899,6 +912,7 @@ window.addEventListener("load", () => {
   const YELLOW_NEAR_MAX_M = 0.35;
   const YELLOW_FAR_MIN_M = 0.39;
   const YELLOW_FAR_MAX_M = 0.41;
+  const GUIDE_SIZE_KEY = 'activityGuideSize';
   let smoothedDistanceM = null;
   let guideScaleMultiplier = 1.0;
 
@@ -916,9 +930,11 @@ window.addEventListener("load", () => {
   const recBadge = document.getElementById("recBadge");
   const personWarning = document.getElementById("personWarning");
   const timerBar = document.getElementById("timerBar");
-  const distanceHintBadge = document.getElementById('distanceHintBadge');
   const distanceValueLabel = document.getElementById('distanceValueLabel');
   const distanceHintLabel = document.getElementById('distanceHintLabel');
+  const distanceBaselineLabel = document.getElementById('distanceBaselineLabel');
+  const setDistanceBaselineBtn = document.getElementById('setDistanceBaselineBtn');
+  const resetDistanceBaselineBtn = document.getElementById('resetDistanceBaselineBtn');
 
 
   const toggleVisuals = document.getElementById('toggleVisuals');
@@ -927,6 +943,7 @@ window.addEventListener("load", () => {
   const toggleSpeed   = document.getElementById('toggleSpeed');
   const feedbackSourceSelect = document.getElementById('feedbackSourceSelect');
   const feedbackGenderSelect = document.getElementById('feedbackGenderSelect');
+  const guideSizeSelect = document.getElementById('guideSizeSelect');
 
   let feedbackSource = localStorage.getItem('activityFeedbackSource') || '3d';
   let feedbackGender = localStorage.getItem('activityFeedbackGender') || 'girl';
@@ -949,6 +966,19 @@ window.addEventListener("load", () => {
   };
   feedbackGenderSelect.disabled = feedbackSource !== '3d';
   feedbackGenderSelect.style.opacity = feedbackSource === '3d' ? '1' : '0.6';
+
+  function getGuideScale(size){
+    if(size === 'small') return 0.88;
+    if(size === 'large') return 1.16;
+    return 1.0;
+  }
+  const savedGuideSize = localStorage.getItem(GUIDE_SIZE_KEY) || 'medium';
+  guideSizeSelect.value = ['small','medium','large'].includes(savedGuideSize) ? savedGuideSize : 'medium';
+  guideScaleMultiplier = getGuideScale(guideSizeSelect.value);
+  guideSizeSelect.onchange = () => {
+    guideScaleMultiplier = getGuideScale(guideSizeSelect.value);
+    localStorage.setItem(GUIDE_SIZE_KEY, guideSizeSelect.value);
+  };
 
   let showVisuals = true;
   let showTimer   = true;
@@ -1060,14 +1090,20 @@ window.addEventListener("load", () => {
     if(!Number.isFinite(distanceM)) return '-- m';
     return distanceM.toFixed(2) + ' m';
   }
+  function refreshDistanceBaselineUi(){
+    distanceBaselineLabel.textContent = FIXED_BASELINE_M.toFixed(2) + ' m';
+  }
   function refreshDistanceValueUi(distanceM, state){
     distanceValueLabel.textContent = formatDistance(distanceM);
-    const color = state === 'green' ? 'var(--grass-green)' : (state === 'yellow' ? 'var(--orange)' : 'var(--coral)');
-    distanceValueLabel.style.color = color;
+    if(state === 'green') distanceValueLabel.style.color = 'var(--grass-green)';
+    else if(state === 'yellow') distanceValueLabel.style.color = 'var(--orange)';
+    else distanceValueLabel.style.color = 'var(--coral)';
     distanceHintLabel.textContent = getDistanceGuideMessage(state);
-    distanceHintLabel.style.color = color;
-    distanceHintBadge.style.color = color;
+    distanceHintLabel.style.color = state === 'green' ? 'var(--grass-green)' : (state === 'yellow' ? 'var(--orange)' : 'var(--coral)');
   }
+  refreshDistanceBaselineUi();
+  setDistanceBaselineBtn.style.display = 'none';
+  resetDistanceBaselineBtn.style.display = 'none';
 
   function normalizeGlobal(hand63,anchors){
     if(!hand63||hand63.length!==63||!anchors.L_SH||!anchors.R_SH) return new Float32Array(63);
