@@ -605,15 +605,13 @@
   // Show feedback
   function showFeedback(res){
     feedbackBox.style.display = "block";
-    const cue = (res.corrective_feedback && res.corrective_feedback.message) ? res.corrective_feedback.message : "";
-    const cueHtml = cue ? `<br><strong>Fix:</strong> ${cue}` : "";
     if(res.correct){
       feedbackBox.className = "feedback-box success";
       feedbackBox.innerHTML = "✅ Correct! Great job!";
       reteach.style.display = "none";
     } else {
       feedbackBox.className = "feedback-box danger";
-      feedbackBox.innerHTML = `❌ Incorrect. Target: ${res.target}<br>${(res.hints||[]).join(" ")}${cueHtml}`;
+      feedbackBox.innerHTML = `❌ Incorrect. Target: ${res.target}<br>${(res.hints||[]).join(" ")}`;
       reteach.style.display = "block";
       reteachVideo.src = (res.teach && res.teach.video) || "";
       reteachSteps.innerHTML = "";
