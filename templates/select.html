@@ -1270,10 +1270,19 @@ window.addEventListener("load", () => {
     return new Float32Array([...L,...R,...alt,lf,rf]);
   }
 
-  function temporalFix(frames,seqLen){
+  function temporalFix(frames,seqLen,preserveStart=false){
     if(frames.length<=seqLen){
       const pad=Array.from({length:seqLen-frames.length},()=>frames[frames.length-1]);
       return frames.concat(pad);
+    }
+    if(preserveStart){
+      const step=frames.length/seqLen;
+      const aligned=[];
+      for(let i=0;i<seqLen;i++){
+        const idx=Math.min(Math.floor(i*step),frames.length-1);
+        aligned.push(frames[idx]);
+      }
+      return aligned;
     }
     const scores=new Array(frames.length).fill(0);
     for(let i=1;i<frames.length;i++){
@@ -1383,7 +1392,9 @@ window.addEventListener("load", () => {
       return { predicted: null, raw: null };
     }
     
-    const fixed = temporalFix(buf, SEQ_LEN);
+    const targetNorm = normLabel(targetGesture || '');
+    const preserveStart = targetNorm === 'son' || targetNorm === 'daughter';
+    const fixed = temporalFix(buf, SEQ_LEN, preserveStart);
     const seq = fixed.flatMap(f => Array.from(f));
 
     try {
