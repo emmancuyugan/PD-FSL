@@ -760,6 +760,14 @@
               <option value="girl">Girl</option>
             </select>
           </div>
+          <div class="setting-item" style="display:block; margin-top: 6px; cursor: default;">
+            <div style="font-size: 11px; color: #444; font-weight: 700;">Distance: <span id="distanceValueLabel">-- m</span></div>
+            <div style="font-size: 10px; color: #666; margin-top: 2px;">Baseline: <span id="distanceBaselineLabel">Default</span></div>
+            <div style="display:flex; gap:6px; margin-top:4px;">
+              <button id="setDistanceBaselineBtn" type="button" style="border:none; border-radius:8px; padding:4px 8px; font-size:10px; font-weight:700; background:linear-gradient(135deg, var(--grass-green), var(--sky-blue)); color:var(--white); cursor:pointer;">Set Baseline</button>
+              <button id="resetDistanceBaselineBtn" type="button" style="border:none; border-radius:8px; padding:4px 8px; font-size:10px; font-weight:700; background:linear-gradient(135deg, var(--orange), var(--sunshine)); color:var(--white); cursor:pointer;">Reset</button>
+            </div>
+          </div>
         </div>
 
 
@@ -892,7 +900,12 @@ window.addEventListener("load", () => {
   const PERFECT_DISTANCE_MAX_M = 0.95;
   const ACCEPTABLE_DISTANCE_MIN_M = 0.45;
   const ACCEPTABLE_DISTANCE_MAX_M = 1.20;
+  const DISTANCE_BASELINE_KEY = 'activityDistanceBaselineM';
   let smoothedDistanceM = null;
+  let distanceBaselineM = Number(localStorage.getItem(DISTANCE_BASELINE_KEY));
+  if(!Number.isFinite(distanceBaselineM) || distanceBaselineM <= 0){
+    distanceBaselineM = null;
+  }
 
   const startBtn = document.getElementById("startBtn");
   const resetBtn = document.getElementById("resetBtn");
@@ -908,6 +921,10 @@ window.addEventListener("load", () => {
   const recBadge = document.getElementById("recBadge");
   const personWarning = document.getElementById("personWarning");
   const timerBar = document.getElementById("timerBar");
+  const distanceValueLabel = document.getElementById('distanceValueLabel');
+  const distanceBaselineLabel = document.getElementById('distanceBaselineLabel');
+  const setDistanceBaselineBtn = document.getElementById('setDistanceBaselineBtn');
+  const resetDistanceBaselineBtn = document.getElementById('resetDistanceBaselineBtn');
 
 
   const toggleVisuals = document.getElementById('toggleVisuals');
@@ -987,10 +1004,27 @@ window.addEventListener("load", () => {
     smoothedDistanceM = smoothedDistanceM * 0.82 + distanceM * 0.18;
     return smoothedDistanceM;
   }
+  function getDistanceRanges(){
+    if(Number.isFinite(distanceBaselineM) && distanceBaselineM > 0){
+      return {
+        perfectMin: distanceBaselineM * 0.90,
+        perfectMax: distanceBaselineM * 1.10,
+        acceptableMin: distanceBaselineM * 0.80,
+        acceptableMax: distanceBaselineM * 1.25
+      };
+    }
+    return {
+      perfectMin: PERFECT_DISTANCE_MIN_M,
+      perfectMax: PERFECT_DISTANCE_MAX_M,
+      acceptableMin: ACCEPTABLE_DISTANCE_MIN_M,
+      acceptableMax: ACCEPTABLE_DISTANCE_MAX_M
+    };
+  }
   function getDistanceGuideState(distanceM, personCount){
     if(personCount !== 1 || !Number.isFinite(distanceM)) return 'red';
-    if(distanceM >= PERFECT_DISTANCE_MIN_M && distanceM <= PERFECT_DISTANCE_MAX_M) return 'green';
-    if(distanceM >= ACCEPTABLE_DISTANCE_MIN_M && distanceM <= ACCEPTABLE_DISTANCE_MAX_M) return 'yellow';
+    const ranges = getDistanceRanges();
+    if(distanceM >= ranges.perfectMin && distanceM <= ranges.perfectMax) return 'green';
+    if(distanceM >= ranges.acceptableMin && distanceM <= ranges.acceptableMax) return 'yellow';
     return 'red';
   }
   function getDistanceGuideColor(state){
@@ -1010,6 +1044,33 @@ window.addEventListener("load", () => {
     ctx.strokeRect(x, y, side, side);
     ctx.restore();
   }
+  function formatDistance(distanceM){
+    if(!Number.isFinite(distanceM)) return '-- m';
+    return distanceM.toFixed(2) + ' m';
+  }
+  function refreshDistanceBaselineUi(){
+    distanceBaselineLabel.textContent = Number.isFinite(distanceBaselineM) ? distanceBaselineM.toFixed(2) + ' m' : 'Default';
+  }
+  function refreshDistanceValueUi(distanceM, state){
+    distanceValueLabel.textContent = formatDistance(distanceM);
+    if(state === 'green') distanceValueLabel.style.color = 'var(--grass-green)';
+    else if(state === 'yellow') distanceValueLabel.style.color = 'var(--orange)';
+    else distanceValueLabel.style.color = 'var(--coral)';
+  }
+  refreshDistanceBaselineUi();
+
+  setDistanceBaselineBtn.onclick = () => {
+    if(!Number.isFinite(smoothedDistanceM)) return;
+    distanceBaselineM = smoothedDistanceM;
+    localStorage.setItem(DISTANCE_BASELINE_KEY, String(distanceBaselineM));
+    refreshDistanceBaselineUi();
+  };
+
+  resetDistanceBaselineBtn.onclick = () => {
+    distanceBaselineM = null;
+    localStorage.removeItem(DISTANCE_BASELINE_KEY);
+    refreshDistanceBaselineUi();
+  };
 
   function normalizeGlobal(hand63,anchors){
     if(!hand63||hand63.length!==63||!anchors.L_SH||!anchors.R_SH) return new Float32Array(63);
@@ -1745,6 +1806,7 @@ window.addEventListener("load", () => {
     const distanceM = smoothDistanceEstimate(rawDistanceM);
     const distanceState = getDistanceGuideState(distanceM, pc);
     drawDistanceGuide(distanceState);
+    refreshDistanceValueUi(distanceM, distanceState);
 
     if (showVisuals) {
       const RH = res.rightHandLandmarks;
