@@ -718,27 +718,22 @@
     // Set video properties for smooth playback
     video.playbackRate = 1.0;
     video.defaultPlaybackRate = 1.0;
+    
     video.src = src;
     video.poster = poster;
-
-    // Robust autoplay: always try to play after load, and if already loaded
-    function tryAutoplay() {
+    
+    // Load and prepare video, then autoplay when ready
+    video.load();
+    video.addEventListener('loadedmetadata', function onLoaded() {
+      video.removeEventListener('loadedmetadata', onLoaded);
+      // Ensure playback rate is set correctly after loading
       video.playbackRate = 1.0;
+      // Attempt to autoplay
       const playPromise = video.play();
       if (playPromise !== undefined) {
         playPromise.catch(() => {/* Autoplay might be blocked, ignore */});
       }
-    }
-    video.load();
-    if (video.readyState >= 2) {
-      // Already loaded
-      tryAutoplay();
-    } else {
-      video.addEventListener('loadedmetadata', function onLoaded() {
-        video.removeEventListener('loadedmetadata', onLoaded);
-        tryAutoplay();
-      });
-    }
+    });
 
     const SAMPLE = [
       'Face the camera with clear hands.',
