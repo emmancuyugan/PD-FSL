@@ -288,7 +288,6 @@ _sign_calibration_cache = {}
 
 _METRIC_OFFSET = {
     "dx_chin": 0,
-    "dy_chin": 1,
     "dy_fore": 4,
 }
 
@@ -405,15 +404,11 @@ def _load_sign_calibration(expected_label: str):
     ]
 
     dy_fore_values = []
-    dy_chin_values = []
     dy_fore_left_values = []
     dy_fore_right_values = []
     abs_dx_values = []
-    dx_signed_values = []
     abs_dx_left_values = []
     abs_dx_right_values = []
-    dx_signed_left_values = []
-    dx_signed_right_values = []
     left_presence = []
     right_presence = []
 
@@ -424,36 +419,24 @@ def _load_sign_calibration(expected_label: str):
                 continue
 
             dy_fore = _extract_metric_values(arr, "dy_fore")
-            dy_chin = _extract_metric_values(arr, "dy_chin")
             dy_fore_left = _extract_metric_values(arr, "dy_fore", hand="left")
             dy_fore_right = _extract_metric_values(arr, "dy_fore", hand="right")
             abs_dx = _extract_metric_values(arr, "dx_chin", use_abs=True)
-            dx_signed = _extract_metric_values(arr, "dx_chin")
             abs_dx_left = _extract_metric_values(arr, "dx_chin", use_abs=True, hand="left")
             abs_dx_right = _extract_metric_values(arr, "dx_chin", use_abs=True, hand="right")
-            dx_signed_left = _extract_metric_values(arr, "dx_chin", hand="left")
-            dx_signed_right = _extract_metric_values(arr, "dx_chin", hand="right")
 
             if dy_fore.size:
                 dy_fore_values.append(dy_fore)
-            if dy_chin.size:
-                dy_chin_values.append(dy_chin)
             if dy_fore_left.size:
                 dy_fore_left_values.append(dy_fore_left)
             if dy_fore_right.size:
                 dy_fore_right_values.append(dy_fore_right)
             if abs_dx.size:
                 abs_dx_values.append(abs_dx)
-            if dx_signed.size:
-                dx_signed_values.append(dx_signed)
             if abs_dx_left.size:
                 abs_dx_left_values.append(abs_dx_left)
             if abs_dx_right.size:
                 abs_dx_right_values.append(abs_dx_right)
-            if dx_signed_left.size:
-                dx_signed_left_values.append(dx_signed_left)
-            if dx_signed_right.size:
-                dx_signed_right_values.append(dx_signed_right)
 
             flags = arr[:, 198:200]
             left_presence.append(float(np.mean(flags[:, 0] > 0.5)))
@@ -476,28 +459,20 @@ def _load_sign_calibration(expected_label: str):
         }
 
     dy_fore_merged = np.concatenate(dy_fore_values)
-    dy_chin_merged = np.concatenate(dy_chin_values) if dy_chin_values else np.array([], dtype=np.float32)
     dy_fore_left_merged = np.concatenate(dy_fore_left_values) if dy_fore_left_values else np.array([], dtype=np.float32)
     dy_fore_right_merged = np.concatenate(dy_fore_right_values) if dy_fore_right_values else np.array([], dtype=np.float32)
     dx_merged = np.concatenate(abs_dx_values) if abs_dx_values else np.array([], dtype=np.float32)
-    dx_signed_merged = np.concatenate(dx_signed_values) if dx_signed_values else np.array([], dtype=np.float32)
     dx_left_merged = np.concatenate(abs_dx_left_values) if abs_dx_left_values else np.array([], dtype=np.float32)
     dx_right_merged = np.concatenate(abs_dx_right_values) if abs_dx_right_values else np.array([], dtype=np.float32)
-    dx_signed_left_merged = np.concatenate(dx_signed_left_values) if dx_signed_left_values else np.array([], dtype=np.float32)
-    dx_signed_right_merged = np.concatenate(dx_signed_right_values) if dx_signed_right_values else np.array([], dtype=np.float32)
 
     calibration = {
         "label": expected_label,
         "dy_fore": _make_band(dy_fore_merged, 0.03),
-        "dy_chin": _make_band(dy_chin_merged, 0.03),
         "dy_fore_left": _make_band(dy_fore_left_merged, 0.03),
         "dy_fore_right": _make_band(dy_fore_right_merged, 0.03),
         "abs_dx_chin": _make_band(dx_merged, 0.02) if dx_merged.size else None,
-        "dx_chin_signed": _make_band(dx_signed_merged, 0.02) if dx_signed_merged.size else None,
         "abs_dx_chin_left": _make_band(dx_left_merged, 0.02),
         "abs_dx_chin_right": _make_band(dx_right_merged, 0.02),
-        "dx_chin_signed_left": _make_band(dx_signed_left_merged, 0.02),
-        "dx_chin_signed_right": _make_band(dx_signed_right_merged, 0.02),
         "left_presence": float(np.mean(left_presence)) if left_presence else 0.0,
         "right_presence": float(np.mean(right_presence)) if right_presence else 0.0,
         "samples": int(dy_fore_merged.size),
@@ -522,15 +497,11 @@ def _build_corrective_feedback(live_seq: np.ndarray, expected_label: str):
     live_right_presence = float(np.mean(live_flags[:, 1] > 0.5))
 
     live_dy_fore = _extract_metric_values(live_seq, "dy_fore")
-    live_dy_chin = _extract_metric_values(live_seq, "dy_chin")
     live_dy_fore_left = _extract_metric_values(live_seq, "dy_fore", hand="left")
     live_dy_fore_right = _extract_metric_values(live_seq, "dy_fore", hand="right")
     live_abs_dx = _extract_metric_values(live_seq, "dx_chin", use_abs=True)
-    live_dx_signed = _extract_metric_values(live_seq, "dx_chin")
     live_abs_dx_left = _extract_metric_values(live_seq, "dx_chin", use_abs=True, hand="left")
     live_abs_dx_right = _extract_metric_values(live_seq, "dx_chin", use_abs=True, hand="right")
-    live_dx_signed_left = _extract_metric_values(live_seq, "dx_chin", hand="left")
-    live_dx_signed_right = _extract_metric_values(live_seq, "dx_chin", hand="right")
 
     if live_dy_fore.size < 6:
         return {
@@ -579,7 +550,6 @@ def _build_corrective_feedback(live_seq: np.ndarray, expected_label: str):
         cues.append((2.5, "Keep your right signing hand visible to the camera."))
 
     dy_band = calibration["dy_fore"]
-    dy_chin_band = calibration.get("dy_chin")
     dy_left_band = calibration.get("dy_fore_left") or dy_band
     dy_right_band = calibration.get("dy_fore_right") or dy_band
     dy_live = float(np.median(live_dy_fore))
@@ -605,11 +575,8 @@ def _build_corrective_feedback(live_seq: np.ndarray, expected_label: str):
             cues.append((2.2 + severity, msg))
 
     dx_band = calibration.get("abs_dx_chin")
-    dx_signed_band = calibration.get("dx_chin_signed")
     dx_left_band = calibration.get("abs_dx_chin_left") or dx_band
     dx_right_band = calibration.get("abs_dx_chin_right") or dx_band
-    dx_signed_left_band = calibration.get("dx_chin_signed_left") or dx_signed_band
-    dx_signed_right_band = calibration.get("dx_chin_signed_right") or dx_signed_band
     dx_live = None
     if dx_band and live_abs_dx.size >= 6:
         dx_live = float(np.median(live_abs_dx))
@@ -624,29 +591,6 @@ def _build_corrective_feedback(live_seq: np.ndarray, expected_label: str):
             cues.append((1.4 + sev, f"Move your {hand_text} closer to the center of your face."))
         elif center_pick["side"] == "low":
             cues.append((1.2 + sev, f"Move your {hand_text} slightly farther from the center of your face."))
-
-    is_number_sign = str(expected_label).lower().startswith("numbers_")
-    if is_number_sign:
-        number_hand_pick = _pick_side_delta(live_dy_fore_left, live_dy_fore_right, dy_left_band, dy_right_band)
-        hand_text = "right hand"
-        if number_hand_pick and number_hand_pick.get("name") in ("left", "right"):
-            hand_text = f"{number_hand_pick['name']} hand"
-
-        if dy_chin_band and live_dy_chin.size >= 6:
-            dy_chin_live = float(np.median(live_dy_chin))
-            chin_delta, chin_side = _band_delta(dy_chin_live, dy_chin_band)
-            chin_span = max(1e-3, dy_chin_band["high"] - dy_chin_band["low"])
-            chin_sev = chin_delta / chin_span
-            if chin_side == "low":
-                cues.append((3.2 + chin_sev, f"For number signs, keep your {hand_text} below your chin."))
-            elif chin_side == "high":
-                cues.append((2.3 + chin_sev, f"For number signs, raise your {hand_text} slightly closer under your chin."))
-
-        number_side_pick = _pick_side_delta(live_dx_signed_left, live_dx_signed_right, dx_signed_left_band, dx_signed_right_band)
-        if number_side_pick and number_side_pick["delta"] > 0:
-            side_band = dx_signed_left_band if number_side_pick["name"] == "left" else dx_signed_right_band
-            target_side = "right" if side_band and side_band["center"] >= 0 else "left"
-            cues.append((3.0 + number_side_pick["delta"], f"For number signs, position your {hand_text} on the {target_side} side of your face."))
 
     cues.sort(key=lambda item: item[0], reverse=True)
 
