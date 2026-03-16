@@ -617,6 +617,20 @@
     display: none;
   }
 
+  .assist-cue {
+    display: none;
+    margin-bottom: 6px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: rgba(255, 107, 157, 0.12);
+    border: 1px solid rgba(255, 107, 157, 0.35);
+    color: #7a1f3d;
+    font-size: 12px;
+    font-weight: 800;
+    text-align: center;
+    line-height: 1.35;
+  }
+
   .assist-buttons {
     display: flex;
     gap: 6px;
@@ -896,6 +910,7 @@
         </div>
 
         <div class="assist-section" id="assistRow">
+          <div class="assist-cue" id="assistCue"></div>
           <div class="assist-buttons">
             <button class="assist-btn show-how-btn" id="btnShowHow">Show again</button>
             <button class="assist-btn try-again-btn" id="btnTryAgain">↻ Try again</button>
@@ -1025,6 +1040,7 @@ window.addEventListener("load", () => {
   const distanceHintBadge = document.getElementById('distanceHintBadge');
   const distanceValueLabel = document.getElementById('distanceValueLabel');
   const distanceHintLabel = document.getElementById('distanceHintLabel');
+  const assistCue = document.getElementById('assistCue');
 
   const toggleVisuals = document.getElementById('toggleVisuals');
   const toggleTimer   = document.getElementById('toggleTimer');
@@ -1406,6 +1422,16 @@ window.addEventListener("load", () => {
     cameraCueOverlay.style.display = 'block';
   }
 
+  function setAssistCue(message) {
+    if (!message) {
+      assistCue.textContent = '';
+      assistCue.style.display = 'none';
+      return;
+    }
+    assistCue.textContent = message;
+    assistCue.style.display = 'block';
+  }
+
   async function predictOnce(silent=false){
     // No hands detected OR hands detected but no person found
     if (buf.length < 5 || lastPersonCount !== 1) {
@@ -1415,6 +1441,7 @@ window.addEventListener("load", () => {
         resultText.className = 'result-text';
         incorrectCount++;
         incorrectCountEl.textContent = String(incorrectCount);
+        setAssistCue('');
         showCameraCue('');
       }
       return { predicted: null, raw: null };
@@ -1425,6 +1452,7 @@ window.addEventListener("load", () => {
         resultText.className = 'result-text';
         incorrectCount++;
         incorrectCountEl.textContent = String(incorrectCount);
+        setAssistCue('');
         showCameraCue('');
       }
       return { predicted: null, raw: null };
@@ -1451,6 +1479,7 @@ window.addEventListener("load", () => {
           const assistHint = document.getElementById("assistHint");
           assistRow.style.display = 'block';
           assistHint.textContent = 'Sign not recognized in FSL. Try a different sign!';
+          setAssistCue('');
           showCameraCue('');
           await saveResult("Not in FSL dataset", j?.confidence || null);
         }
@@ -1466,6 +1495,7 @@ window.addEventListener("load", () => {
           resultText.className = 'result-text correct';
           correctCountEl.textContent = String(correctCount);
           document.getElementById("assistRow").style.display = 'none';
+          setAssistCue('');
           showCameraCue('');
           celebrate();
           // Save correct result with confidence from backend
@@ -1481,6 +1511,7 @@ window.addEventListener("load", () => {
           const cue = getCorrectiveHint(j);
           assistRow.style.display = 'block';
           assistHint.textContent = cue || 'Watch the feedback guide, then try again!';
+          setAssistCue(cue);
           showCameraCue(cue);
           // Save incorrect result
           await saveResult("Incorrect", j?.confidence || null);
@@ -1496,6 +1527,7 @@ window.addEventListener("load", () => {
         const assistHint = document.getElementById("assistHint");
         assistRow.style.display = 'block';
         assistHint.textContent = 'Check that the backend is running.';
+        setAssistCue('');
         showCameraCue('');
       }
       return { predicted: null, raw: null };
@@ -1818,6 +1850,7 @@ window.addEventListener("load", () => {
     ghostReady = false;
     showGhostUI(false);
     document.getElementById("assistHint").textContent = '';
+    setAssistCue('');
     showCameraCue('');
     document.getElementById("feedbackCloseBtn").style.display = 'none';
     if (ghostAnimationId) {
@@ -2114,6 +2147,7 @@ window.addEventListener("load", () => {
     camera.start();
     timerBar.style.width = "0%";
     document.getElementById("assistRow").style.display = "none";
+    setAssistCue('');
     showCameraCue('');
 
     setTimeout(function () {
@@ -2136,6 +2170,7 @@ window.addEventListener("load", () => {
     targetGesture=null; updateGestureDisplay(null); resultText.textContent='—';
     document.getElementById("assistRow").style.display='none';
     document.getElementById("assistHint").textContent='';
+    setAssistCue('');
     showCameraCue('');
     ghostEnabled=false; ghostFrames=null; ghostIdx=0; ghostReady=false; showGhostUI(false);
     if(ghostAnimationId) {
