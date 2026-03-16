@@ -722,14 +722,17 @@
     video.src = src;
     video.poster = poster;
     
-    // Load and prepare video
+    // Load and prepare video, then autoplay when ready
     video.load();
-    
-    // Wait for video to be ready
     video.addEventListener('loadedmetadata', function onLoaded() {
       video.removeEventListener('loadedmetadata', onLoaded);
       // Ensure playback rate is set correctly after loading
       video.playbackRate = 1.0;
+      // Attempt to autoplay
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {/* Autoplay might be blocked, ignore */});
+      }
     });
 
     const SAMPLE = [
