@@ -283,26 +283,6 @@
     z-index: 17;
   }
 
-  .camera-cue-overlay {
-    position: absolute;
-    top: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.85);
-    color: var(--white);
-    padding: 6px 16px;
-    border-radius: 12px;
-    font-size: 14px;
-    font-weight: 800;
-    display: none;
-    z-index: 26;
-    text-align: center;
-    max-width: 90%;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(10px);
-    pointer-events: none;
-  }
-
   .prep-overlay {
     position: absolute;
     top: 50%;
@@ -775,7 +755,6 @@
         <!-- Main camera display (default view) -->
         <div class="camera-display" id="cameraDisplay">
           <span class="pip-label">Camera</span>
-          <div class="camera-cue-overlay" id="cameraCueOverlay"></div>
           <video id="mainCamera" autoplay playsinline muted></video>
           <canvas id="overlayCanvas"></canvas>
           <div class="fps-counter" id="fpsCounter">FPS: 0</div>
@@ -989,7 +968,6 @@ window.addEventListener("load", () => {
   const canvasEl = document.getElementById("overlayCanvas");
   const skeletonCanvas = document.getElementById("skeletonCanvas");
   const feedbackVideo = document.getElementById("feedbackVideo");
-  const cameraCueOverlay = document.getElementById("cameraCueOverlay");
   const ctx = canvasEl.getContext("2d");
   const skeletonCtx = skeletonCanvas.getContext("2d");
   const fpsCounter = document.getElementById("fpsCounter");
@@ -1396,16 +1374,6 @@ window.addEventListener("load", () => {
     return '';
   }
 
-  function showCameraCue(message) {
-    if (!message) {
-      cameraCueOverlay.textContent = '';
-      cameraCueOverlay.style.display = 'none';
-      return;
-    }
-    cameraCueOverlay.textContent = message;
-    cameraCueOverlay.style.display = 'block';
-  }
-
   async function predictOnce(silent=false){
     // No hands detected OR hands detected but no person found
     if (buf.length < 5 || lastPersonCount !== 1) {
@@ -1415,7 +1383,6 @@ window.addEventListener("load", () => {
         resultText.className = 'result-text';
         incorrectCount++;
         incorrectCountEl.textContent = String(incorrectCount);
-        showCameraCue('');
       }
       return { predicted: null, raw: null };
     }
@@ -1425,7 +1392,6 @@ window.addEventListener("load", () => {
         resultText.className = 'result-text';
         incorrectCount++;
         incorrectCountEl.textContent = String(incorrectCount);
-        showCameraCue('');
       }
       return { predicted: null, raw: null };
     }
@@ -1451,7 +1417,6 @@ window.addEventListener("load", () => {
           const assistHint = document.getElementById("assistHint");
           assistRow.style.display = 'block';
           assistHint.textContent = 'Sign not recognized in FSL. Try a different sign!';
-          showCameraCue('');
           await saveResult("Not in FSL dataset", j?.confidence || null);
         }
         return { predicted: null, raw: j };
@@ -1466,7 +1431,6 @@ window.addEventListener("load", () => {
           resultText.className = 'result-text correct';
           correctCountEl.textContent = String(correctCount);
           document.getElementById("assistRow").style.display = 'none';
-          showCameraCue('');
           celebrate();
           // Save correct result with confidence from backend
           await saveResult(target, j?.confidence || null);
@@ -1478,10 +1442,8 @@ window.addEventListener("load", () => {
           incorrectCountEl.textContent = String(incorrectCount);
           const assistRow = document.getElementById("assistRow");
           const assistHint = document.getElementById("assistHint");
-          const cue = getCorrectiveHint(j);
           assistRow.style.display = 'block';
-          assistHint.textContent = cue || 'Watch the feedback guide, then try again!';
-          showCameraCue(cue);
+          assistHint.textContent = getCorrectiveHint(j) || 'Watch the feedback guide, then try again!';
           // Save incorrect result
           await saveResult("Incorrect", j?.confidence || null);
         }
@@ -1496,7 +1458,6 @@ window.addEventListener("load", () => {
         const assistHint = document.getElementById("assistHint");
         assistRow.style.display = 'block';
         assistHint.textContent = 'Check that the backend is running.';
-        showCameraCue('');
       }
       return { predicted: null, raw: null };
     }
@@ -1818,7 +1779,6 @@ window.addEventListener("load", () => {
     ghostReady = false;
     showGhostUI(false);
     document.getElementById("assistHint").textContent = '';
-    showCameraCue('');
     document.getElementById("feedbackCloseBtn").style.display = 'none';
     if (ghostAnimationId) {
       cancelAnimationFrame(ghostAnimationId);
@@ -2114,7 +2074,6 @@ window.addEventListener("load", () => {
     camera.start();
     timerBar.style.width = "0%";
     document.getElementById("assistRow").style.display = "none";
-    showCameraCue('');
 
     setTimeout(function () {
       setState(STATE_CAPTURE);
@@ -2136,7 +2095,6 @@ window.addEventListener("load", () => {
     targetGesture=null; updateGestureDisplay(null); resultText.textContent='—';
     document.getElementById("assistRow").style.display='none';
     document.getElementById("assistHint").textContent='';
-    showCameraCue('');
     ghostEnabled=false; ghostFrames=null; ghostIdx=0; ghostReady=false; showGhostUI(false);
     if(ghostAnimationId) {
       cancelAnimationFrame(ghostAnimationId);
