@@ -709,35 +709,72 @@
     // Pause current video before switching
     video.pause();
 
+
     const prefixMap = { numbers: 'number' };
     const prefix = prefixMap[category] || category;
-    const src = `/static/learn_videos/${prefix}_${item}.mp4`;
+    let src = `/static/learn_videos/${prefix}_${item}.mp4`;
+    let poster = posterFromSrc(src);
 
-    const poster = posterFromSrc(src);
-
-    // Set video properties for smooth playback
-    video.playbackRate = 1.0;
-    video.defaultPlaybackRate = 1.0;
-    video.src = src;
-    video.poster = poster;
-
-    // Robust autoplay: always try to play after load, and if already loaded
-    function tryAutoplay() {
-      video.playbackRate = 1.0;
-      const playPromise = video.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(() => {/* Autoplay might be blocked, ignore */});
+    // Helper to check if a video exists
+    async function videoExists(url) {
+      try {
+        const res = await fetch(url, { method: 'HEAD' });
+        return res.ok;
+      } catch {
+        return false;
       }
     }
-    video.load();
-    if (video.readyState >= 2) {
-      // Already loaded
-      tryAutoplay();
-    } else {
-      video.addEventListener('loadedmetadata', function onLoaded() {
-        video.removeEventListener('loadedmetadata', onLoaded);
+
+    // Try original, then lowercase, then fallback for known issues
+    let found = await videoExists(src);
+    if (!found) {
+      // Try lowercase item
+      src = `/static/learn_videos/${prefix}_${item.toLowerCase()}.mp4`;
+      poster = posterFromSrc(src);
+      found = await videoExists(src);
+    }
+    if (!found) {
+      // Try fallback for known issues
+      const fallbackMap = {
+        three: '/static/learn_videos/number_three.mp4',
+        five: '/static/learn_videos/number_five.mp4',
+        yes: '/static/learn_videos/survival_yes.mp4'
+      };
+      if (fallbackMap[item.toLowerCase()]) {
+        src = fallbackMap[item.toLowerCase()];
+        poster = posterFromSrc(src);
+        found = await videoExists(src);
+      }
+    }
+
+    // Set video or show error
+    if (found) {
+      video.playbackRate = 1.0;
+      video.defaultPlaybackRate = 1.0;
+      video.src = src;
+      video.poster = poster;
+      function tryAutoplay() {
+        video.playbackRate = 1.0;
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {/* Autoplay might be blocked, ignore */});
+        }
+      }
+      video.load();
+      if (video.readyState >= 2) {
         tryAutoplay();
-      });
+      } else {
+        video.addEventListener('loadedmetadata', function onLoaded() {
+          video.removeEventListener('loadedmetadata', onLoaded);
+          tryAutoplay();
+        });
+      }
+    } else {
+      video.src = '';
+      video.poster = '';
+      video.load();
+      steps.innerHTML = '<li style="color:red">Video not found for this sign.</li>';
+      return;
     }
 
     const SAMPLE = [
