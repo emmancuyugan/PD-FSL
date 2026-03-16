@@ -513,7 +513,19 @@
         <canvas id="overlay"></canvas>
 
         <div class="fps-counter" id="fpsCounter">FPS: 0</div>
-        <div id="distanceHintBadge" style="position:absolute;top:8px;right:8px;background:rgba(255,107,157,0.9);color:#fff;padding:4px 10px;border-radius:8px;font-size:10px;font-weight:700;z-index:21;box-shadow:0 2px 6px rgba(0,0,0,0.3);">Too far or too close</div>
+        <div id="distanceHintBadge" style="position:absolute;top:10px;right:10px;background:rgba(255,255,255,0.92);border:1px solid rgba(255,255,255,0.5);border-radius:12px;padding:8px 10px;min-width:190px;z-index:21;box-shadow:0 4px 10px rgba(0,0,0,0.2);backdrop-filter:blur(3px);">
+          <div style="font-size:11px;font-weight:800;color:#666;letter-spacing:0.2px;">Distance Calibration</div>
+          <div style="font-size:11px;color:#666;margin-top:4px;">Guide Size:
+            <select id="guideSizeSelect" style="border:1px solid #ddd;border-radius:6px;padding:2px 6px;font-size:11px;font-weight:700;margin-left:6px;">
+              <option value="small">Small</option>
+              <option value="medium" selected>Medium</option>
+              <option value="large">Large</option>
+            </select>
+          </div>
+          <div style="font-size:12px;color:#444;font-weight:700;margin-top:3px;">Distance: <span id="distanceValueLabel">-- m</span></div>
+          <div id="distanceHintLabel" style="font-size:11px;color:#666;margin-top:2px;">Too far or too close</div>
+          <div style="font-size:11px;color:#666;margin-top:2px;">Baseline: <span id="distanceBaselineLabel">Default</span></div>
+        </div>
 
         <div class="result-overlay" id="gestureOverlay">—</div>
 
@@ -539,14 +551,6 @@
           <div class="setting-item">
             <input type="checkbox" id="toggleSpeed">
             <span>Fast Mode (3 Seconds)</span>
-          </div>
-          <div class="setting-item" style="margin-top: 4px;">
-            <span style="margin-right: 8px;">Guide Size:</span>
-            <select id="guideSizeSelect" style="border: 1px solid #ddd; border-radius: 6px; padding: 2px 6px; font-size: 12px; font-weight: 700;">
-              <option value="small">Small</option>
-              <option value="medium" selected>Medium</option>
-              <option value="large">Large</option>
-            </select>
           </div>
         </div>
 
@@ -620,6 +624,9 @@
   const ghostBadge=document.getElementById('ghostBadge');
   const personWarning=document.getElementById('personWarning');
   const distanceHintBadge=document.getElementById('distanceHintBadge');
+  const distanceValueLabel=document.getElementById('distanceValueLabel');
+  const distanceHintLabel=document.getElementById('distanceHintLabel');
+  const distanceBaselineLabel=document.getElementById('distanceBaselineLabel');
   const guideSizeSelect=document.getElementById('guideSizeSelect');
 
   const PREDICT_URL=location.origin+'/predict_auto';
@@ -768,10 +775,22 @@
     if(state === 'yellow') return 'Good distance, but preferably adjust a bit';
     return 'Too far or too close';
   }
-  function refreshDistanceHintUi(state){
-    distanceHintBadge.textContent = getDistanceGuideMessage(state);
-    distanceHintBadge.style.background = getDistanceGuideColor(state);
+  function formatDistance(distanceM){
+    if(!Number.isFinite(distanceM)) return '-- m';
+    return distanceM.toFixed(2) + ' m';
   }
+  function refreshDistanceBaselineUi(){
+    distanceBaselineLabel.textContent = FIXED_BASELINE_M.toFixed(2) + ' m';
+  }
+  function refreshDistanceValueUi(distanceM, state){
+    const color = state === 'green' ? 'var(--grass-green)' : (state === 'yellow' ? 'var(--orange)' : 'var(--coral)');
+    distanceValueLabel.textContent = formatDistance(distanceM);
+    distanceValueLabel.style.color = color;
+    distanceHintLabel.textContent = getDistanceGuideMessage(state);
+    distanceHintLabel.style.color = color;
+    distanceHintBadge.style.borderColor = state === 'green' ? 'rgba(6,214,160,0.45)' : (state === 'yellow' ? 'rgba(255,217,61,0.5)' : 'rgba(255,107,157,0.45)');
+  }
+  refreshDistanceBaselineUi();
   function drawDistanceGuide(state, anchors){
     const color = getDistanceGuideColor(state);
     const hasShoulders = anchorsValid(anchors);
@@ -1012,7 +1031,7 @@
     const distanceM = smoothDistanceEstimate(rawDistanceM);
     const distanceState = getDistanceGuideState(distanceM, pc);
     drawDistanceGuide(distanceState, anchors);
-    refreshDistanceHintUi(distanceState);
+    refreshDistanceValueUi(distanceM, distanceState);
     
     const RH=res.rightHandLandmarks,LH=res.leftHandLandmarks;
     handsPresent=!!(RH||LH);
