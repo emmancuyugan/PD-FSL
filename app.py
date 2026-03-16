@@ -17,7 +17,6 @@ import random
 import json
 import datetime
 import threading
-import re
 import cv2
 import mediapipe as mp
 
@@ -281,154 +280,6 @@ def prepare_sequence(data_json):
 
     return tensor
 
-
-KEYPOINTS_ROOT = resource_path("KEYPOINTS")
-_dy_fore_left_idx = [4 + 6 * i for i in range(6)]
-_dy_fore_right_idx = [40 + 6 * i for i in range(6)]
-_keypoints_folder_map = {}
-_sign_calibration_cache = {}
-
-
-def _canon_name(text: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "", str(text).lower())
-
-
-def _init_keypoints_folder_map():
-    _keypoints_folder_map.clear()
-    if not os.path.isdir(KEYPOINTS_ROOT):
-        return
-    for name in os.listdir(KEYPOINTS_ROOT):
-        folder = os.path.join(KEYPOINTS_ROOT, name)
-        if os.path.isdir(folder):
-            _keypoints_folder_map[_canon_name(name)] = folder
-
-
-def _resolve_sign_folder(expected_label: str):
-    if not expected_label:
-        return None
-    exact = os.path.join(KEYPOINTS_ROOT, expected_label)
-    if os.path.isdir(exact):
-        return exact
-    return _keypoints_folder_map.get(_canon_name(expected_label))
-
-
-def _extract_dy_fore_values(seq: np.ndarray) -> np.ndarray:
-    if seq.ndim != 2 or seq.shape[1] < 200:
-        return np.array([], dtype=np.float32)
-
-    derived = seq[:, 126:198]
-    flags = seq[:, 198:200]
-    values = []
-
-    for i in range(seq.shape[0]):
-        has_left = flags[i, 0] > 0.5
-        has_right = flags[i, 1] > 0.5
-
-        if has_left:
-            values.extend(derived[i, _dy_fore_left_idx].tolist())
-        if has_right:
-            values.extend(derived[i, _dy_fore_right_idx].tolist())
-
-    if not values:
-        return np.array([], dtype=np.float32)
-    return np.array(values, dtype=np.float32)
-
-
-def _load_sign_calibration(expected_label: str):
-    key = _canon_name(expected_label)
-    if key in _sign_calibration_cache:
-        return _sign_calibration_cache[key]
-
-    folder = _resolve_sign_folder(expected_label)
-    if not folder:
-        _sign_calibration_cache[key] = None
-        return None
-
-    npy_files = [
-        os.path.join(folder, f)
-        for f in os.listdir(folder)
-        if f.lower().endswith(".npy")
-    ]
-
-    all_values = []
-    for path in npy_files:
-        try:
-            arr = np.load(path)
-            vals = _extract_dy_fore_values(arr)
-            if vals.size:
-                all_values.append(vals)
-        except Exception:
-            continue
-
-    if not all_values:
-        _sign_calibration_cache[key] = None
-        return None
-
-    merged = np.concatenate(all_values)
-    q25, q50, q75 = np.percentile(merged, [25, 50, 75])
-    calibration = {
-        "label": expected_label,
-        "low": float(q25 - 0.03),
-        "high": float(q75 + 0.03),
-        "center": float(q50),
-        "samples": int(merged.size),
-    }
-    _sign_calibration_cache[key] = calibration
-    return calibration
-
-
-def _build_corrective_feedback(live_seq: np.ndarray, expected_label: str):
-    if live_seq.ndim != 2:
-        return None
-
-    calibration = _load_sign_calibration(expected_label)
-    if not calibration:
-        return None
-
-    live_vals = _extract_dy_fore_values(live_seq)
-    if live_vals.size < 6:
-        return {
-            "available": True,
-            "source": "npy",
-            "status": "insufficient_live_data",
-            "message": "Keep both hands visible for clearer height feedback.",
-        }
-
-    live_median = float(np.median(live_vals))
-    low = calibration["low"]
-    high = calibration["high"]
-
-    if live_median > high:
-        severity = live_median - calibration["center"]
-        msg = (
-            "Raise your hand much higher to forehead level."
-            if severity > 0.20
-            else "Raise your hand slightly to forehead level."
-        )
-        status = "too_low"
-    elif live_median < low:
-        severity = calibration["center"] - live_median
-        msg = (
-            "Lower your hand much closer to forehead level."
-            if severity > 0.20
-            else "Lower your hand slightly to forehead level."
-        )
-        status = "too_high"
-    else:
-        msg = "Great hand height — you are near forehead level."
-        status = "good"
-
-    return {
-        "available": True,
-        "source": "npy",
-        "status": status,
-        "message": msg,
-        "live_median": live_median,
-        "target_low": low,
-        "target_high": high,
-        "target_center": calibration["center"],
-    }
-
 def get_demo_video_path(label):
     parts = label.split("_")
     if len(parts) != 2:
@@ -448,9 +299,6 @@ def get_demo_video_path(label):
 
     chosen = random.choice(candidates)
     return f"static/video/{category}/{chosen}"
-
-
-_init_keypoints_folder_map()
 
 def run_inference(x):
     """Run inference via TensorRT (if available) or PyTorch."""
@@ -786,7 +634,6 @@ def api_ghost_landmarks():
 def predict():
     try:
         data = request.get_json(force=True)
-        expected_label = data.get("expected") if isinstance(data, dict) else None
         if "sequence" in data:
             x = prepare_sequence({"sequence": data["sequence"]})
         elif "features" in data:
@@ -799,10 +646,6 @@ def predict():
         np.save("tmp_live_seq.npy", live_seq)
         print(f"[DEBUG] Saved live sequence to tmp_live_seq.npy  shape={live_seq.shape}")
 
-        corrective_feedback = None
-        if expected_label:
-            corrective_feedback = _build_corrective_feedback(live_seq, expected_label)
-
         probs = run_inference(x)
         log_top3(probs, tag="PREDICT")
         pred_idx = int(np.argmax(probs))
@@ -814,14 +657,11 @@ def predict():
 
         if conf < NOT_FSL_THRESHOLD:
             print(f"[PREDICT] Unrecognized Sign (max_conf={conf:.4f})")
-            payload = {
+            return jsonify({
                 "prediction": "Unrecognized Sign",
                 "confidence": conf,
                 "message": "Unrecognized sign"
-            }
-            if corrective_feedback:
-                payload["corrective_feedback"] = corrective_feedback
-            return jsonify(payload)
+            })
 
         save_progress(label, conf)
 
@@ -831,8 +671,6 @@ def predict():
             "confidence": conf,
             "demo": demo_path or f"No demo found for {label}"
         }
-        if corrective_feedback:
-            response["corrective_feedback"] = corrective_feedback
         print(f"[PREDICT] {label} (conf={conf:.4f}) → {demo_path}")
         return jsonify(response)
 
@@ -861,8 +699,6 @@ def predict_auto():
         else:
             x = prepare_sequence({"features": data["features"]})
 
-        live_seq = x.squeeze(0).cpu().float().numpy()
-
         probs = run_inference(x)
         log_top3(probs, tag="AUTO")
 
@@ -875,15 +711,11 @@ def predict_auto():
 
         if conf < NOT_FSL_THRESHOLD:
             print(f"[AUTO] Unrecognized Sign (max_conf={conf:.4f})")
-            corrective_feedback = _build_corrective_feedback(live_seq, label)
-            payload = {
+            return jsonify({
                 "prediction": "Unrecognized Sign",
                 "confidence": conf,
                 "message": "Unrecognized sign"
-            }
-            if corrective_feedback:
-                payload["corrective_feedback"] = corrective_feedback
-            return jsonify(payload)
+            })
 
         if conf < THRESHOLD:
             sorted_indices = np.argsort(probs)[::-1]
@@ -893,32 +725,22 @@ def predict_auto():
 
             save_progress(closest_label, closest_conf)
 
-            corrective_feedback = _build_corrective_feedback(live_seq, closest_label)
-
-            payload = {
+            return jsonify({
                 "prediction": "Incorrect",
                 "closest_sign": closest_label,
                 "closest_confidence": round(closest_conf, 4),
                 "confidence": conf,
                 "message": f"Incorrect — closest sign is {closest_label.replace('_', ' ')}"
-            }
-            if corrective_feedback:
-                payload["corrective_feedback"] = corrective_feedback
-            return jsonify(payload)
+            })
 
         else:
             save_progress(label, conf)
 
-            corrective_feedback = _build_corrective_feedback(live_seq, label)
-
-            payload = {
+            return jsonify({
                 "prediction": label,
                 "confidence": conf,
                 "message": f"Correct — {label.replace('_', ' ')}"
-            }
-            if corrective_feedback:
-                payload["corrective_feedback"] = corrective_feedback
-            return jsonify(payload)
+            })
 
     except Exception as e:
         print(f"[ERROR] Auto Prediction failed: {e}")
