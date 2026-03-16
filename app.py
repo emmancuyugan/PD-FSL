@@ -553,46 +553,45 @@ def _build_corrective_feedback(live_seq: np.ndarray, expected_label: str):
 
     def _profile_for_sign(lbl: str):
         category, name = _label_key(lbl)
-        canon_name = _canon_name(name)
 
         if category == "numbers":
             return {
                 "metric": "dy_chin",
                 "band": (0.14, 0.44),
-                "target": "just below the right side of your chin",
+                "target": "just below your chin",
                 "side": "right",
                 "side_min": 0.20,
                 "metric_hand": "right",
             }
 
         if category == "colors":
-            if canon_name == "white":
+            if name == "white":
                 return {"metric": "dy_chin", "band": (0.45, 0.85), "target": "at chest level"}
-            if canon_name in {"red", "pink"}:
+            if name in {"red", "pink"}:
                 return {"metric": "dy_lip", "band": (-0.04, 0.06), "target": "at lip level"}
-            if canon_name in {"blue", "green", "yellow", "orange"}:
+            if name in {"blue", "green", "yellow", "orange"}:
                 return {"metric": "dy_chin", "band": (0.12, 0.45), "target": "below your chin"}
             return {"metric": "dy_fore", "band": (-0.12, 0.12), "target": "at forehead level"}
 
         if category == "family":
-            if canon_name in {"father", "grandfather", "grandpa", "lolo"}:
+            if name in {"father", "grandfather"}:
                 return {"metric": "dy_fore", "band": (-0.08, 0.08), "target": "at forehead level"}
-            if canon_name in {"mother", "grandmother", "grandma", "lola"}:
+            if name in {"mother", "grandmother"}:
                 return {"metric": "dy_chin", "band": (-0.10, 0.14), "target": "at chin level"}
-            if canon_name in {"daughter", "son"}:
+            if name in {"daughter", "son"}:
                 return {"no_comment": True}
 
         if category == "relationship":
             return {"no_comment": True}
 
         if category == "survival":
-            if canon_name == "correct":
+            if name == "correct":
                 return {"metric": "dy_chin", "band": (0.45, 0.85), "target": "at chest level"}
-            if canon_name in {"no", "yes"}:
+            if name in {"no", "yes"}:
                 return {"metric": "dy_chin", "band": (0.20, 0.62), "target": "below your chin"}
-            if canon_name == "understand":
+            if name == "understand":
                 return {"metric": "dy_lip", "band": (-0.02, 0.22), "target": "around cheek level"}
-            if canon_name == "wrong":
+            if name == "wrong":
                 return {"metric": "dy_chin", "band": (-0.08, 0.10), "target": "at chin level"}
 
         return {"metric": "dy_fore", "band": (-0.10, 0.15), "target": "at forehead level"}
@@ -656,7 +655,7 @@ def _build_corrective_feedback(live_seq: np.ndarray, expected_label: str):
         side_min = float(profile.get("side_min", 0.10))
         dx_signed_median = float(np.median(dx_signed_right))
         if dx_signed_median < side_min:
-            cues.append((4.2, "Keep your right hand on the right side of your face, just below your chin."))
+            cues.append((3.1, "Keep your right hand just below your chin on the right side of your face."))
 
     cues.sort(key=lambda item: item[0], reverse=True)
 
