@@ -283,25 +283,6 @@
     z-index: 17;
   }
 
-  .camera-cue-overlay {
-    position: absolute;
-    top: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.85);
-    color: var(--white);
-    padding: 6px 16px;
-    border-radius: 12px;
-    font-size: 14px;
-    font-weight: 800;
-    display: none;
-    z-index: 26;
-    text-align: center;
-    max-width: 90%;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(10px);
-    pointer-events: none;
-  }
 
   .prep-overlay {
     position: absolute;
@@ -789,7 +770,6 @@
         <!-- Main camera display (default view) -->
         <div class="camera-display" id="cameraDisplay">
           <span class="pip-label">Camera</span>
-          <div class="camera-cue-overlay" id="cameraCueOverlay"></div>
           <video id="mainCamera" autoplay playsinline muted></video>
           <canvas id="overlayCanvas"></canvas>
           <div class="fps-counter" id="fpsCounter">FPS: 0</div>
@@ -1004,7 +984,6 @@ window.addEventListener("load", () => {
   const canvasEl = document.getElementById("overlayCanvas");
   const skeletonCanvas = document.getElementById("skeletonCanvas");
   const feedbackVideo = document.getElementById("feedbackVideo");
-  const cameraCueOverlay = document.getElementById("cameraCueOverlay");
   const ctx = canvasEl.getContext("2d");
   const skeletonCtx = skeletonCanvas.getContext("2d");
   const fpsCounter = document.getElementById("fpsCounter");
@@ -1408,18 +1387,25 @@ window.addEventListener("load", () => {
   function getCorrectiveHint(j){
     const fb = j?.corrective_feedback;
     if (!fb || !fb.message) return '';
-    if (fb.status === 'too_low' || fb.status === 'too_high') return fb.message;
-    return '';
+    return fb.status === 'good' ? '' : adaptMirrorCue(fb.message);
+  }
+
+  function adaptMirrorCue(message) {
+    if (!message) return '';
+    return message
+      .replace(/\bLEFT\b/g, '__TMP_LEFT__')
+      .replace(/\bRIGHT\b/g, 'LEFT')
+      .replace(/__TMP_LEFT__/g, 'RIGHT')
+      .replace(/\bLeft\b/g, '__TmpLeft__')
+      .replace(/\bRight\b/g, 'Left')
+      .replace(/__TmpLeft__/g, 'Right')
+      .replace(/\bleft\b/g, '__tmp_left__')
+      .replace(/\bright\b/g, 'left')
+      .replace(/__tmp_left__/g, 'right');
   }
 
   function showCameraCue(message) {
-    if (!message) {
-      cameraCueOverlay.textContent = '';
-      cameraCueOverlay.style.display = 'none';
-      return;
-    }
-    cameraCueOverlay.textContent = message;
-    cameraCueOverlay.style.display = 'block';
+    return;
   }
 
   function setAssistCue(message) {
