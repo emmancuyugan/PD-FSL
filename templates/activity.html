@@ -614,15 +614,45 @@
     line-height: 1.4;
   }
 
-  .confetti {
-    position: fixed;
-    top: -12px;
-    width: 10px;
-    height: 16px;
-    opacity: 0.95;
-    z-index: 9999;
+  .celebration-layer {
+    position: absolute;
+    inset: 0;
     pointer-events: none;
-    border-radius: 2px;
+    overflow: hidden;
+    z-index: 40;
+  }
+
+  .celebration-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.7);
+    background: linear-gradient(135deg, rgba(6, 214, 160, 0.92), rgba(76, 201, 240, 0.92));
+    color: var(--white);
+    font-weight: 900;
+    font-size: 32px;
+    line-height: 1;
+    padding: 14px 24px;
+    border-radius: 16px;
+    opacity: 0;
+    box-shadow: 0 8px 24px rgba(6, 214, 160, 0.45);
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    white-space: nowrap;
+    will-change: transform, opacity;
+  }
+
+  .celebration-text.show {
+    transition: transform 240ms ease-out, opacity 240ms ease-out;
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+
+  .celebration-particle {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    opacity: 0;
     will-change: transform, opacity;
   }
 
@@ -844,7 +874,6 @@
 
 <script>
 window.addEventListener("load", () => {
-  const ENABLE_CONFETTI = true;
   const NUMBER_SIGNS = ["One","Two","Three","Four","Five"];
   const COLOR_SIGNS  = ["Black","Blue","Green","Orange","Pink","Red","White","Yellow"];
   const FAMILY_SIGNS = ["Daughter","Father","Grandfather","Grandmother","Mother","Son"];
@@ -859,29 +888,62 @@ window.addEventListener("load", () => {
 
 
 
-  function celebrate(){
-    if(!ENABLE_CONFETTI) return;
-    for(let i=0;i<30;i++){
-      setTimeout(()=>{
-        const confetti=document.createElement('div');
-        confetti.className='confetti';
-        confetti.style.left=Math.random()*100+'%';
-        confetti.style.background=['#FFD93D','#FF6B9D','#06D6A0','#4CC9F0','#A78BFA'][Math.floor(Math.random()*5)];
-        const drift = Math.round((Math.random() - 0.5) * 320);
-        const rotate = 540 + Math.round(Math.random() * 360);
-        const durationMs = 2200 + Math.round(Math.random() * 900);
-        const fallY = window.innerHeight + 80;
-        confetti.style.transition = 'none';
-        confetti.style.transform = 'translate3d(0,0,0) rotate(0deg)';
-        confetti.style.opacity = '1';
-        document.body.appendChild(confetti);
-        void confetti.offsetWidth;
-        confetti.style.transition = `transform ${durationMs}ms linear, opacity ${durationMs}ms linear`;
-        confetti.style.transform = `translate3d(${drift}px, ${fallY}px, 0) rotate(${rotate}deg)`;
-        confetti.style.opacity = '0';
-        setTimeout(()=>confetti.remove(), durationMs + 120);
-      },i*50);
+  let celebrationLayer = null;
+  let celebrationText = null;
+  let celebrationHideTimer = null;
+
+  function ensureCelebrationLayer() {
+    if (celebrationLayer && celebrationText) return;
+    const host = document.querySelector('.video-section') || document.body;
+    celebrationLayer = document.createElement('div');
+    celebrationLayer.className = 'celebration-layer';
+    celebrationText = document.createElement('div');
+    celebrationText.className = 'celebration-text';
+    celebrationText.textContent = '✓ Great Job!';
+    celebrationLayer.appendChild(celebrationText);
+    host.appendChild(celebrationLayer);
+  }
+
+  function launchCelebrationParticles() {
+    const colors = ['#FFD93D', '#FF6B9D', '#06D6A0', '#4CC9F0', '#A78BFA'];
+    const particleCount = 22;
+    for (let i = 0; i < particleCount; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'celebration-particle';
+      particle.style.background = colors[i % colors.length];
+      const cx = celebrationLayer.clientWidth / 2;
+      const cy = celebrationLayer.clientHeight / 2;
+      particle.style.left = `${cx}px`;
+      particle.style.top = `${cy}px`;
+      celebrationLayer.appendChild(particle);
+
+      const angle = (Math.PI * 2 * i) / particleCount;
+      const distance = 120 + Math.random() * 140;
+      const tx = Math.cos(angle) * distance;
+      const ty = Math.sin(angle) * distance;
+      const durationMs = 520 + Math.round(Math.random() * 260);
+
+      particle.style.transform = 'translate(-50%, -50%) scale(0.4)';
+      particle.style.opacity = '1';
+      void particle.offsetWidth;
+      particle.style.transition = `transform ${durationMs}ms ease-out, opacity ${durationMs}ms ease-out`;
+      particle.style.transform = `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(0.2)`;
+      particle.style.opacity = '0';
+
+      setTimeout(() => particle.remove(), durationMs + 80);
     }
+  }
+
+  function celebrate(){
+    ensureCelebrationLayer();
+    if (celebrationHideTimer) clearTimeout(celebrationHideTimer);
+    celebrationText.classList.remove('show');
+    void celebrationText.offsetWidth;
+    celebrationText.classList.add('show');
+    launchCelebrationParticles();
+    celebrationHideTimer = setTimeout(() => {
+      celebrationText.classList.remove('show');
+    }, 760);
   }
 
   // Initialize display to show camera by default
