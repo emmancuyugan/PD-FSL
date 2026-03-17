@@ -698,18 +698,7 @@
     z-index: 9999;
     pointer-events: none;
     border-radius: 2px;
-    animation: confetti-fall 2.8s linear forwards;
-  }
-
-  @keyframes confetti-fall {
-    0% {
-      transform: translate3d(0, 0, 0) rotate(0deg);
-      opacity: 1;
-    }
-    100% {
-      transform: translate3d(var(--drift, 0px), 110vh, 0) rotate(720deg);
-      opacity: 0;
-    }
+    will-change: transform, opacity;
   }
 
   @media (max-width: 1024px) {
@@ -976,10 +965,19 @@ window.addEventListener("load", () => {
         confetti.className='confetti';
         confetti.style.left=Math.random()*100+'%';
         confetti.style.background=['#FFD93D','#FF6B9D','#06D6A0','#4CC9F0','#A78BFA'][Math.floor(Math.random()*5)];
-        confetti.style.setProperty('--drift', `${Math.round((Math.random() - 0.5) * 280)}px`);
-        confetti.style.animationDelay=Math.random()*0.5+'s';
+        const drift = Math.round((Math.random() - 0.5) * 320);
+        const rotate = 540 + Math.round(Math.random() * 360);
+        const durationMs = 2200 + Math.round(Math.random() * 900);
+        const fallY = window.innerHeight + 80;
+        confetti.style.transform = 'translate3d(0,0,0) rotate(0deg)';
+        confetti.style.opacity = '1';
         document.body.appendChild(confetti);
-        setTimeout(()=>confetti.remove(),3000);
+        requestAnimationFrame(() => {
+          confetti.style.transition = `transform ${durationMs}ms linear, opacity ${durationMs}ms linear`;
+          confetti.style.transform = `translate3d(${drift}px, ${fallY}px, 0) rotate(${rotate}deg)`;
+          confetti.style.opacity = '0';
+        });
+        setTimeout(()=>confetti.remove(), durationMs + 120);
       },i*50);
     }
   }

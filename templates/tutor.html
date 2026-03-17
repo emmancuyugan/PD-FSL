@@ -97,8 +97,8 @@
   .page-container {
     position: relative;
     z-index: 1;
-    padding: 12px 20px;
-    max-width: 1400px;
+    padding: 8px 12px;
+    max-width: none;
     margin: 0 auto;
     height: calc(100vh - 64px);
     display: flex;
@@ -145,14 +145,14 @@
   }
 
   .video-panel {
-    flex: 2;
+    flex: 2.35;
     min-height: 0;
     min-width: 0;
     height: 100%;
   }
 
   .learn-sidebar {
-    flex: 0 0 420px;
+    flex: 0 0 360px;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -429,7 +429,7 @@
     -webkit-backface-visibility: hidden;
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
   }
 
   .steps-section {
@@ -438,6 +438,7 @@
     border-radius: 12px;
     border: 2px dashed #DDD;
     flex-shrink: 0;
+    display: none;
   }
 
   .steps-title {
@@ -526,7 +527,7 @@
         <div id="videoButtons" class="selection-buttons"></div>
 
         <div class="video-container">
-          <video id="mainVideo" controls playsinline preload="auto" muted onloadedmetadata="this.muted = true;" style="border-radius:20px;">
+          <video id="mainVideo" playsinline preload="auto" muted autoplay loop onloadedmetadata="this.muted = true;" style="border-radius:20px;">
             Your browser does not support the video tag.
           </video>
         </div>
@@ -770,6 +771,8 @@
     // Set video properties for smooth playback
     video.playbackRate = 1.0;
     video.defaultPlaybackRate = 1.0;
+    video.controls = false;
+    video.loop = true;
     
     video.src = src;
     video.poster = poster;
