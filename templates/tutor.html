@@ -106,36 +106,6 @@
     overflow: hidden;
   }
 
-  .header-section {
-    text-align: center;
-    margin-bottom: 14px;
-    animation: slideDown 0.6s ease-out;
-    flex-shrink: 0;
-  }
-
-  @keyframes slideDown {
-    from { transform: translateY(-50px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-  }
-
-  .page-title {
-    font-size: 28px;
-    font-weight: 900;
-    background: linear-gradient(135deg, var(--deep-blue), var(--lavender), var(--coral));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 6px;
-  }
-
-  .page-subtitle {
-    font-size: 15px;
-    color: #333;
-    max-width: 800px;
-    margin: 0 auto;
-    line-height: 1.4;
-  }
-
   .learn-main-content {
     display: flex;
     gap: 10px;
@@ -484,10 +454,6 @@
   }
 
   @media (max-width: 768px) {
-    .page-title {
-      font-size: 20px;
-    }
-
     .category-numbers .items-grid,
     .category-colors .items-grid,
     .category-family .items-grid,
@@ -507,14 +473,6 @@
 </div>
 
 <div class="page-container">
-  <!-- Header -->
-  <div class="header-section">
-    <h1 class="page-title">Learn Filipino Sign Language</h1>
-    <p class="page-subtitle">
-      Discover essential vocabulary through five core categories: Numbers, Colors, Family, Relationship, and Survival words.
-    </p>
-  </div>
-
   <div class="learn-main-content">
     <div id="videoView" class="video-panel">
       <div class="detail-card">

@@ -969,14 +969,14 @@ window.addEventListener("load", () => {
         const rotate = 540 + Math.round(Math.random() * 360);
         const durationMs = 2200 + Math.round(Math.random() * 900);
         const fallY = window.innerHeight + 80;
+        confetti.style.transition = 'none';
         confetti.style.transform = 'translate3d(0,0,0) rotate(0deg)';
         confetti.style.opacity = '1';
         document.body.appendChild(confetti);
-        requestAnimationFrame(() => {
-          confetti.style.transition = `transform ${durationMs}ms linear, opacity ${durationMs}ms linear`;
-          confetti.style.transform = `translate3d(${drift}px, ${fallY}px, 0) rotate(${rotate}deg)`;
-          confetti.style.opacity = '0';
-        });
+        void confetti.offsetWidth;
+        confetti.style.transition = `transform ${durationMs}ms linear, opacity ${durationMs}ms linear`;
+        confetti.style.transform = `translate3d(${drift}px, ${fallY}px, 0) rotate(${rotate}deg)`;
+        confetti.style.opacity = '0';
         setTimeout(()=>confetti.remove(), durationMs + 120);
       },i*50);
     }
