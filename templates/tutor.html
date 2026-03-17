@@ -134,24 +134,47 @@
     line-height: 1.4;
   }
 
+  .learn-main-content {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .video-panel {
+    flex: 2;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .learn-sidebar {
+    flex: 0 0 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 2px;
+  }
+
   /* 3 categories on top, 2 on bottom */
   .categories-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(200px, 1fr));
-    gap: 12px;
-    margin-bottom: 12px;
-    flex: 1;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 0;
   }
 
   .categories-grid-bottom {
     display: grid;
-    grid-template-columns: repeat(2, minmax(200px, 1fr));
-    gap: 12px;
-    margin-bottom: 14px;
-    max-width: 900px;
-    margin-left: auto;
-    margin-right: auto;
-    flex: 1;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 0;
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
   }
 
   .category-card {
@@ -166,6 +189,11 @@
     min-width: 200px;
     display: flex;
     flex-direction: column;
+  }
+
+  .category-card.active {
+    box-shadow: 0 0 0 3px rgba(6, 214, 160, 0.35), 0 2px 10px var(--shadow);
+    transform: translateY(-1px);
   }
 
   .category-card:nth-child(1) { animation-delay: 0.1s; }
@@ -312,6 +340,10 @@
     padding: 16px 20px;
     box-shadow: 0 2px 10px var(--shadow);
     animation: fadeIn 0.6s ease-out;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
   }
 
   @keyframes fadeIn {
@@ -351,6 +383,7 @@
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
     gap: 6px;
     margin-bottom: 10px;
+    flex-shrink: 0;
   }
 
 
@@ -380,6 +413,8 @@
     overflow: hidden;
     margin-bottom: 10px;
     box-shadow: 0 2px 8px var(--shadow);
+    flex: 1;
+    min-height: 0;
   }
 
   .video-container video {
@@ -388,6 +423,9 @@
     -webkit-transform: translateZ(0);
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 
   .steps-section {
@@ -395,6 +433,7 @@
     padding: 10px 14px;
     border-radius: 12px;
     border: 2px dashed #DDD;
+    flex-shrink: 0;
   }
 
   .steps-title {
@@ -417,35 +456,31 @@
   }
 
   @media (max-width: 1400px) {
-    .categories-grid {
-      grid-template-columns: repeat(3, minmax(180px, 1fr));
-    }
-    .categories-grid-bottom {
-      grid-template-columns: repeat(2, minmax(180px, 1fr));
+    .learn-sidebar {
+      flex-basis: 380px;
     }
   }
 
   @media (max-width: 1024px) {
-    .categories-grid {
-      grid-template-columns: repeat(2, 1fr);
+    .learn-main-content {
+      flex-direction: column;
+      overflow: auto;
     }
-    .categories-grid-bottom {
-      grid-template-columns: 1fr;
-      max-width: 600px;
+
+    .video-panel {
+      min-height: 60vh;
+    }
+
+    .learn-sidebar {
+      flex: none;
+      max-height: none;
+      overflow: visible;
     }
   }
 
   @media (max-width: 768px) {
     .page-title {
       font-size: 20px;
-    }
-
-    .categories-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .categories-grid-bottom {
-      grid-template-columns: 1fr;
     }
 
     .category-numbers .items-grid,
@@ -475,128 +510,123 @@
     </p>
   </div>
 
-  <!-- Top Row: 3 Categories -->
-  <div class="categories-grid">
-    <!-- Numbers -->
-    <div class="category-card category-numbers" onclick="showCategory('numbers')">
-      <div class="card-header">
-        <h2 class="card-title">Numbers</h2>
-        <span class="card-badge">5 Signs</span>
-      </div>
-      <p class="card-description">Learn numbers One to Five with step-by-step demos.</p>
-      <div class="items-grid">
-        <div class="item-badge">One</div>
-        <div class="item-badge">Two</div>
-        <div class="item-badge">Three</div>
-        <div class="item-badge">Four</div>
-        <div class="item-badge">Five</div>
-        <div class="item-badge" style="visibility: hidden;"></div>
-        <div class="item-badge" style="visibility: hidden;"></div>
-        <div class="item-badge" style="visibility: hidden;"></div>
+  <div class="learn-main-content">
+    <div id="videoView" class="video-panel">
+      <div class="detail-card">
+        <div class="detail-header">
+          <h2 id="videoTitle" class="detail-title">Category Videos</h2>
+        </div>
+
+        <p id="videoDescription" style="color:#666;margin-bottom:12px;"></p>
+
+        <div id="videoButtons" class="selection-buttons"></div>
+
+        <div class="video-container">
+          <video id="mainVideo" controls playsinline preload="auto" muted onloadedmetadata="this.muted = true;" style="border-radius:20px;">
+            Your browser does not support the video tag.
+          </video>
+        </div>
+
+        <div class="steps-section">
+          <h4 class="steps-title">Learning Steps</h4>
+          <ol id="videoSteps" class="steps-list"></ol>
+        </div>
       </div>
     </div>
 
-    <!-- Colors -->
-    <div class="category-card category-colors" onclick="showCategory('colors')">
-      <div class="card-header">
-        <h2 class="card-title">Colors</h2>
-        <span class="card-badge">8 Colors</span>
-      </div>
-      <p class="card-description">Master essential color signs with visual demonstrations.</p>
-      <div class="items-grid">
-        <div class="item-badge">Black</div>
-        <div class="item-badge">Blue</div>
-        <div class="item-badge">Green</div>
-        <div class="item-badge">Orange</div>
-        <div class="item-badge">Pink</div>
-        <div class="item-badge">Red</div>
-        <div class="item-badge">White</div>
-        <div class="item-badge">Yellow</div>
-      </div>
-    </div>
+    <div class="learn-sidebar">
+      <div class="categories-grid">
+        <div class="category-card category-numbers" data-category="numbers" onclick="showCategory('numbers')">
+          <div class="card-header">
+            <h2 class="card-title">Numbers</h2>
+            <span class="card-badge">5 Signs</span>
+          </div>
+          <p class="card-description">Learn numbers One to Five with step-by-step demos.</p>
+          <div class="items-grid">
+            <div class="item-badge">One</div>
+            <div class="item-badge">Two</div>
+            <div class="item-badge">Three</div>
+            <div class="item-badge">Four</div>
+            <div class="item-badge">Five</div>
+            <div class="item-badge" style="visibility: hidden;"></div>
+            <div class="item-badge" style="visibility: hidden;"></div>
+            <div class="item-badge" style="visibility: hidden;"></div>
+          </div>
+        </div>
 
-    <!-- Family -->
-    <div class="category-card category-family" onclick="showCategory('family')">
-      <div class="card-header">
-        <h2 class="card-title">Family</h2>
-        <span class="card-badge">6 Terms</span>
-      </div>
-      <p class="card-description">Learn common family terms used in daily life.</p>
-      <div class="items-grid">
-        <div class="item-badge">Daughter</div>
-        <div class="item-badge">Father</div>
-        <div class="item-badge">Grandfather</div>
-        <div class="item-badge">Grandmother</div>
-        <div class="item-badge">Mother</div>
-        <div class="item-badge">Son</div>
-        <div class="item-badge" style="visibility: hidden;"></div>
-        <div class="item-badge" style="visibility: hidden;"></div>
-      </div>
-    </div>
-  </div>
+        <div class="category-card category-colors" data-category="colors" onclick="showCategory('colors')">
+          <div class="card-header">
+            <h2 class="card-title">Colors</h2>
+            <span class="card-badge">8 Colors</span>
+          </div>
+          <p class="card-description">Master essential color signs with visual demonstrations.</p>
+          <div class="items-grid">
+            <div class="item-badge">Black</div>
+            <div class="item-badge">Blue</div>
+            <div class="item-badge">Green</div>
+            <div class="item-badge">Orange</div>
+            <div class="item-badge">Pink</div>
+            <div class="item-badge">Red</div>
+            <div class="item-badge">White</div>
+            <div class="item-badge">Yellow</div>
+          </div>
+        </div>
 
-  <!-- Bottom Row: 2 Categories (Centered) -->
-  <div class="categories-grid-bottom">
-    <!-- Relationship -->
-    <div class="category-card category-relationship" onclick="showCategory('relationship')">
-      <div class="card-header">
-        <h2 class="card-title">Relationship</h2>
-        <span class="card-badge">2 Signs</span>
-      </div>
-      <p class="card-description">Essential relationship terms for social interactions.</p>
-      <div class="items-grid">
-        <div class="item-badge">Boy</div>
-        <div class="item-badge">Girl</div>
-        <div class="item-badge" style="visibility: hidden;"></div>
-        <div class="item-badge" style="visibility: hidden;"></div>
-        <div class="item-badge" style="visibility: hidden;"></div>
-        <div class="item-badge" style="visibility: hidden;"></div>
-        <div class="item-badge" style="visibility: hidden;"></div>
-        <div class="item-badge" style="visibility: hidden;"></div>
-      </div>
-    </div>
-
-    <!-- Survival -->
-    <div class="category-card category-survival" onclick="showCategory('survival')">
-      <div class="card-header">
-        <h2 class="card-title">Survival</h2>
-        <span class="card-badge">5 Words</span>
-      </div>
-      <p class="card-description">Critical communication words for everyday situations.</p>
-      <div class="items-grid">
-        <div class="item-badge">Correct</div>
-        <div class="item-badge">No</div>
-        <div class="item-badge">Understand</div>
-        <div class="item-badge">Wrong</div>
-        <div class="item-badge">Yes</div>
-        <div class="item-badge" style="visibility: hidden;"></div>
-        <div class="item-badge" style="visibility: hidden;"></div>
-        <div class="item-badge" style="visibility: hidden;"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Video Selection View (Hidden by default) -->
-  <div id="videoView" style="display:none;">
-    <div class="detail-card">
-      <div class="detail-header">
-        <h2 id="videoTitle" class="detail-title">Category Videos</h2>
-        <button class="back-btn" onclick="hideVideoView()">← Back to Categories</button>
+        <div class="category-card category-family" data-category="family" onclick="showCategory('family')">
+          <div class="card-header">
+            <h2 class="card-title">Family</h2>
+            <span class="card-badge">6 Terms</span>
+          </div>
+          <p class="card-description">Learn common family terms used in daily life.</p>
+          <div class="items-grid">
+            <div class="item-badge">Daughter</div>
+            <div class="item-badge">Father</div>
+            <div class="item-badge">Grandfather</div>
+            <div class="item-badge">Grandmother</div>
+            <div class="item-badge">Mother</div>
+            <div class="item-badge">Son</div>
+            <div class="item-badge" style="visibility: hidden;"></div>
+            <div class="item-badge" style="visibility: hidden;"></div>
+          </div>
+        </div>
       </div>
 
-      <p id="videoDescription" style="color:#666;margin-bottom:24px;"></p>
+      <div class="categories-grid-bottom">
+        <div class="category-card category-relationship" data-category="relationship" onclick="showCategory('relationship')">
+          <div class="card-header">
+            <h2 class="card-title">Relationship</h2>
+            <span class="card-badge">2 Signs</span>
+          </div>
+          <p class="card-description">Essential relationship terms for social interactions.</p>
+          <div class="items-grid">
+            <div class="item-badge">Boy</div>
+            <div class="item-badge">Girl</div>
+            <div class="item-badge" style="visibility: hidden;"></div>
+            <div class="item-badge" style="visibility: hidden;"></div>
+            <div class="item-badge" style="visibility: hidden;"></div>
+            <div class="item-badge" style="visibility: hidden;"></div>
+            <div class="item-badge" style="visibility: hidden;"></div>
+            <div class="item-badge" style="visibility: hidden;"></div>
+          </div>
+        </div>
 
-      <div id="videoButtons" class="selection-buttons"></div>
-
-      <div class="video-container">
-        <video id="mainVideo" controls playsinline preload="auto" muted onloadedmetadata="this.muted = true;" style="width:100%;max-height:800px;border-radius:20px;">
-          Your browser does not support the video tag.
-        </video>
-      </div>
-
-      <div class="steps-section">
-        <h4 class="steps-title">Learning Steps</h4>
-        <ol id="videoSteps" class="steps-list"></ol>
+        <div class="category-card category-survival" data-category="survival" onclick="showCategory('survival')">
+          <div class="card-header">
+            <h2 class="card-title">Survival</h2>
+            <span class="card-badge">5 Words</span>
+          </div>
+          <p class="card-description">Critical communication words for everyday situations.</p>
+          <div class="items-grid">
+            <div class="item-badge">Correct</div>
+            <div class="item-badge">No</div>
+            <div class="item-badge">Understand</div>
+            <div class="item-badge">Wrong</div>
+            <div class="item-badge">Yes</div>
+            <div class="item-badge" style="visibility: hidden;"></div>
+            <div class="item-badge" style="visibility: hidden;"></div>
+            <div class="item-badge" style="visibility: hidden;"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -687,9 +717,11 @@
 
     currentCategoryKey = categoryKey;
 
-    document.querySelector('.categories-grid').style.display = 'none';
-    document.querySelector('.categories-grid-bottom').style.display = 'none';
-    document.getElementById('videoView').style.display = 'block';
+    document.querySelectorAll('.category-card').forEach(card => {
+      card.classList.remove('active');
+    });
+    const selectedCard = document.querySelector(`.category-card[data-category="${categoryKey}"]`);
+    if (selectedCard) selectedCard.classList.add('active');
 
     document.getElementById('videoTitle').textContent = cat.title;
     document.getElementById('videoTitle').style.background = `linear-gradient(135deg, ${cat.color}, var(--lavender))`;
@@ -701,7 +733,7 @@
     const buttonsContainer = document.getElementById('videoButtons');
     buttonsContainer.innerHTML = '';
 
-    cat.items.forEach((item, index) => {
+    cat.items.forEach((item) => {
       const btn = document.createElement('button');
       btn.className = 'select-btn';
       btn.textContent = formatLabel(titleCase(item));
@@ -762,12 +794,7 @@
     });
   }
 
-  function hideVideoView() {
-    document.querySelector('.categories-grid').style.display = 'grid';
-    document.querySelector('.categories-grid-bottom').style.display = 'grid';
-    document.getElementById('videoView').style.display = 'none';
-    document.getElementById('mainVideo').pause();
-  }
+  showCategory('numbers');
 </script>
 
 {% endblock %}

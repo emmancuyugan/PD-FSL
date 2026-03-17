@@ -690,7 +690,26 @@
   }
 
   .confetti {
-    display: none;
+    position: fixed;
+    top: -12px;
+    width: 10px;
+    height: 16px;
+    opacity: 0.95;
+    z-index: 9999;
+    pointer-events: none;
+    border-radius: 2px;
+    animation: confetti-fall 2.8s linear forwards;
+  }
+
+  @keyframes confetti-fall {
+    0% {
+      transform: translate3d(0, 0, 0) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translate3d(calc((var(--drift, 0) * 1px)), 110vh, 0) rotate(720deg);
+      opacity: 0;
+    }
   }
 
   @media (max-width: 1024px) {
@@ -908,7 +927,7 @@
 
 <script>
 window.addEventListener("load", () => {
-  const ENABLE_CONFETTI = false; // keep look, disable expensive confetti
+  const ENABLE_CONFETTI = true;
   const NUMBER_SIGNS = ["One","Two","Three","Four","Five"];
   const COLOR_SIGNS  = ["Black","Blue","Green","Orange","Pink","Red","White","Yellow"];
   const FAMILY_SIGNS = ["Daughter","Father","Grandfather","Grandmother","Mother","Son"];
@@ -957,6 +976,7 @@ window.addEventListener("load", () => {
         confetti.className='confetti';
         confetti.style.left=Math.random()*100+'%';
         confetti.style.background=['#FFD93D','#FF6B9D','#06D6A0','#4CC9F0','#A78BFA'][Math.floor(Math.random()*5)];
+        confetti.style.setProperty('--drift', String(Math.round((Math.random() - 0.5) * 280)));
         confetti.style.animationDelay=Math.random()*0.5+'s';
         document.body.appendChild(confetti);
         setTimeout(()=>confetti.remove(),3000);
