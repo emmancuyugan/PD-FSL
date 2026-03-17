@@ -707,7 +707,7 @@
       opacity: 1;
     }
     100% {
-      transform: translate3d(calc((var(--drift, 0) * 1px)), 110vh, 0) rotate(720deg);
+      transform: translate3d(var(--drift, 0px), 110vh, 0) rotate(720deg);
       opacity: 0;
     }
   }
@@ -976,7 +976,7 @@ window.addEventListener("load", () => {
         confetti.className='confetti';
         confetti.style.left=Math.random()*100+'%';
         confetti.style.background=['#FFD93D','#FF6B9D','#06D6A0','#4CC9F0','#A78BFA'][Math.floor(Math.random()*5)];
-        confetti.style.setProperty('--drift', String(Math.round((Math.random() - 0.5) * 280)));
+        confetti.style.setProperty('--drift', `${Math.round((Math.random() - 0.5) * 280)}px`);
         confetti.style.animationDelay=Math.random()*0.5+'s';
         document.body.appendChild(confetti);
         setTimeout(()=>confetti.remove(),3000);
