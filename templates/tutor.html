@@ -663,6 +663,24 @@
     return src.replace('/static/video/', '/static/posters/').replace(/\.mp4$/i, '.jpg');
   }
 
+  async function resolveLearnVideoSource(category, item) {
+    const prefixMap = { numbers: 'number' };
+    const prefix = prefixMap[category] || category;
+    const primarySrc = `/static/learn_videos/${prefix}_${item}.mp4`;
+    try {
+      const head = await fetch(primarySrc, { method: 'HEAD', cache: 'no-store' });
+      if (head.ok) return primarySrc;
+    } catch (_e) {}
+
+    const manifest = await loadManifest();
+    const manifestClips = manifest?.[category]?.[item];
+    if (Array.isArray(manifestClips) && manifestClips.length) {
+      return pickRandom(manifestClips);
+    }
+
+    return primarySrc;
+  }
+
   function showCategory(categoryKey) {
     const cat = CATEGORIES[categoryKey];
     if (!cat) return;
@@ -709,9 +727,7 @@
     // Pause current video before switching
     video.pause();
 
-    const prefixMap = { numbers: 'number' };
-    const prefix = prefixMap[category] || category;
-    const src = `/static/learn_videos/${prefix}_${item}.mp4`;
+    const src = await resolveLearnVideoSource(category, item);
 
     const poster = posterFromSrc(src);
 
@@ -730,6 +746,7 @@
       video.removeEventListener('loadedmetadata', onLoaded);
       // Ensure playback rate is set correctly after loading
       video.playbackRate = 1.0;
+      video.play().catch(() => {});
     });
 
     const SAMPLE = [

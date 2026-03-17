@@ -224,7 +224,7 @@
   .feedback-video {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
     background: #000;
     display: none;
   }
@@ -1249,6 +1249,32 @@ window.addEventListener("load", () => {
     return `/static/learn_videos/${prefix}_${key}.mp4`;
   }
 
+  function getLegacyFeedbackUrl(label) {
+    const category = inferCategory(label);
+    const key = normLabel(label);
+    return `/static/video/${category}/${key}_01.mp4`;
+  }
+
+  async function resolveFeedbackUrl(label) {
+    const preferred = feedbackSource === '3d' ? get3DFeedbackUrl(label) : getLearnFeedbackUrl(label);
+    if (await fileExists(preferred)) {
+      return { url: preferred, source: feedbackSource };
+    }
+
+    const alternateSource = feedbackSource === '3d' ? 'learn' : '3d';
+    const alternate = alternateSource === '3d' ? get3DFeedbackUrl(label) : getLearnFeedbackUrl(label);
+    if (await fileExists(alternate)) {
+      return { url: alternate, source: alternateSource };
+    }
+
+    const legacy = getLegacyFeedbackUrl(label);
+    if (await fileExists(legacy)) {
+      return { url: legacy, source: 'legacy' };
+    }
+
+    return { url: null, source: null };
+  }
+
   function packFeature(res){
     const pose=res.poseLandmarks||[], face=res.faceLandmarks||[];
     const anchors={};
@@ -1687,8 +1713,8 @@ window.addEventListener("load", () => {
     showSkeletonDisplay();
     document.getElementById("feedbackCloseBtn").style.display = 'flex';
 
-    const feedbackUrl = feedbackSource === '3d' ? get3DFeedbackUrl(targetGesture) : getLearnFeedbackUrl(targetGesture);
-    if (await fileExists(feedbackUrl)) {
+    const { url: feedbackUrl, source: resolvedSource } = await resolveFeedbackUrl(targetGesture);
+    if (feedbackUrl) {
       document.querySelector('.skeleton-label').textContent = 'Feedback Guide';
       skeletonCanvas.style.display = 'none';
       feedbackVideo.style.display = 'block';
@@ -1696,7 +1722,13 @@ window.addEventListener("load", () => {
       feedbackVideo.loop = true;
       feedbackVideo.src = feedbackUrl;
       feedbackVideo.currentTime = 0;
-      document.getElementById("assistHint").textContent = feedbackSource === '3d' ? 'Playing 3D feedback guide.' : 'Playing learn video guide.';
+      if (resolvedSource === '3d') {
+        document.getElementById("assistHint").textContent = 'Playing 3D feedback guide.';
+      } else if (resolvedSource === 'learn') {
+        document.getElementById("assistHint").textContent = 'Playing learn video guide.';
+      } else {
+        document.getElementById("assistHint").textContent = 'Playing fallback feedback guide.';
+      }
       try {
         await feedbackVideo.play();
       } catch (_e) {
