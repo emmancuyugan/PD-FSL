@@ -1289,6 +1289,14 @@ window.addEventListener("load", () => {
     return rules[sign] || null;
   }
 
+  function getPrimarySignKey(label){
+    if (!label) return '';
+    let raw = String(label).trim();
+    if (raw.includes('+')) raw = raw.split('+')[0].trim();
+    if (raw.includes('_')) raw = raw.split('_').pop().trim();
+    return normLabel(raw);
+  }
+
   function computeTargetLevelY(rule, face, pose){
     const foreheadY = lm(face, 10).y;
     const lipY = lm(face, 13).y;
@@ -1328,11 +1336,16 @@ window.addEventListener("load", () => {
   }
 
   function buildAltitudeFeedbackHint(targetLabel, lmData){
-    const sign = normLabel(targetLabel);
-    if (!sign || sign === 'son' || sign === 'daughter') return null;
+    const sign = getPrimarySignKey(targetLabel);
+    if (!sign) return 'Match your hand height with the demo guide.';
+    if (sign === 'son' || sign === 'daughter') {
+      return 'This sign is motion-based; mirror the full movement sequence shown in the guide.';
+    }
 
     const rule = getAltitudeRule(sign);
-    if (!rule) return null;
+    if (!rule) {
+      return 'Match your hand height with the demo guide at the start of the sign.';
+    }
 
     const face = lmData?.faceLandmarks || [];
     const pose = lmData?.poseLandmarks || [];
@@ -1601,7 +1614,7 @@ window.addEventListener("load", () => {
           const assistRow = document.getElementById("assistRow");
           const assistHint = document.getElementById("assistHint");
           assistRow.style.display = 'block';
-          pendingCorrectionOverlayText = buildAltitudeFeedbackHint(targetGesture, _displayLM) || 'Watch the guide and try again.';
+          pendingCorrectionOverlayText = buildAltitudeFeedbackHint(targetGesture, _displayLM);
           assistHint.textContent = '';
           clearFeedbackOverlayText();
           // Save incorrect result
@@ -1855,7 +1868,7 @@ window.addEventListener("load", () => {
     ghostEnabled=true; ghostFrames=null; ghostReady=false; ghostIdx=0;
     showSkeletonDisplay();
     document.getElementById("feedbackCloseBtn").style.display = 'flex';
-    const overlayHint = pendingCorrectionOverlayText || buildAltitudeFeedbackHint(targetGesture, _displayLM) || 'Match your hand height with the guide.';
+    const overlayHint = pendingCorrectionOverlayText || buildAltitudeFeedbackHint(targetGesture, _displayLM);
     setFeedbackOverlayText(overlayHint);
 
     const { url: feedbackUrl, source: resolvedSource } = await resolveFeedbackUrl(targetGesture);
