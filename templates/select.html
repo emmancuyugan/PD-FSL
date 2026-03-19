@@ -1176,6 +1176,8 @@ window.addEventListener("load", () => {
   let CAPTURE_MS = BASE_CAPTURE_MS;
   let buf=[], running=false, frameSkip=1, frameCounter=0, autoJudge=false, captureStartMs=0;
   let lastPersonCount=1; // Track latest person count for prediction gating
+  const ALTITUDE_SAMPLE_MAX = 30;
+  let recentAltitudeSamples = [];
 
   function updateGestureDisplay(gesture) {
     targetLabel.textContent = gesture ? gesture : 'None';
@@ -1415,6 +1417,72 @@ window.addEventListener("load", () => {
     return points.reduce((sum, p) => sum + p.y, 0) / points.length;
   }
 
+  function getTargetZoneText(rule){
+    if (!rule) return 'the target height zone';
+    if (rule.level === 'below_chin') return 'just below chin level';
+    if (rule.level === 'chest') return 'upper chest level';
+    if (rule.level === 'lips') return 'lip level';
+    if (rule.level === 'forehead') return 'forehead level';
+    if (rule.level === 'cheek') return 'cheek level';
+    if (rule.level === 'chin') return 'chin level';
+    return rule.phrase || 'the target height zone';
+  }
+
+  function median(nums){
+    if (!Array.isArray(nums) || !nums.length) return NaN;
+    const sorted = [...nums].sort((a,b)=>a-b);
+    const mid = Math.floor(sorted.length/2);
+    return sorted.length % 2 ? sorted[mid] : (sorted[mid-1] + sorted[mid]) / 2;
+  }
+
+  function pickSigningHandLandmarks(face, rightHand, leftHand){
+    const hasRight = Array.isArray(rightHand) && rightHand.length >= 21;
+    const hasLeft = Array.isArray(leftHand) && leftHand.length >= 21;
+    if (hasRight && !hasLeft) return rightHand;
+    if (hasLeft && !hasRight) return leftHand;
+    if (!hasRight && !hasLeft) return null;
+
+    const noseX = lm(face, 1).x;
+    const rightWristX = lm(rightHand, 0).x;
+    const leftWristX = lm(leftHand, 0).x;
+    if (!Number.isFinite(noseX) || !Number.isFinite(rightWristX) || !Number.isFinite(leftWristX)) {
+      return rightHand;
+    }
+    return Math.abs(rightWristX - noseX) <= Math.abs(leftWristX - noseX) ? rightHand : leftHand;
+  }
+
+  function collectAltitudeSample(targetLabel, lmData){
+    const sign = getPrimarySignKey(targetLabel);
+    const rule = getAltitudeRule(sign);
+    if (!rule || sign === 'son' || sign === 'daughter') return;
+
+    const face = lmData?.faceLandmarks || [];
+    const pose = lmData?.poseLandmarks || [];
+    const rightHand = lmData?.rightHandLandmarks;
+    const leftHand = lmData?.leftHandLandmarks;
+    if (!face.length) return;
+
+    const hand = pickSigningHandLandmarks(face, rightHand, leftHand);
+    if (!hand) return;
+
+    const targetY = computeTargetLevelY(rule, face, pose);
+    const handY = getSigningHandY(hand);
+    const foreheadY = lm(face, 10).y;
+    const chinY = lm(face, 152).y;
+    const faceSpan = Math.max(0.04, Math.abs(chinY - foreheadY));
+    if (!Number.isFinite(targetY) || !Number.isFinite(handY) || !Number.isFinite(faceSpan)) return;
+
+    recentAltitudeSamples.push({
+      delta: handY - targetY,
+      faceSpan,
+      level: rule.level,
+      zoneText: getTargetZoneText(rule)
+    });
+    if (recentAltitudeSamples.length > ALTITUDE_SAMPLE_MAX) {
+      recentAltitudeSamples.shift();
+    }
+  }
+
   function buildAltitudeFeedbackHint(targetLabel, lmData){
     const sign = getPrimarySignKey(targetLabel);
     if (!sign) return 'Match your hand height with the demo guide.';
@@ -1427,34 +1495,50 @@ window.addEventListener("load", () => {
       return 'Match your hand height with the demo guide at the start of the sign.';
     }
 
+    const sampleSet = recentAltitudeSamples.filter(s => s && s.level === rule.level);
+    if (sampleSet.length >= 4) {
+      const delta = median(sampleSet.map(s => s.delta));
+      const faceSpan = Math.max(0.04, median(sampleSet.map(s => s.faceSpan)));
+      const tolerance = Math.max(0.018, faceSpan * (rule.level === 'chin' ? 0.12 : 0.15));
+      const zoneText = sampleSet[sampleSet.length - 1].zoneText || getTargetZoneText(rule);
+      if (delta < -tolerance) {
+        return `Lower your signing hand to ${zoneText}. Your hand is currently too high.`;
+      }
+      if (delta > tolerance) {
+        return `Raise your signing hand to ${zoneText}. Your hand is currently too low.`;
+      }
+      return `Keep your signing hand at ${zoneText}. Height is close; refine handshape and motion.`;
+    }
+
     const face = lmData?.faceLandmarks || [];
     const pose = lmData?.poseLandmarks || [];
     const rightHand = lmData?.rightHandLandmarks;
     const leftHand = lmData?.leftHandLandmarks;
-    const hand = (Array.isArray(rightHand) && rightHand.length) ? rightHand : leftHand;
+    const hand = pickSigningHandLandmarks(face, rightHand, leftHand);
+    const zoneText = getTargetZoneText(rule);
 
     if (!face.length || !hand || !hand.length) {
-      return `Position your signing hand ${rule.phrase}.`;
+      return `Position your signing hand at ${zoneText}.`;
     }
 
     const targetY = computeTargetLevelY(rule, face, pose);
     const handY = getSigningHandY(hand);
     if (!Number.isFinite(targetY) || !Number.isFinite(handY)) {
-      return `Position your signing hand ${rule.phrase}.`;
+      return `Position your signing hand at ${zoneText}.`;
     }
 
     const foreheadY = lm(face, 10).y;
     const chinY = lm(face, 152).y;
     const faceSpan = Math.max(0.04, Math.abs(chinY - foreheadY));
-    const tolerance = Math.max(0.02, faceSpan * (rule.level === 'chin' ? 0.14 : 0.18));
+    const tolerance = Math.max(0.018, faceSpan * (rule.level === 'chin' ? 0.12 : 0.15));
 
     if (handY < targetY - tolerance) {
-      return `Lower your hand — it should be ${rule.phrase}.`;
+      return `Lower your signing hand to ${zoneText}. Your hand is currently too high.`;
     }
     if (handY > targetY + tolerance) {
-      return `Raise your hand — it should be ${rule.phrase}.`;
+      return `Raise your signing hand to ${zoneText}. Your hand is currently too low.`;
     }
-    return `Hand height looks close. Keep your hand ${rule.phrase} and focus on handshape and motion.`;
+    return `Keep your signing hand at ${zoneText}. Height is close; refine handshape and motion.`;
   }
 
   async function fileExists(url) {
@@ -1683,6 +1767,7 @@ window.addEventListener("load", () => {
           resultText.className = 'result-text correct';
           correctCountEl.textContent = String(correctCount);
           pendingCorrectionOverlayText = '';
+          recentAltitudeSamples = [];
           clearFeedbackOverlayText();
           document.getElementById("assistRow").style.display = 'none';
           celebrate();
@@ -2229,6 +2314,7 @@ window.addEventListener("load", () => {
     ctx.restore();
 
     if (running && state === STATE_CAPTURE) {
+      collectAltitudeSample(targetGesture, _displayLM);
       frameCounter++;
       if (frameCounter % frameSkip === 0) {
         const feat = packFeature(_displayLM);
@@ -2318,6 +2404,7 @@ window.addEventListener("load", () => {
     preloadGhost(targetGesture);
 
     buf = [];
+    recentAltitudeSamples = [];
     smoothedDistanceM = null;
     frameCounter = 0;
     autoJudge = false;
@@ -2354,6 +2441,7 @@ window.addEventListener("load", () => {
     correctCountEl.textContent='0'; incorrectCountEl.textContent='0';
     targetGesture=null; updateGestureDisplay(null); resultText.textContent='—';
     pendingCorrectionOverlayText = '';
+    recentAltitudeSamples = [];
     clearFeedbackOverlayText();
     document.getElementById("assistRow").style.display='none';
     document.getElementById("assistHint").textContent='';
