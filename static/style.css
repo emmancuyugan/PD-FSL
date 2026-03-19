@@ -98,8 +98,8 @@ body,
 }
 
 *::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 4px;
+  height: 4px;
 }
 
 *::-webkit-scrollbar-track {
@@ -107,16 +107,16 @@ body,
 }
 
 *::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(67, 97, 238, 0.75), rgba(167, 139, 250, 0.75));
+  background: linear-gradient(180deg, rgba(67, 97, 238, 0.58), rgba(167, 139, 250, 0.58));
   border-radius: 9999px;
-  border: 2px solid transparent;
+  border: 1px solid transparent;
   background-clip: content-box;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(67, 97, 238, 0.9), rgba(167, 139, 250, 0.9));
+  background: linear-gradient(180deg, rgba(67, 97, 238, 0.75), rgba(167, 139, 250, 0.75));
   border-radius: 9999px;
-  border: 2px solid transparent;
+  border: 1px solid transparent;
   background-clip: content-box;
 }
 
