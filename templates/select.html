@@ -1486,13 +1486,16 @@ window.addEventListener("load", () => {
   function buildAltitudeFeedbackHint(targetLabel, lmData){
     const sign = getPrimarySignKey(targetLabel);
     if (!sign) return 'Match your hand height with the demo guide.';
+    if (["one","two","three","four","five"].includes(sign)) {
+      return 'For number signs, focus on finger shape and palm orientation. Hand height is not graded here.';
+    }
     if (sign === 'son' || sign === 'daughter') {
       return 'This sign is motion-based; mirror the full movement sequence shown in the guide.';
     }
 
     const rule = getAltitudeRule(sign);
     if (!rule) {
-      return 'Match your hand height with the demo guide at the start of the sign.';
+      return 'Focus on handshape and movement timing for this sign. Vertical hand height is not graded here.';
     }
 
     const sampleSet = recentAltitudeSamples.filter(s => s && s.level === rule.level);
