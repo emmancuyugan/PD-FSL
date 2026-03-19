@@ -1224,6 +1224,107 @@ window.addEventListener("load", () => {
     return "colors";
   }
 
+  function getAltitudeRule(signLabel){
+    const sign = normLabel(signLabel);
+    const rules = {
+      black: { level: 'forehead', phrase: 'at forehead level' },
+      blue: { level: 'below_chin', phrase: 'slightly below chin level' },
+      green: { level: 'below_chin', phrase: 'slightly below chin level' },
+      yellow: { level: 'below_chin', phrase: 'slightly below chin level' },
+      orange: { level: 'below_chin', phrase: 'slightly below chin level' },
+      white: { level: 'chest', phrase: 'at upper-chest level' },
+      red: { level: 'lips', phrase: 'at lip level' },
+      pink: { level: 'lips', phrase: 'at lip level' },
+      father: { level: 'forehead', phrase: 'at forehead level' },
+      grandfather: { level: 'forehead', phrase: 'at forehead level' },
+      mother: { level: 'chin', phrase: 'at chin level' },
+      grandmother: { level: 'chin', phrase: 'at chin level' },
+      boy: { level: 'forehead', phrase: 'at forehead level at the start of the sign' },
+      girl: { level: 'below_chin', phrase: 'slightly below chin level' },
+      correct: { level: 'chest', phrase: 'at upper-chest level' },
+      no: { level: 'below_chin', phrase: 'slightly below chin level' },
+      understand: { level: 'cheek', phrase: 'at cheek level' },
+      wrong: { level: 'chin', phrase: 'at chin level' },
+      yes: { level: 'below_chin', phrase: 'slightly below chin level' }
+    };
+    return rules[sign] || null;
+  }
+
+  function computeTargetLevelY(rule, face, pose){
+    const foreheadY = lm(face, 10).y;
+    const lipY = lm(face, 13).y;
+    const chinY = lm(face, 152).y;
+    const browRightY = lm(face, 65).y;
+    const browLeftY = lm(face, 295).y;
+    const browY = Number.isFinite(browRightY) && Number.isFinite(browLeftY)
+      ? (browRightY + browLeftY) * 0.5
+      : foreheadY;
+    const shoulderLeftY = lm(pose, 11).y;
+    const shoulderRightY = lm(pose, 12).y;
+    const shoulderY = Number.isFinite(shoulderLeftY) && Number.isFinite(shoulderRightY)
+      ? (shoulderLeftY + shoulderRightY) * 0.5
+      : NaN;
+
+    const faceSpan = Math.max(0.04, Math.abs(chinY - foreheadY));
+
+    if (rule.level === 'forehead') return foreheadY;
+    if (rule.level === 'lips') return lipY;
+    if (rule.level === 'chin') return chinY;
+    if (rule.level === 'below_chin') return chinY + faceSpan * 0.22;
+    if (rule.level === 'cheek') return browY + (lipY - browY) * 0.55;
+    if (rule.level === 'chest') {
+      if (Number.isFinite(shoulderY)) return shoulderY + faceSpan * 0.12;
+      return chinY + faceSpan * 0.9;
+    }
+    return NaN;
+  }
+
+  function getSigningHandY(landmarks){
+    if (!Array.isArray(landmarks) || landmarks.length < 21) return NaN;
+    const points = [0, 5, 9, 13, 17]
+      .map(i => landmarks[i])
+      .filter(p => p && Number.isFinite(p.y));
+    if (!points.length) return NaN;
+    return points.reduce((sum, p) => sum + p.y, 0) / points.length;
+  }
+
+  function buildAltitudeFeedbackHint(targetLabel, lmData){
+    const sign = normLabel(targetLabel);
+    if (!sign || sign === 'son' || sign === 'daughter') return null;
+
+    const rule = getAltitudeRule(sign);
+    if (!rule) return null;
+
+    const face = lmData?.faceLandmarks || [];
+    const pose = lmData?.poseLandmarks || [];
+    const rightHand = lmData?.rightHandLandmarks;
+    const leftHand = lmData?.leftHandLandmarks;
+    const hand = (Array.isArray(rightHand) && rightHand.length) ? rightHand : leftHand;
+
+    if (!face.length || !hand || !hand.length) {
+      return `Position your signing hand ${rule.phrase}.`;
+    }
+
+    const targetY = computeTargetLevelY(rule, face, pose);
+    const handY = getSigningHandY(hand);
+    if (!Number.isFinite(targetY) || !Number.isFinite(handY)) {
+      return `Position your signing hand ${rule.phrase}.`;
+    }
+
+    const foreheadY = lm(face, 10).y;
+    const chinY = lm(face, 152).y;
+    const faceSpan = Math.max(0.04, Math.abs(chinY - foreheadY));
+    const tolerance = Math.max(0.02, faceSpan * (rule.level === 'chin' ? 0.14 : 0.18));
+
+    if (handY < targetY - tolerance) {
+      return `Lower your hand — it should be ${rule.phrase}.`;
+    }
+    if (handY > targetY + tolerance) {
+      return `Raise your hand — it should be ${rule.phrase}.`;
+    }
+    return `Hand height looks close. Keep your hand ${rule.phrase} and focus on handshape and motion.`;
+  }
+
   async function fileExists(url) {
     try {
       const res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
@@ -1459,7 +1560,7 @@ window.addEventListener("load", () => {
           const assistRow = document.getElementById("assistRow");
           const assistHint = document.getElementById("assistHint");
           assistRow.style.display = 'block';
-          assistHint.textContent = 'Watch the overlay, then try again.';
+          assistHint.textContent = buildAltitudeFeedbackHint(targetGesture, _displayLM) || 'Watch the overlay, then try again.';
           // Save incorrect result
           await saveResult("Incorrect", j?.confidence || null);
         }
