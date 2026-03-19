@@ -1100,8 +1100,6 @@ window.addEventListener("load", () => {
   let lastPersonCount=1; // Track latest person count for prediction gating
   const ALTITUDE_SAMPLE_MAX = 30;
   let recentAltitudeSamples = [];
-  const ALTITUDE_SAMPLE_MAX = 30;
-  let recentAltitudeSamples = [];
 
   function updateGestureDisplay(gesture) {
     targetLabel.textContent = gesture ? gesture : 'None';
@@ -1270,6 +1268,11 @@ window.addEventListener("load", () => {
   function getAltitudeRule(signLabel){
     const sign = normLabel(signLabel);
     const rules = {
+      one: { level: 'chin', phrase: 'at chin level' },
+      two: { level: 'chin', phrase: 'at chin level' },
+      three: { level: 'chin', phrase: 'at chin level' },
+      four: { level: 'below_chin', phrase: 'slightly below chin level' },
+      five: { level: 'below_chin', phrase: 'slightly below chin level' },
       black: { level: 'forehead', phrase: 'at forehead level' },
       blue: { level: 'below_chin', phrase: 'slightly below chin level' },
       green: { level: 'below_chin', phrase: 'slightly below chin level' },
@@ -1409,9 +1412,6 @@ window.addEventListener("load", () => {
   function buildAltitudeFeedbackHint(targetLabel, lmData){
     const sign = getPrimarySignKey(targetLabel);
     if (!sign) return 'Match your hand height with the demo guide.';
-    if (["one","two","three","four","five"].includes(sign)) {
-      return 'For number signs, focus on finger shape and palm orientation. Hand height is not graded here.';
-    }
     if (sign === 'son' || sign === 'daughter') {
       return 'This sign is motion-based; mirror the full movement sequence shown in the guide.';
     }
@@ -2325,8 +2325,10 @@ window.addEventListener("load", () => {
 
   startBtn.onclick = async () => {
     dismissFeedback();
-    await camera.start();
-    document.body.classList.add('camera-running'); await stopPreviewIfAny(); originalStart(); };
+    document.body.classList.add('camera-running');
+    await stopPreviewIfAny();
+    originalStart();
+  };
 
   const originalReset = () => {
     correctCount=0; incorrectCount=0;
