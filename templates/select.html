@@ -1451,6 +1451,86 @@ window.addEventListener("load", () => {
     return Math.abs(rightWristX - noseX) <= Math.abs(leftWristX - noseX) ? rightHand : leftHand;
   }
 
+  function isFingerExtended(hand, tipIdx, pipIdx, mcpIdx){
+    const tip = lm(hand, tipIdx);
+    const pip = lm(hand, pipIdx);
+    const mcp = lm(hand, mcpIdx);
+    if (!Number.isFinite(tip.y) || !Number.isFinite(pip.y) || !Number.isFinite(mcp.y)) return false;
+    return tip.y < pip.y && pip.y < mcp.y;
+  }
+
+  function isThumbExtended(hand){
+    const tip = lm(hand, 4);
+    const mcp = lm(hand, 2);
+    const wrist = lm(hand, 0);
+    const indexMcp = lm(hand, 5);
+    const pinkyMcp = lm(hand, 17);
+    if (!Number.isFinite(tip.x) || !Number.isFinite(mcp.x) || !Number.isFinite(wrist.y) || !Number.isFinite(indexMcp.x) || !Number.isFinite(pinkyMcp.x)) {
+      return false;
+    }
+    const thumbReach = Math.abs(tip.x - mcp.x);
+    const palmWidth = Math.max(0.02, Math.abs(indexMcp.x - pinkyMcp.x));
+    return thumbReach > palmWidth * 0.45 && Math.abs(tip.y - wrist.y) < 0.35;
+  }
+
+  function getFingerStates(hand){
+    return {
+      thumb: isThumbExtended(hand),
+      index: isFingerExtended(hand, 8, 6, 5),
+      middle: isFingerExtended(hand, 12, 10, 9),
+      ring: isFingerExtended(hand, 16, 14, 13),
+      pinky: isFingerExtended(hand, 20, 18, 17)
+    };
+  }
+
+  function countRaisedFingers(states){
+    return ['thumb','index','middle','ring','pinky'].reduce((sum, key) => sum + (states[key] ? 1 : 0), 0);
+  }
+
+  function buildNumberFeedbackHint(sign, lmData){
+    const face = lmData?.faceLandmarks || [];
+    const hand = pickSigningHandLandmarks(face, lmData?.rightHandLandmarks, lmData?.leftHandLandmarks);
+    if (!hand || hand.length < 21) {
+      return `Show the handshape for ${sign}: hold the correct fingers clearly open and separate.`;
+    }
+
+    const states = getFingerStates(hand);
+    const raised = countRaisedFingers(states);
+
+    if (sign === 'one') {
+      if (!states.index) return 'For One, raise only your index finger.';
+      if (states.middle || states.ring || states.pinky) return 'For One, keep only index up and fold middle, ring, and pinky.';
+      return 'For One, keep index straight and all other fingers closed.';
+    }
+
+    if (sign === 'two') {
+      if (!states.index || !states.middle) return 'For Two, raise your index and middle fingers together.';
+      if (states.ring || states.pinky) return 'For Two, lower ring and pinky; keep only index and middle up.';
+      return 'For Two, keep index and middle up with ring and pinky folded.';
+    }
+
+    if (sign === 'three') {
+      if (!states.index || !states.middle || !states.ring) return 'For Three, raise index, middle, and ring fingers.';
+      if (states.pinky) return 'For Three, lower pinky and keep only index, middle, and ring up.';
+      return 'For Three, keep index, middle, and ring up with pinky folded.';
+    }
+
+    if (sign === 'four') {
+      if (!states.index || !states.middle || !states.ring || !states.pinky) {
+        return 'For Four, raise index, middle, ring, and pinky fingers.';
+      }
+      if (states.thumb) return 'For Four, tuck your thumb and keep the other four fingers up.';
+      return 'For Four, keep four fingers up and thumb tucked in.';
+    }
+
+    if (sign === 'five') {
+      if (raised < 5) return 'For Five, open all five fingers wide, including the thumb.';
+      return 'For Five, keep all fingers open and spread naturally.';
+    }
+
+    return `Adjust your finger pattern for ${sign}.`;
+  }
+
   function collectAltitudeSample(targetLabel, lmData){
     const sign = getPrimarySignKey(targetLabel);
     const rule = getAltitudeRule(sign);
@@ -1487,7 +1567,7 @@ window.addEventListener("load", () => {
     const sign = getPrimarySignKey(targetLabel);
     if (!sign) return 'Match your hand height with the demo guide.';
     if (["one","two","three","four","five"].includes(sign)) {
-      return 'For number signs, focus on finger shape and palm orientation. Hand height is not graded here.';
+      return buildNumberFeedbackHint(sign, lmData);
     }
     if (sign === 'son' || sign === 'daughter') {
       return 'This sign is motion-based; mirror the full movement sequence shown in the guide.';
