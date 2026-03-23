@@ -1348,9 +1348,9 @@ window.addEventListener("load", () => {
   function getAltitudeRule(signLabel){
     const sign = normLabel(signLabel);
     const rules = {
-      one: { level: 'chin', phrase: 'at chin level' },
-      two: { level: 'chin', phrase: 'at chin level' },
-      three: { level: 'chin', phrase: 'at chin level' },
+      one: { level: 'below_chin', phrase: 'slightly below chin level' },
+      two: { level: 'below_chin', phrase: 'slightly below chin level' },
+      three: { level: 'below_chin', phrase: 'slightly below chin level' },
       four: { level: 'below_chin', phrase: 'slightly below chin level' },
       five: { level: 'below_chin', phrase: 'slightly below chin level' },
       black: { level: 'forehead', phrase: 'at forehead level' },
@@ -1512,7 +1512,7 @@ window.addEventListener("load", () => {
       if (delta > tolerance) {
         return `Raise your signing hand to ${zoneText}. Your hand is currently too low.`;
       }
-      return `Keep your signing hand at ${zoneText}. Height is close; refine handshape and motion.`;
+      return `Keep your signing hand at ${zoneText}. Height is close, refine handshape and motion.`;
     }
 
     const face = lmData?.faceLandmarks || [];
