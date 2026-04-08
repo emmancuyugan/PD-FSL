@@ -1300,10 +1300,7 @@ async function _doPredict(isRealtime=false){
             detStatus.textContent = 'Try again!';
 
             if(j.closest_sign){
-              const normalizedClosest = normLabel(j.closest_sign);
-              if(normalizedClosest !== activeGhostLabel){
-                queueGhostFeedback(j.closest_sign);
-              }
+              queueGhostFeedback(j.closest_sign);
             }
 
         }else{
@@ -1322,7 +1319,10 @@ async function _doPredict(isRealtime=false){
               detLabel.textContent = cleanLabel(j.prediction)||'—';
               detStatus.textContent = 'Correct! Keep going!';
               celebrate();
-              stopGhostPlayback();
+              // Do not interrupt an active ghost cycle; clear only pending queue.
+              if(!ghostEnabled){
+                stopGhostPlayback();
+              }
               pendingGhostLabel='';
               ghostBadge.style.display='none';
               // Preload ghost in background for this sign (in case user tries again)
