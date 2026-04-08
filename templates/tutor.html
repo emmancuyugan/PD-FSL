@@ -271,48 +271,48 @@
     grid-template-rows: repeat(4, 1fr);
   }
   .category-colors .item-badge {
-    position: relative;
     color: #fff;
     border: 2px solid rgba(0, 0, 0, 0.2);
     text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
   }
   .category-colors .item-badge.active {
-    transform: translateY(-1px) scale(1.02);
-    border-width: 3px;
-    border-color: #ffffff;
-    box-shadow: 0 0 0 2px #0f172a, 0 0 0 6px rgba(255, 255, 255, 0.85), 0 4px 10px var(--shadow);
-  }
-
-  .category-colors .item-badge.active::after {
-    content: '';
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    width: 14px;
-    height: 14px;
-    border-radius: 999px;
-    background: #10b981;
-    border: 2px solid #ffffff;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px var(--shadow);
   }
 
   .category-colors .item-badge[data-item="black"] {
     background: #111;
     border-color: #000;
   }
+  .category-colors .item-badge[data-item="black"].active {
+    background: linear-gradient(135deg, #374151, #111827);
+    border-color: #111827;
+  }
 
   .category-colors .item-badge[data-item="blue"] {
     background: #1d4ed8;
     border-color: #1e40af;
+  }
+  .category-colors .item-badge[data-item="blue"].active {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    border-color: #1d4ed8;
   }
 
   .category-colors .item-badge[data-item="green"] {
     background: #16a34a;
     border-color: #15803d;
   }
+  .category-colors .item-badge[data-item="green"].active {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    border-color: #16a34a;
+  }
 
   .category-colors .item-badge[data-item="orange"] {
     background: #f97316;
+    border-color: #ea580c;
+  }
+  .category-colors .item-badge[data-item="orange"].active {
+    background: linear-gradient(135deg, #fb923c, #f97316);
     border-color: #ea580c;
   }
 
@@ -320,9 +320,17 @@
     background: #ec4899;
     border-color: #db2777;
   }
+  .category-colors .item-badge[data-item="pink"].active {
+    background: linear-gradient(135deg, #f472b6, #ec4899);
+    border-color: #db2777;
+  }
 
   .category-colors .item-badge[data-item="red"] {
     background: #dc2626;
+    border-color: #b91c1c;
+  }
+  .category-colors .item-badge[data-item="red"].active {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
     border-color: #b91c1c;
   }
 
@@ -332,12 +340,22 @@
     border-color: #94a3b8;
     text-shadow: none;
   }
+  .category-colors .item-badge[data-item="white"].active {
+    background: linear-gradient(135deg, #ffffff, #e2e8f0);
+    color: #334155;
+    border-color: #64748b;
+  }
 
   .category-colors .item-badge[data-item="yellow"] {
     background: #facc15;
     color: #422006;
     border-color: #eab308;
     text-shadow: none;
+  }
+  .category-colors .item-badge[data-item="yellow"].active {
+    background: linear-gradient(135deg, #fde047, #f59e0b);
+    color: #422006;
+    border-color: #d97706;
   }
 
   .category-family .card-title { color: var(--lavender); }
