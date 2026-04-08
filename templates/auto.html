@@ -645,7 +645,11 @@
   let loadingGhost=false;
   let scaleMultiplier=1.08;
   let yOffset=-0.08;
-  let ghostPlaybackSpeed=0.25;
+  let ghostAnimLastMs=0;
+  let lastGhostLoadMs=0;
+  let activeGhostLabel='';
+  const GHOST_PLAYBACK_FPS=7.5;
+  const REALTIME_GHOST_REFRESH_MS=900;
   let ghostTimer=null;
   const GHOST_DURATION_MS=12000;
 
@@ -1021,7 +1025,11 @@
     }
 
     if(ghostEnabled&&ghostReady&&anchorsValid(anchors)&&ghostFrames&&ghostFrames.length){
-      ghostIdx+=ghostPlaybackSpeed;
+      const nowMs = performance.now();
+      if(!ghostAnimLastMs) ghostAnimLastMs = nowMs;
+      const deltaSec = Math.max(0, (nowMs - ghostAnimLastMs) / 1000);
+      ghostAnimLastMs = nowMs;
+      ghostIdx += deltaSec * GHOST_PLAYBACK_FPS;
       if(ghostIdx>=ghostFrames.length)ghostIdx=0;
 
       const frameA=ghostFrames[Math.floor(ghostIdx)%ghostFrames.length];
@@ -1042,6 +1050,7 @@
       if(R)drawGhostHand(R,anchors,ctx,'rgba(76,201,240,0.85)');
       ghostBadge.style.display='inline-block';
     }else{
+      ghostAnimLastMs=0;
       ghostBadge.style.display='none';
     }
 
@@ -1242,21 +1251,35 @@ async function _doPredict(isRealtime=false){
             detStatus.textContent = 'Try again!';
 
             if(j.closest_sign && !loadingGhost){
+              const normalizedClosest = normLabel(j.closest_sign);
+              const realtimeMode = toggleSpeed.checked;
+              const nowGhostMs = Date.now();
+              const shouldRefreshRealtime = !realtimeMode ||
+                ((normalizedClosest !== activeGhostLabel) && ((nowGhostMs - lastGhostLoadMs) >= REALTIME_GHOST_REFRESH_MS));
+
+              if(!shouldRefreshRealtime){
+                return;
+              }
+
                 loadingGhost = true;
+              lastGhostLoadMs = nowGhostMs;
                 ghostEnabled = false;
                 ghostReady = false;
                 ghostFrames = null;
                 ghostIdx = 0;
+              ghostAnimLastMs = 0;
                 if(ghostTimer) clearTimeout(ghostTimer);
 
                 // Fire-and-forget: don't block camera while ghost loads
                 loadGhostFor(j.closest_sign).then(ok => {
                     if(ok){
+                  activeGhostLabel = normalizedClosest;
                         ghostEnabled = true;
                         ghostTimer = setTimeout(()=>{
                             ghostEnabled = false;
                             ghostReady = false;
                             ghostFrames = null;
+                    activeGhostLabel = '';
                             ghostBadge.style.display='none';
                         }, GHOST_DURATION_MS);
                     }
@@ -1286,6 +1309,8 @@ async function _doPredict(isRealtime=false){
               ghostEnabled=false;
               ghostReady=false;
               ghostFrames=null;
+              activeGhostLabel='';
+              ghostAnimLastMs=0;
               if(ghostTimer) clearTimeout(ghostTimer);
               ghostBadge.style.display='none';
               // Preload ghost in background for this sign (in case user tries again)
@@ -1425,6 +1450,8 @@ async function _doPredict(isRealtime=false){
     ghostEnabled=false;
     ghostReady=false;
     ghostFrames=null;
+    activeGhostLabel='';
+    ghostAnimLastMs=0;
     ghostBadge.style.display='none';
     if(ghostTimer)clearTimeout(ghostTimer);
     try{await camera.stop();}catch(_){}
