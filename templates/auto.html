@@ -645,13 +645,11 @@
   let loadingGhost=false;
   let scaleMultiplier=1.08;
   let yOffset=-0.08;
-  let ghostAnimLastMs=0;
+  let ghostLoopStartMs=0;
   let lastGhostLoadMs=0;
   let activeGhostLabel='';
-  const GHOST_PLAYBACK_FPS=7.5;
+  const GHOST_LOOP_MS=5000;
   const REALTIME_GHOST_REFRESH_MS=900;
-  let ghostTimer=null;
-  const GHOST_DURATION_MS=12000;
 
   // ── Client-side ghost frame cache ──────────────────────────
   // Key: normLabel(label) → value: ghostFrames array
@@ -1026,14 +1024,18 @@
 
     if(ghostEnabled&&ghostReady&&anchorsValid(anchors)&&ghostFrames&&ghostFrames.length){
       const nowMs = performance.now();
-      if(!ghostAnimLastMs) ghostAnimLastMs = nowMs;
-      const deltaSec = Math.max(0, (nowMs - ghostAnimLastMs) / 1000);
-      ghostAnimLastMs = nowMs;
-      ghostIdx += deltaSec * GHOST_PLAYBACK_FPS;
-      if(ghostIdx>=ghostFrames.length)ghostIdx=0;
+      if(!ghostLoopStartMs) ghostLoopStartMs = nowMs;
 
-      const frameA=ghostFrames[Math.floor(ghostIdx)%ghostFrames.length];
-      const frameB=ghostFrames[Math.floor(ghostIdx+1)%ghostFrames.length];
+      const elapsedMs = Math.max(0, nowMs - ghostLoopStartMs);
+      const progress = Math.min(1, elapsedMs / GHOST_LOOP_MS);
+      const maxIdx = Math.max(0, ghostFrames.length - 1);
+      const position = progress * maxIdx;
+      ghostIdx = position;
+
+      const idxA = Math.floor(ghostIdx);
+      const idxB = Math.min(idxA + 1, maxIdx);
+      const frameA=ghostFrames[idxA];
+      const frameB=ghostFrames[idxB];
       const t=ghostIdx%1;
 
       const L=frameA.L&&frameB.L?new Float32Array(63):null;
@@ -1049,8 +1051,17 @@
       if(L)drawGhostHand(L,anchors,ctx,'rgba(167,139,250,0.85)');
       if(R)drawGhostHand(R,anchors,ctx,'rgba(76,201,240,0.85)');
       ghostBadge.style.display='inline-block';
+
+      if(progress >= 1){
+        ghostEnabled = false;
+        ghostReady = false;
+        ghostFrames = null;
+        ghostIdx = 0;
+        ghostLoopStartMs = 0;
+        activeGhostLabel = '';
+      }
     }else{
-      ghostAnimLastMs=0;
+      ghostLoopStartMs=0;
       ghostBadge.style.display='none';
     }
 
@@ -1267,21 +1278,14 @@ async function _doPredict(isRealtime=false){
                 ghostReady = false;
                 ghostFrames = null;
                 ghostIdx = 0;
-              ghostAnimLastMs = 0;
-                if(ghostTimer) clearTimeout(ghostTimer);
+              ghostLoopStartMs = 0;
 
                 // Fire-and-forget: don't block camera while ghost loads
                 loadGhostFor(j.closest_sign).then(ok => {
                     if(ok){
-                  activeGhostLabel = normalizedClosest;
+                        activeGhostLabel = normalizedClosest;
                         ghostEnabled = true;
-                        ghostTimer = setTimeout(()=>{
-                            ghostEnabled = false;
-                            ghostReady = false;
-                            ghostFrames = null;
-                    activeGhostLabel = '';
-                            ghostBadge.style.display='none';
-                        }, GHOST_DURATION_MS);
+                        ghostLoopStartMs = 0;
                     }
                 }).catch(e => {
                     console.error('Ghost load error', e);
@@ -1310,8 +1314,7 @@ async function _doPredict(isRealtime=false){
               ghostReady=false;
               ghostFrames=null;
               activeGhostLabel='';
-              ghostAnimLastMs=0;
-              if(ghostTimer) clearTimeout(ghostTimer);
+              ghostLoopStartMs=0;
               ghostBadge.style.display='none';
               // Preload ghost in background for this sign (in case user tries again)
               preloadGhostFor(j.prediction);
@@ -1451,9 +1454,8 @@ async function _doPredict(isRealtime=false){
     ghostReady=false;
     ghostFrames=null;
     activeGhostLabel='';
-    ghostAnimLastMs=0;
+    ghostLoopStartMs=0;
     ghostBadge.style.display='none';
-    if(ghostTimer)clearTimeout(ghostTimer);
     try{await camera.stop();}catch(_){}
     stopBtn.style.display='none';startBtn.style.display='inline-block';
   };
