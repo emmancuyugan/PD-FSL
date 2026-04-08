@@ -7,7 +7,6 @@ from sqlalchemy import func
 
 # Libraries for model inference and MediaPipe
 import torch
-import torch.nn as nn
 import numpy as np
 import os
 import pathlib, platform

@@ -341,12 +341,6 @@
       Tutorial.init("{{ request.endpoint or '' }}", "{{ session.get('user_id', '') }}");
     });
 
-    // Smooth scroll helper
-    function scrollToId(id){
-      const el=document.getElementById(id);
-      if(el) el.scrollIntoView({behavior:"smooth"});
-    }
-
     // Scroll-triggered animations
     const observerOptions = {
       threshold: 0.1,
