@@ -271,13 +271,29 @@
     grid-template-rows: repeat(4, 1fr);
   }
   .category-colors .item-badge {
+    position: relative;
     color: #fff;
     border: 2px solid rgba(0, 0, 0, 0.2);
     text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
   }
   .category-colors .item-badge.active {
     transform: translateY(-1px) scale(1.02);
-    box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.45), 0 2px 8px var(--shadow);
+    border-width: 3px;
+    border-color: #ffffff;
+    box-shadow: 0 0 0 2px #0f172a, 0 0 0 6px rgba(255, 255, 255, 0.85), 0 4px 10px var(--shadow);
+  }
+
+  .category-colors .item-badge.active::after {
+    content: '';
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background: #10b981;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
   }
 
   .category-colors .item-badge[data-item="black"] {
@@ -557,11 +573,11 @@
           </div>
           <p class="card-description">Learn numbers One to Five with step-by-step demos.</p>
           <div class="items-grid">
-            <button type="button" class="item-badge" data-item="one" onclick="selectSidebarItem(event, 'numbers', 'one')">One</button>
-            <button type="button" class="item-badge" data-item="two" onclick="selectSidebarItem(event, 'numbers', 'two')">Two</button>
-            <button type="button" class="item-badge" data-item="three" onclick="selectSidebarItem(event, 'numbers', 'three')">Three</button>
-            <button type="button" class="item-badge" data-item="four" onclick="selectSidebarItem(event, 'numbers', 'four')">Four</button>
-            <button type="button" class="item-badge" data-item="five" onclick="selectSidebarItem(event, 'numbers', 'five')">Five</button>
+            <button type="button" class="item-badge" data-item="one" onclick="selectSidebarItem(event, 'numbers', 'one')">One (1)</button>
+            <button type="button" class="item-badge" data-item="two" onclick="selectSidebarItem(event, 'numbers', 'two')">Two (2)</button>
+            <button type="button" class="item-badge" data-item="three" onclick="selectSidebarItem(event, 'numbers', 'three')">Three (3)</button>
+            <button type="button" class="item-badge" data-item="four" onclick="selectSidebarItem(event, 'numbers', 'four')">Four (4)</button>
+            <button type="button" class="item-badge" data-item="five" onclick="selectSidebarItem(event, 'numbers', 'five')">Five (5)</button>
             <div class="item-badge placeholder" style="visibility: hidden;"></div>
             <div class="item-badge placeholder" style="visibility: hidden;"></div>
             <div class="item-badge placeholder" style="visibility: hidden;"></div>
