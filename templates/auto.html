@@ -542,7 +542,7 @@
           </div>
           <div class="setting-item">
             <input type="checkbox" id="toggleSpeed">
-            <span>Fast Mode (3 Seconds)</span>
+            <span>Real-Time Recognition</span>
           </div>
         </div>
 
@@ -624,16 +624,14 @@
   // Skip every 2nd frame = ~15 FPS effective (from 30 FPS camera)
   // 5.5s capture × 15 fps = ~83 frames achievable
   const SEQ_LEN = 48;
-  const CAPTURE_MAX = 80;  // Adjusted for frameSkip=2
-  const BASE_CAPTURE_MS = 5500;  // Increased to ensure enough frames
-  let CAPTURE_MS = BASE_CAPTURE_MS;
+  const CAPTURE_MAX = 80;  // Keep a rolling window for stable sequence extraction
   let buf=[],running=false,handsPresent=false,frameCount=0,showVisuals=true,showTimer=true,showResults=true;
   let lastPersonCount=1; // Track latest person count for prediction gating
   let frameSkip=2;
   let autoJudge=false;  // Track auto-trigger to prevent multiple calls
   let predicting=false; // Lock: true while predict() is in-flight
   let feedbackActive=false; // True while feedback overlay is showing — pauses accumulation
-  let predictInterval=null,tickInterval=null,countdown=5;
+  let tickInterval=null,countdown=5;
 
   const HAND_CONN=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20]];
 
@@ -1055,11 +1053,10 @@
         frameInfo.textContent='Capturing: '+Math.floor(buf.length)+' frames';
         frameInfo.style.display='block';
         
-        // Auto-trigger when buffer reaches 75% capacity
-        const threshold = Math.ceil(CAPTURE_MAX * 0.75);
-        if(buf.length >= threshold && !autoJudge){
+        const realtimeMode = toggleSpeed.checked;
+        if(realtimeMode && buf.length >= SEQ_LEN && !autoJudge){
           autoJudge=true; 
-          setTimeout(()=>predict(), 200);
+          setTimeout(()=>predict(), 80);
         }
       }
     }
@@ -1317,8 +1314,64 @@ async function _doPredict(){
 }
 
   toggleVisuals.onchange=()=>{showVisuals=toggleVisuals.checked;};
-  toggleTimer.onchange=()=>{showTimer=toggleTimer.checked;timerOverlay.style.display=showTimer?'block':'none';};
+  toggleTimer.onchange=()=>{
+    showTimer=toggleTimer.checked;
+    if(toggleSpeed.checked){
+      timerOverlay.style.display='none';
+      return;
+    }
+    timerOverlay.style.display=showTimer?'block':'none';
+  };
   toggleResults.onchange=()=>{showResults=toggleResults.checked;gestureOverlay.style.display=showResults?'block':'none';};
+
+  function applyTimerOverlayStyle(value){
+    if(value <= 1) timerOverlay.style.background='var(--coral)';
+    else if(value <= 2) timerOverlay.style.background='var(--orange)';
+    else timerOverlay.style.background='var(--sunshine)';
+  }
+
+  function stopCountdownLoop(){
+    if(tickInterval){
+      clearInterval(tickInterval);
+      tickInterval = null;
+    }
+  }
+
+  function startCountdownLoop(){
+    stopCountdownLoop();
+    countdown = 5;
+    timerOverlay.textContent = countdown;
+    applyTimerOverlayStyle(countdown);
+    timerOverlay.style.display = showTimer ? 'block' : 'none';
+
+    tickInterval = setInterval(() => {
+      countdown--;
+      timerOverlay.textContent = countdown;
+      applyTimerOverlayStyle(countdown);
+
+      if(countdown <= 0){
+        predict();
+        countdown = 5;
+        timerOverlay.textContent = countdown;
+        applyTimerOverlayStyle(countdown);
+      }
+    }, 1000);
+  }
+
+  function applyAutoMode(){
+    if(!running) return;
+    const realtimeMode = toggleSpeed.checked;
+
+    if(realtimeMode){
+      stopCountdownLoop();
+      timerOverlay.style.display = 'none';
+      frameInfo.textContent = 'Real-time mode: predicting at 48 frames';
+    }else{
+      startCountdownLoop();
+    }
+  }
+
+  toggleSpeed.onchange=()=>{ applyAutoMode(); };
 
   startBtn.onclick=async()=>{
     document.body.classList.add('camera-running');
@@ -1335,29 +1388,7 @@ async function _doPredict(){
     startBtn.style.display='none';
     stopBtn.style.display='inline-block';
 
-    const fastMode=toggleSpeed.checked;
-    const intervalMs=fastMode?3000:5000;
-    countdown=fastMode?3:5;
-
-    timerOverlay.textContent=countdown;
-    timerOverlay.style.display=showTimer?'block':'none';
-
-    tickInterval = setInterval(() => {
-      countdown--;
-      timerOverlay.textContent = countdown;
-      if(countdown <= 1)
-        timerOverlay.style.background='var(--coral)';
-      else if(countdown <= 2)
-        timerOverlay.style.background='var(--orange)';
-      else
-        timerOverlay.style.background='var(--sunshine)';
-
-      if(countdown <= 0){
-        predict();
-        countdown=fastMode?3:5;
-        timerOverlay.textContent = countdown;
-      }
-    }, 1000);
+    applyAutoMode();
   };
 
   stopBtn.onclick=async()=>{
@@ -1367,7 +1398,7 @@ async function _doPredict(){
     recBadge.style.display='none';
     stateBadge.textContent='Ready to Learn!';
     stateBadge.style.background='linear-gradient(135deg, var(--grass-green), var(--sky-blue))';
-    clearInterval(predictInterval);clearInterval(tickInterval);
+    stopCountdownLoop();
     timerOverlay.style.display='none';
     gestureOverlay.style.display='none';
     frameInfo.style.display='none';
