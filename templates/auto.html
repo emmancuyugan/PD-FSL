@@ -649,6 +649,7 @@
   let activeGhostLabel='';
   let pendingGhostLabel='';
   const GHOST_LOOP_FRAMES=48;
+  const GHOST_LOOP_REPEATS=2;
 
   // ── Client-side ghost frame cache ──────────────────────────
   // Key: normLabel(label) → value: ghostFrames array
@@ -1063,7 +1064,10 @@
 
     if(ghostEnabled&&ghostReady&&anchorsValid(anchors)&&ghostFrames&&ghostFrames.length){
       ghostRenderFrames += 1;
-      const progress = Math.min(1, ghostRenderFrames / GHOST_LOOP_FRAMES);
+      const totalGhostFrames = GHOST_LOOP_FRAMES * GHOST_LOOP_REPEATS;
+      const clampedFrame = Math.min(ghostRenderFrames, totalGhostFrames);
+      const loopFrame = (clampedFrame - 1) % GHOST_LOOP_FRAMES;
+      const progress = Math.min(1, (loopFrame + 1) / GHOST_LOOP_FRAMES);
       const maxIdx = Math.max(0, ghostFrames.length - 1);
       const position = progress * maxIdx;
       ghostIdx = position;
@@ -1088,7 +1092,7 @@
       if(R)drawGhostHand(R,anchors,ctx,'rgba(76,201,240,0.85)');
       ghostBadge.style.display='inline-block';
 
-      if(progress >= 1){
+      if(ghostRenderFrames >= totalGhostFrames){
         stopGhostPlayback();
         if(pendingGhostLabel){
           startQueuedGhostFeedback();
