@@ -222,6 +222,18 @@
     font-size: 13px;
     text-align: center;
     transition: all 0.2s ease;
+    cursor: pointer;
+  }
+
+  .item-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px var(--shadow);
+  }
+
+  .item-badge.placeholder {
+    cursor: default;
+    pointer-events: none;
+    box-shadow: none;
   }
 
   /* Color scheme for each category */
@@ -240,6 +252,11 @@
     color: var(--deep-blue);
     border: 2px solid rgba(67, 97, 238, 0.3);
   }
+  .category-numbers .item-badge.active {
+    background: linear-gradient(135deg, var(--deep-blue), var(--sky-blue));
+    color: var(--white);
+    border-color: var(--deep-blue);
+  }
 
   .category-colors .card-title { color: var(--coral); }
   .category-colors .card-badge { 
@@ -255,6 +272,11 @@
     background: rgba(255, 107, 157, 0.1);
     color: var(--coral);
     border: 2px solid rgba(255, 107, 157, 0.3);
+  }
+  .category-colors .item-badge.active {
+    background: linear-gradient(135deg, var(--coral), var(--orange));
+    color: var(--white);
+    border-color: var(--coral);
   }
 
   .category-family .card-title { color: var(--lavender); }
@@ -272,6 +294,11 @@
     color: var(--lavender);
     border: 2px solid rgba(167, 139, 250, 0.3);
   }
+  .category-family .item-badge.active {
+    background: linear-gradient(135deg, var(--lavender), var(--deep-blue));
+    color: var(--white);
+    border-color: var(--lavender);
+  }
 
   .category-relationship .card-title { color: var(--grass-green); }
   .category-relationship .card-badge { 
@@ -288,6 +315,11 @@
     color: var(--grass-green);
     border: 2px solid rgba(6, 214, 160, 0.3);
   }
+  .category-relationship .item-badge.active {
+    background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
+    color: var(--white);
+    border-color: var(--grass-green);
+  }
 
   .category-survival .card-title { color: var(--orange); }
   .category-survival .card-badge { 
@@ -303,6 +335,11 @@
     background: rgba(255, 140, 66, 0.1);
     color: var(--orange);
     border: 2px solid rgba(255, 140, 66, 0.3);
+  }
+  .category-survival .item-badge.active {
+    background: linear-gradient(135deg, var(--orange), var(--sunshine));
+    color: var(--white);
+    border-color: var(--orange);
   }
 
   /* Color badges special styling - REMOVED since colors now use standard item-badge */
@@ -350,35 +387,6 @@
     transition: all 0.3s ease;
     box-shadow: 0 2px 6px rgba(255, 140, 66, 0.3);
     min-height: 40px;
-  }
-
-  .selection-buttons {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    gap: 6px;
-    margin-bottom: 10px;
-    flex-shrink: 0;
-  }
-
-
-  .select-btn {
-    padding: 8px 12px;
-    background: var(--white);
-    color: #333;
-    border: 2px solid var(--grass-green);
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    box-shadow: 0 1px 4px var(--shadow);
-    min-height: 40px;
-  }
-
-  .select-btn.active {
-    background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
-    color: var(--white);
-    border-color: var(--sky-blue);
   }
 
   .video-container {
@@ -482,8 +490,6 @@
 
         <p id="videoDescription" style="color:#666;margin-bottom:12px;"></p>
 
-        <div id="videoButtons" class="selection-buttons"></div>
-
         <div class="video-container">
           <video id="mainVideo" playsinline preload="auto" muted autoplay loop onloadedmetadata="this.muted = true;" style="border-radius:20px;">
             Your browser does not support the video tag.
@@ -506,14 +512,14 @@
           </div>
           <p class="card-description">Learn numbers One to Five with step-by-step demos.</p>
           <div class="items-grid">
-            <div class="item-badge">One</div>
-            <div class="item-badge">Two</div>
-            <div class="item-badge">Three</div>
-            <div class="item-badge">Four</div>
-            <div class="item-badge">Five</div>
-            <div class="item-badge" style="visibility: hidden;"></div>
-            <div class="item-badge" style="visibility: hidden;"></div>
-            <div class="item-badge" style="visibility: hidden;"></div>
+            <button type="button" class="item-badge" data-item="one" onclick="selectSidebarItem(event, 'numbers', 'one')">One</button>
+            <button type="button" class="item-badge" data-item="two" onclick="selectSidebarItem(event, 'numbers', 'two')">Two</button>
+            <button type="button" class="item-badge" data-item="three" onclick="selectSidebarItem(event, 'numbers', 'three')">Three</button>
+            <button type="button" class="item-badge" data-item="four" onclick="selectSidebarItem(event, 'numbers', 'four')">Four</button>
+            <button type="button" class="item-badge" data-item="five" onclick="selectSidebarItem(event, 'numbers', 'five')">Five</button>
+            <div class="item-badge placeholder" style="visibility: hidden;"></div>
+            <div class="item-badge placeholder" style="visibility: hidden;"></div>
+            <div class="item-badge placeholder" style="visibility: hidden;"></div>
           </div>
         </div>
 
@@ -524,14 +530,14 @@
           </div>
           <p class="card-description">Master essential color signs with visual demonstrations.</p>
           <div class="items-grid">
-            <div class="item-badge">Black</div>
-            <div class="item-badge">Blue</div>
-            <div class="item-badge">Green</div>
-            <div class="item-badge">Orange</div>
-            <div class="item-badge">Pink</div>
-            <div class="item-badge">Red</div>
-            <div class="item-badge">White</div>
-            <div class="item-badge">Yellow</div>
+            <button type="button" class="item-badge" data-item="black" onclick="selectSidebarItem(event, 'colors', 'black')">Black</button>
+            <button type="button" class="item-badge" data-item="blue" onclick="selectSidebarItem(event, 'colors', 'blue')">Blue</button>
+            <button type="button" class="item-badge" data-item="green" onclick="selectSidebarItem(event, 'colors', 'green')">Green</button>
+            <button type="button" class="item-badge" data-item="orange" onclick="selectSidebarItem(event, 'colors', 'orange')">Orange</button>
+            <button type="button" class="item-badge" data-item="pink" onclick="selectSidebarItem(event, 'colors', 'pink')">Pink</button>
+            <button type="button" class="item-badge" data-item="red" onclick="selectSidebarItem(event, 'colors', 'red')">Red</button>
+            <button type="button" class="item-badge" data-item="white" onclick="selectSidebarItem(event, 'colors', 'white')">White</button>
+            <button type="button" class="item-badge" data-item="yellow" onclick="selectSidebarItem(event, 'colors', 'yellow')">Yellow</button>
           </div>
         </div>
 
@@ -542,14 +548,14 @@
           </div>
           <p class="card-description">Learn common family terms used in daily life.</p>
           <div class="items-grid">
-            <div class="item-badge">Daughter</div>
-            <div class="item-badge">Father</div>
-            <div class="item-badge">Grandfather</div>
-            <div class="item-badge">Grandmother</div>
-            <div class="item-badge">Mother</div>
-            <div class="item-badge">Son</div>
-            <div class="item-badge" style="visibility: hidden;"></div>
-            <div class="item-badge" style="visibility: hidden;"></div>
+            <button type="button" class="item-badge" data-item="daughter" onclick="selectSidebarItem(event, 'family', 'daughter')">Daughter</button>
+            <button type="button" class="item-badge" data-item="father" onclick="selectSidebarItem(event, 'family', 'father')">Father</button>
+            <button type="button" class="item-badge" data-item="grandfather" onclick="selectSidebarItem(event, 'family', 'grandfather')">Grandfather</button>
+            <button type="button" class="item-badge" data-item="grandmother" onclick="selectSidebarItem(event, 'family', 'grandmother')">Grandmother</button>
+            <button type="button" class="item-badge" data-item="mother" onclick="selectSidebarItem(event, 'family', 'mother')">Mother</button>
+            <button type="button" class="item-badge" data-item="son" onclick="selectSidebarItem(event, 'family', 'son')">Son</button>
+            <div class="item-badge placeholder" style="visibility: hidden;"></div>
+            <div class="item-badge placeholder" style="visibility: hidden;"></div>
           </div>
         </div>
       </div>
@@ -562,14 +568,14 @@
           </div>
           <p class="card-description">Essential relationship terms for social interactions.</p>
           <div class="items-grid">
-            <div class="item-badge">Boy</div>
-            <div class="item-badge">Girl</div>
-            <div class="item-badge" style="visibility: hidden;"></div>
-            <div class="item-badge" style="visibility: hidden;"></div>
-            <div class="item-badge" style="visibility: hidden;"></div>
-            <div class="item-badge" style="visibility: hidden;"></div>
-            <div class="item-badge" style="visibility: hidden;"></div>
-            <div class="item-badge" style="visibility: hidden;"></div>
+            <button type="button" class="item-badge" data-item="boy" onclick="selectSidebarItem(event, 'relationship', 'boy')">Boy</button>
+            <button type="button" class="item-badge" data-item="girl" onclick="selectSidebarItem(event, 'relationship', 'girl')">Girl</button>
+            <div class="item-badge placeholder" style="visibility: hidden;"></div>
+            <div class="item-badge placeholder" style="visibility: hidden;"></div>
+            <div class="item-badge placeholder" style="visibility: hidden;"></div>
+            <div class="item-badge placeholder" style="visibility: hidden;"></div>
+            <div class="item-badge placeholder" style="visibility: hidden;"></div>
+            <div class="item-badge placeholder" style="visibility: hidden;"></div>
           </div>
         </div>
 
@@ -580,14 +586,14 @@
           </div>
           <p class="card-description">Critical communication words for everyday situations.</p>
           <div class="items-grid">
-            <div class="item-badge">Correct</div>
-            <div class="item-badge">No</div>
-            <div class="item-badge">Understand</div>
-            <div class="item-badge">Wrong</div>
-            <div class="item-badge">Yes</div>
-            <div class="item-badge" style="visibility: hidden;"></div>
-            <div class="item-badge" style="visibility: hidden;"></div>
-            <div class="item-badge" style="visibility: hidden;"></div>
+            <button type="button" class="item-badge" data-item="correct" onclick="selectSidebarItem(event, 'survival', 'correct')">Correct</button>
+            <button type="button" class="item-badge" data-item="no" onclick="selectSidebarItem(event, 'survival', 'no')">No</button>
+            <button type="button" class="item-badge" data-item="understand" onclick="selectSidebarItem(event, 'survival', 'understand')">Understand</button>
+            <button type="button" class="item-badge" data-item="wrong" onclick="selectSidebarItem(event, 'survival', 'wrong')">Wrong</button>
+            <button type="button" class="item-badge" data-item="yes" onclick="selectSidebarItem(event, 'survival', 'yes')">Yes</button>
+            <div class="item-badge placeholder" style="visibility: hidden;"></div>
+            <div class="item-badge placeholder" style="visibility: hidden;"></div>
+            <div class="item-badge placeholder" style="visibility: hidden;"></div>
           </div>
         </div>
       </div>
@@ -630,8 +636,6 @@
     }
   };
 
-  const titleCase = s => s.charAt(0).toUpperCase() + s.slice(1);
-  const formatLabel = s => s.replace(/dontunderstand/i, "Don't Understand");
   let currentCategoryKey = null;
   let currentItemKey = null;
 
@@ -674,9 +678,9 @@
     return primarySrc;
   }
 
-  function showCategory(categoryKey) {
+  function setCategoryState(categoryKey) {
     const cat = CATEGORIES[categoryKey];
-    if (!cat) return;
+    if (!cat) return null;
 
     currentCategoryKey = categoryKey;
 
@@ -693,25 +697,36 @@
     document.getElementById('videoTitle').style.webkitTextFillColor = 'transparent';
     document.getElementById('videoDescription').textContent = cat.description;
 
-    const buttonsContainer = document.getElementById('videoButtons');
-    buttonsContainer.innerHTML = '';
+    return selectedCard;
+  }
 
-    cat.items.forEach((item) => {
-      const btn = document.createElement('button');
-      btn.className = 'select-btn';
-      btn.textContent = formatLabel(titleCase(item));
-      btn.onclick = () => loadVideo(categoryKey, item, btn);
-      buttonsContainer.appendChild(btn);
-    });
+  function showCategory(categoryKey) {
+    const cat = CATEGORIES[categoryKey];
+    if (!cat) return;
 
-    loadVideo(categoryKey, cat.items[0], buttonsContainer.children[0]);
+    const selectedCard = setCategoryState(categoryKey);
+    const firstButton = selectedCard ? selectedCard.querySelector('.item-badge[data-item]') : null;
+    const firstItem = firstButton ? firstButton.getAttribute('data-item') : cat.items[0];
+    loadVideo(categoryKey, firstItem, firstButton);
+  }
+
+  function selectSidebarItem(event, category, item) {
+    event.stopPropagation();
+
+    const selectedCard = setCategoryState(category);
+
+    const button = selectedCard
+      ? selectedCard.querySelector(`.item-badge[data-item="${item}"]`)
+      : null;
+
+    loadVideo(category, item, button);
   }
 
   async function loadVideo(category, item, btnElement) {
     currentCategoryKey = category;
     currentItemKey = item;
 
-    document.querySelectorAll('#videoButtons .select-btn').forEach(b => {
+    document.querySelectorAll('.item-badge[data-item]').forEach(b => {
       b.classList.remove('active');
     });
     if(btnElement) btnElement.classList.add('active');
