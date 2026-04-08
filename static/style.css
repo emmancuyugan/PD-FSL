@@ -1082,29 +1082,6 @@ a:focus-visible {
   box-shadow: 0 15px 35px rgba(30, 58, 138, 0.2), 0 5px 15px rgba(0,0,0,0.1);
 }
 
-.category-card::after {
-  content: '👆 Click to explore this category';
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: rgba(255,255,255,0.9);
-  color: var(--primary);
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--radius);
-  font-size: 0.75rem;
-  font-weight: 600;
-  opacity: 0;
-  transform: translateY(-10px);
-  transition: all 0.3s ease;
-  pointer-events: none;
-  backdrop-filter: blur(8px);
-}
-
-.category-card:hover::after {
-  opacity: 1;
-  transform: translateY(0);
-}
-
 /* Learning Category Badges */
 .number-badge {
   background: linear-gradient(135deg, #475569, #334155);
