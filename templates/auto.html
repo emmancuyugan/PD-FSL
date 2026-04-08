@@ -625,12 +625,15 @@
   // 5.5s capture × 15 fps = ~83 frames achievable
   const SEQ_LEN = 48;
   const CAPTURE_MAX = 80;  // Keep a rolling window for stable sequence extraction
+  const REALTIME_MIN_FRAMES = 16;
+  const REALTIME_MIN_INTERVAL_MS = 250;
   let buf=[],running=false,handsPresent=false,frameCount=0,showVisuals=true,showTimer=true,showResults=true;
   let lastPersonCount=1; // Track latest person count for prediction gating
   let frameSkip=2;
   let autoJudge=false;  // Track auto-trigger to prevent multiple calls
   let predicting=false; // Lock: true while predict() is in-flight
   let feedbackActive=false; // True while feedback overlay is showing — pauses accumulation
+  let realtimeLastPredictMs=0;
   let tickInterval=null,countdown=5;
 
   const HAND_CONN=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20]];
@@ -1054,9 +1057,12 @@
         frameInfo.style.display='block';
         
         const realtimeMode = toggleSpeed.checked;
-        if(realtimeMode && buf.length >= SEQ_LEN && !autoJudge){
-          autoJudge=true; 
-          setTimeout(()=>predict(), 80);
+        if(realtimeMode && buf.length >= REALTIME_MIN_FRAMES){
+          const nowMs = Date.now();
+          if(!predicting && (nowMs - realtimeLastPredictMs) >= REALTIME_MIN_INTERVAL_MS){
+            realtimeLastPredictMs = nowMs;
+            predict(true);
+          }
         }
       }
     }
@@ -1118,12 +1124,12 @@
     }
   },width:480,height:360});
 
-async function predict(){
+async function predict(isRealtime=false){
     if(predicting || feedbackActive) return; // Skip while in-flight or showing feedback
     predicting = true;
-    try { await _doPredict(); } finally { predicting = false; }
+  try { await _doPredict(isRealtime); } finally { predicting = false; }
 }
-async function _doPredict(){
+async function _doPredict(isRealtime=false){
     // No hands detected OR hands detected but no person found
     if(buf.length < 5 || lastPersonCount !== 1){
       if(showResults){
@@ -1148,9 +1154,11 @@ async function _doPredict(){
         }
         historyEl.insertBefore(histEntry, historyEl.firstChild);
       }
-      buf = [];
-      frameCount = 0;
-      autoJudge = false;
+      if(!isRealtime){
+        buf = [];
+        frameCount = 0;
+        autoJudge = false;
+      }
       return;
     }
 
@@ -1177,7 +1185,9 @@ async function _doPredict(){
       }
       buf = [];
       frameCount = 0;
-      autoJudge = false;
+      if(!isRealtime){
+        autoJudge = false;
+      }
       return;
     }
 
@@ -1283,21 +1293,25 @@ async function _doPredict(){
             }
         }
 
-        if(historyEl.children.length===1 && historyEl.children[0].style.color==='#999'){
+        if(!isRealtime){
+          if(historyEl.children.length===1 && historyEl.children[0].style.color==='#999'){
             historyEl.innerHTML='';
+          }
+          historyEl.insertBefore(histEntry, historyEl.firstChild);
+          historyEl.scrollTop = 0;
         }
-        historyEl.insertBefore(histEntry, historyEl.firstChild);
-        historyEl.scrollTop = 0;
 
-        // Pause accumulation while feedback shows, then start fresh
-        feedbackActive = true;
-        setTimeout(() => {
+        if(!isRealtime){
+          // Pause accumulation while feedback shows, then start fresh
+          feedbackActive = true;
+          setTimeout(() => {
             feedbackActive = false;
             buf = [];
             frameCount = 0;
             autoJudge = false;
             if(showResults) gestureOverlay.style.display = 'none';
-        }, 3000);
+          }, 3000);
+        }
 
     }catch(e){
         console.error(e);
@@ -1308,9 +1322,11 @@ async function _doPredict(){
     }
 
     // 🔥 CRITICAL RESET — TRUE WINDOW MODE
-    buf = [];
-    frameCount = 0;
-    autoJudge = false;
+    if(!isRealtime){
+      buf = [];
+      frameCount = 0;
+      autoJudge = false;
+    }
 }
 
   toggleVisuals.onchange=()=>{showVisuals=toggleVisuals.checked;};
@@ -1380,6 +1396,7 @@ async function _doPredict(){
     smoothedDistanceM=null;
     buf=[];
     frameCount=0;
+    realtimeLastPredictMs=0;
     autoJudge=false;  // Reset auto-trigger flag for new capture
     recBadge.style.display='inline-block';
     stateBadge.textContent='Learning Mode ON! 🎓';
