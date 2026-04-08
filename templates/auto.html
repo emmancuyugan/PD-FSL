@@ -645,11 +645,10 @@
   let loadingGhost=false;
   let scaleMultiplier=1.08;
   let yOffset=-0.08;
-  let ghostLoopStartMs=0;
-  let lastGhostLoadMs=0;
+  let ghostRenderFrames=0;
   let activeGhostLabel='';
-  const GHOST_LOOP_MS=5000;
-  const REALTIME_GHOST_REFRESH_MS=900;
+  let pendingGhostLabel='';
+  const GHOST_LOOP_FRAMES=48;
 
   // ── Client-side ghost frame cache ──────────────────────────
   // Key: normLabel(label) → value: ghostFrames array
@@ -944,6 +943,46 @@
     return false;
   }
 
+  function stopGhostPlayback(){
+    ghostEnabled = false;
+    ghostReady = false;
+    ghostFrames = null;
+    ghostIdx = 0;
+    ghostRenderFrames = 0;
+    activeGhostLabel = '';
+  }
+
+  function queueGhostFeedback(label){
+    if(!label) return;
+    pendingGhostLabel = label; // keep latest incorrect sign only
+    if(ghostEnabled || loadingGhost) return;
+    startQueuedGhostFeedback();
+  }
+
+  function startQueuedGhostFeedback(){
+    if(ghostEnabled || loadingGhost || !pendingGhostLabel) return;
+    const labelToLoad = pendingGhostLabel;
+    pendingGhostLabel = '';
+    const normalizedClosest = normLabel(labelToLoad);
+
+    loadingGhost = true;
+    loadGhostFor(labelToLoad).then(ok => {
+      if(ok){
+        activeGhostLabel = normalizedClosest;
+        ghostEnabled = true;
+        ghostIdx = 0;
+        ghostRenderFrames = 0;
+      }
+    }).catch(e => {
+      console.error('Ghost load error', e);
+    }).finally(() => {
+      loadingGhost = false;
+      if(!ghostEnabled && pendingGhostLabel){
+        startQueuedGhostFeedback();
+      }
+    });
+  }
+
   // Background preload: fetch ghost for a label and store in cache
   function preloadGhostFor(label){
     if(!label || _preloadBusy) return;
@@ -1023,11 +1062,8 @@
     }
 
     if(ghostEnabled&&ghostReady&&anchorsValid(anchors)&&ghostFrames&&ghostFrames.length){
-      const nowMs = performance.now();
-      if(!ghostLoopStartMs) ghostLoopStartMs = nowMs;
-
-      const elapsedMs = Math.max(0, nowMs - ghostLoopStartMs);
-      const progress = Math.min(1, elapsedMs / GHOST_LOOP_MS);
+      ghostRenderFrames += 1;
+      const progress = Math.min(1, ghostRenderFrames / GHOST_LOOP_FRAMES);
       const maxIdx = Math.max(0, ghostFrames.length - 1);
       const position = progress * maxIdx;
       ghostIdx = position;
@@ -1053,15 +1089,13 @@
       ghostBadge.style.display='inline-block';
 
       if(progress >= 1){
-        ghostEnabled = false;
-        ghostReady = false;
-        ghostFrames = null;
-        ghostIdx = 0;
-        ghostLoopStartMs = 0;
-        activeGhostLabel = '';
+        stopGhostPlayback();
+        if(pendingGhostLabel){
+          startQueuedGhostFeedback();
+        }
       }
     }else{
-      ghostLoopStartMs=0;
+      ghostRenderFrames=0;
       ghostBadge.style.display='none';
     }
 
@@ -1261,37 +1295,11 @@ async function _doPredict(isRealtime=false){
             detLabel.textContent = cleanLabel(j.closest_sign)||'—';
             detStatus.textContent = 'Try again!';
 
-            if(j.closest_sign && !loadingGhost){
+            if(j.closest_sign){
               const normalizedClosest = normLabel(j.closest_sign);
-              const realtimeMode = toggleSpeed.checked;
-              const nowGhostMs = Date.now();
-              const shouldRefreshRealtime = !realtimeMode ||
-                ((normalizedClosest !== activeGhostLabel) && ((nowGhostMs - lastGhostLoadMs) >= REALTIME_GHOST_REFRESH_MS));
-
-              if(!shouldRefreshRealtime){
-                return;
+              if(normalizedClosest !== activeGhostLabel){
+                queueGhostFeedback(j.closest_sign);
               }
-
-                loadingGhost = true;
-              lastGhostLoadMs = nowGhostMs;
-                ghostEnabled = false;
-                ghostReady = false;
-                ghostFrames = null;
-                ghostIdx = 0;
-              ghostLoopStartMs = 0;
-
-                // Fire-and-forget: don't block camera while ghost loads
-                loadGhostFor(j.closest_sign).then(ok => {
-                    if(ok){
-                        activeGhostLabel = normalizedClosest;
-                        ghostEnabled = true;
-                        ghostLoopStartMs = 0;
-                    }
-                }).catch(e => {
-                    console.error('Ghost load error', e);
-                }).finally(() => {
-                    loadingGhost = false;
-                });
             }
 
         }else{
@@ -1310,11 +1318,8 @@ async function _doPredict(isRealtime=false){
               detLabel.textContent = cleanLabel(j.prediction)||'—';
               detStatus.textContent = 'Correct! Keep going!';
               celebrate();
-              ghostEnabled=false;
-              ghostReady=false;
-              ghostFrames=null;
-              activeGhostLabel='';
-              ghostLoopStartMs=0;
+              stopGhostPlayback();
+              pendingGhostLabel='';
               ghostBadge.style.display='none';
               // Preload ghost in background for this sign (in case user tries again)
               preloadGhostFor(j.prediction);
@@ -1450,11 +1455,8 @@ async function _doPredict(isRealtime=false){
     detLabel.textContent='—';
     detStatus.textContent='Ready to start!';
     smoothedDistanceM=null;
-    ghostEnabled=false;
-    ghostReady=false;
-    ghostFrames=null;
-    activeGhostLabel='';
-    ghostLoopStartMs=0;
+    stopGhostPlayback();
+    pendingGhostLabel='';
     ghostBadge.style.display='none';
     try{await camera.stop();}catch(_){}
     stopBtn.style.display='none';startBtn.style.display='inline-block';
