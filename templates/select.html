@@ -465,8 +465,14 @@
     font-size: 13px;
     font-weight: 600;
     background: var(--white);
+    color: #0f172a;
     cursor: pointer;
     min-height: 36px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+  }
+
+  .input-group select option {
+    font-weight: 700;
   }
 
   .input-group select:focus {
@@ -973,6 +979,23 @@ window.addEventListener("load", () => {
   const FAMILY_SIGNS = ["Daughter","Father","Grandfather","Grandmother","Mother","Son"];
   const RELATIONSHIP_SIGNS = ["Boy","Girl"];
   const SURVIVAL_SIGNS = ["Correct","No","Understand","Wrong","Yes"];
+  const NUMBER_LABELS = {
+    One: "One (1)",
+    Two: "Two (2)",
+    Three: "Three (3)",
+    Four: "Four (4)",
+    Five: "Five (5)",
+  };
+  const COLOR_OPTION_STYLES = {
+    black:  { bg: '#111111', fg: '#ffffff', border: '#000000' },
+    blue:   { bg: '#1d4ed8', fg: '#ffffff', border: '#1e40af' },
+    green:  { bg: '#16a34a', fg: '#ffffff', border: '#15803d' },
+    orange: { bg: '#f97316', fg: '#ffffff', border: '#ea580c' },
+    pink:   { bg: '#ec4899', fg: '#ffffff', border: '#db2777' },
+    red:    { bg: '#dc2626', fg: '#ffffff', border: '#b91c1c' },
+    white:  { bg: '#ffffff', fg: '#334155', border: '#94a3b8' },
+    yellow: { bg: '#facc15', fg: '#422006', border: '#d97706' },
+  };
 
   // Initialize display to show camera by default
   const showCameraDisplay = () => {
@@ -990,22 +1013,62 @@ window.addEventListener("load", () => {
   const categorySelect = document.getElementById("categorySelect");
   const gestureSelect  = document.getElementById("gestureSelect");
 
+  function getGestureDisplayLabel(category, sign) {
+    if (category === 'numbers') return NUMBER_LABELS[sign] || sign;
+    return sign;
+  }
+
+  function applyGestureSelectTheme() {
+    const category = categorySelect.value;
+    const selected = (gestureSelect.value || '').toLowerCase();
+
+    if (category === 'colors' && COLOR_OPTION_STYLES[selected]) {
+      const style = COLOR_OPTION_STYLES[selected];
+      gestureSelect.style.background = style.bg;
+      gestureSelect.style.color = style.fg;
+      gestureSelect.style.borderColor = style.border;
+      gestureSelect.style.boxShadow = '0 0 0 2px rgba(15, 23, 42, 0.18)';
+      return;
+    }
+
+    gestureSelect.style.background = 'var(--white)';
+    gestureSelect.style.color = '#0f172a';
+    gestureSelect.style.borderColor = 'var(--grass-green)';
+    gestureSelect.style.boxShadow = 'none';
+  }
+
   function loadGestures() {
     gestureSelect.innerHTML = "";
     let signs = [];
-    if (categorySelect.value === "numbers") signs = NUMBER_SIGNS;
-    if (categorySelect.value === "colors")  signs = COLOR_SIGNS;
-    if (categorySelect.value === "family")  signs = FAMILY_SIGNS;
-    if (categorySelect.value === "relationship")  signs = RELATIONSHIP_SIGNS;
-    if (categorySelect.value === "survival")  signs = SURVIVAL_SIGNS;
+    const category = categorySelect.value;
+    if (category === "numbers") signs = NUMBER_SIGNS;
+    if (category === "colors")  signs = COLOR_SIGNS;
+    if (category === "family")  signs = FAMILY_SIGNS;
+    if (category === "relationship")  signs = RELATIONSHIP_SIGNS;
+    if (category === "survival")  signs = SURVIVAL_SIGNS;
+
     signs.forEach(s => {
       const opt = document.createElement("option");
       opt.value = s;
-      opt.textContent = s;
+      opt.textContent = getGestureDisplayLabel(category, s);
+
+      if (category === 'colors') {
+        const style = COLOR_OPTION_STYLES[s.toLowerCase()];
+        if (style) {
+          opt.style.backgroundColor = style.bg;
+          opt.style.color = style.fg;
+        }
+      }
+
       gestureSelect.appendChild(opt);
     });
+
+    applyGestureSelectTheme();
   }
-  categorySelect.onchange = loadGestures;
+  categorySelect.onchange = () => {
+    loadGestures();
+  };
+  gestureSelect.onchange = applyGestureSelectTheme;
   loadGestures();
 
   let celebrationLayer = null;
