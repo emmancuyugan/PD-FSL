@@ -141,10 +141,107 @@
     line-height: 1.4;
   }
 
+  .hero-actions {
+    margin-top: 12px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .mission-trigger {
+    padding: 10px 22px;
+    border: 0;
+    border-radius: 14px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--deep-blue);
+    background: var(--white);
+    box-shadow: 0 4px 12px var(--shadow);
+    transition: all 0.25s ease;
+  }
+
+  .mission-trigger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px var(--shadow);
+  }
+
+  .mission-trigger:focus-visible {
+    outline: 2px solid rgba(67, 97, 238, 0.35);
+    outline-offset: 2px;
+  }
+
   .mission-section {
     max-width: 1200px;
     margin: 0 auto 12px;
     animation: scaleIn 0.8s ease-out 0.2s backwards;
+  }
+
+  .mission-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(20, 24, 40, 0.55);
+    backdrop-filter: blur(6px);
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .mission-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .mission-dialog {
+    width: min(1020px, 96vw);
+    max-height: min(86vh, 720px);
+    overflow-y: auto;
+    background: linear-gradient(135deg, #FFF8F0 0%, #FFE5EC 45%, #E0F4FF 100%);
+    border-radius: 22px;
+    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.24);
+    padding: 20px;
+    position: relative;
+  }
+
+  .mission-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 34px;
+    height: 34px;
+    border: 1px solid rgba(67, 97, 238, 0.24);
+    border-radius: 999px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--deep-blue);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .mission-close:hover {
+    transform: translateY(-1px) scale(1.03);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.16);
+  }
+
+  .mission-close:focus-visible {
+    outline: 2px solid rgba(67, 97, 238, 0.35);
+    outline-offset: 2px;
+  }
+
+  .mission-dialog .mission-card {
+    margin-top: 8px;
   }
 
   @keyframes scaleIn {
@@ -384,9 +481,38 @@
       font-size: 11px;
     }
 
+    .hero-actions {
+      margin-top: 10px;
+    }
+
+    .mission-trigger {
+      width: 100%;
+      max-width: 280px;
+      font-size: 12px;
+      padding: 9px 16px;
+    }
+
     .mission-grid {
       grid-template-columns: 1fr;
       gap: 12px;
+    }
+
+    .mission-overlay {
+      padding: 12px;
+    }
+
+    .mission-dialog {
+      padding: 16px;
+      border-radius: 16px;
+      max-height: 90vh;
+    }
+
+    .mission-close {
+      width: 32px;
+      height: 32px;
+      font-size: 20px;
+      top: 10px;
+      right: 10px;
     }
 
     .team-title {
@@ -418,6 +544,9 @@
     <p class="hero-subtitle">
       We're passionate innovators building the future of Filipino Sign Language education through AI-powered technology!
     </p>
+    <div class="hero-actions">
+      <button class="mission-trigger" id="missionBtn" type="button">Our Mission</button>
+    </div>
   </div>
 
   <!-- Team Section -->
@@ -485,40 +614,86 @@
     </div>
   </div>
 
-  <!-- Mission Section -->
-  <div class="mission-section">
-    <div class="mission-card">
-      <h2 class="mission-title">Our Mission</h2>
+</div>
 
-      <div class="mission-grid">
-        <div class="mission-item">
-          <h3>
-            <span class="icon-circle icon-blue"></span>
-            Building Inclusive Technology
-          </h3>
-          <p>
-            We're creating an innovative AI-powered platform that makes Filipino Sign Language learning accessible,
-            interactive, and effective. Our system combines advanced LSTM neural networks with intuitive design
-            to create a comprehensive learning experience.
-          </p>
-        </div>
+<div class="mission-overlay" id="missionOverlay" aria-hidden="true">
+  <div class="mission-dialog" role="dialog" aria-modal="true" aria-labelledby="missionTitle">
+    <button class="mission-close" id="missionCloseBtn" type="button" aria-label="Close mission dialog">&times;</button>
+    <div class="mission-section">
+      <div class="mission-card">
+        <h2 class="mission-title" id="missionTitle">Our Mission</h2>
 
-        <div class="mission-item">
-          <h3>
-            <span class="icon-circle icon-green"></span>
-            Key Features
-          </h3>
-          <ul>
-            <li>Provide real-time visual feedback for FSL</li>
-            <li>Offer instructional videos to guide users in learning FSL</li>
-            <li>Deliver corrective feedback to help users improve their performance</li>
-            <li>Track practice progress with daily summaries, streaks, and most-practiced signs</li>
-            <li>User accounts to save and review learning history over time</li>
-          </ul>
+        <div class="mission-grid">
+          <div class="mission-item">
+            <h3>
+              <span class="icon-circle icon-blue"></span>
+              Building Inclusive Technology
+            </h3>
+            <p>
+              We're creating an innovative AI-powered platform that makes Filipino Sign Language learning accessible,
+              interactive, and effective. Our system combines advanced LSTM neural networks with intuitive design
+              to create a comprehensive learning experience.
+            </p>
+          </div>
+
+          <div class="mission-item">
+            <h3>
+              <span class="icon-circle icon-green"></span>
+              Key Features
+            </h3>
+            <ul>
+              <li>Provide real-time visual feedback for FSL</li>
+              <li>Offer instructional videos to guide users in learning FSL</li>
+              <li>Deliver corrective feedback to help users improve their performance</li>
+              <li>Track practice progress with daily summaries, streaks, and most-practiced signs</li>
+              <li>User accounts to save and review learning history over time</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+  (function () {
+    const missionBtn = document.getElementById('missionBtn');
+    const missionOverlay = document.getElementById('missionOverlay');
+    const missionCloseBtn = document.getElementById('missionCloseBtn');
+
+    if (!missionBtn || !missionOverlay || !missionCloseBtn) {
+      return;
+    }
+
+    const openMission = function () {
+      missionOverlay.classList.add('show');
+      missionOverlay.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      missionCloseBtn.focus();
+    };
+
+    const closeMission = function () {
+      missionOverlay.classList.remove('show');
+      missionOverlay.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      missionBtn.focus();
+    };
+
+    missionBtn.addEventListener('click', openMission);
+    missionCloseBtn.addEventListener('click', closeMission);
+
+    missionOverlay.addEventListener('click', function (event) {
+      if (event.target === missionOverlay) {
+        closeMission();
+      }
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && missionOverlay.classList.contains('show')) {
+        closeMission();
+      }
+    });
+  })();
+</script>
 
 {% endblock %}
