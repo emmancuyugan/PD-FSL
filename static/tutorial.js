@@ -244,8 +244,23 @@ const Tutorial = (() => {
   function init(pageName, uid) {
     currentPage = pageName;
     userId = uid || "";
-    // Auto-show after a brief delay so the page finishes rendering
-    setTimeout(() => start(pageName, false), 600);
+
+    // Show tutorial at least once per user, even if previous browser state exists.
+    const firstRunKey = "senyasalin_tutorial_first_run" + (userId ? "_" + userId : "");
+    let forceFirstRun = false;
+    try {
+      forceFirstRun = localStorage.getItem(firstRunKey) !== "1";
+    } catch {
+      forceFirstRun = false;
+    }
+
+    // Auto-show after a brief delay so the page finishes rendering.
+    setTimeout(() => {
+      start(pageName, forceFirstRun);
+      if (forceFirstRun) {
+        try { localStorage.setItem(firstRunKey, "1"); } catch { /* ignore */ }
+      }
+    }, 600);
   }
 
   return { init, start, resetAll };
