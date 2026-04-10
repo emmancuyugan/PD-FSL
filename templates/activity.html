@@ -813,7 +813,7 @@
           </div>
           <div class="setting-item">
             <input type="checkbox" id="toggleSpeed">
-            <span>Fast Mode (3 Seconds)</span>
+            <span>Real-Time Recognition</span>
           </div>
           <div class="setting-item" style="margin-top: 4px;">
             <span style="margin-right: 8px;">Source:</span>
@@ -1080,11 +1080,26 @@ window.addEventListener("load", () => {
   toggleVisuals.onchange = () => { showVisuals = toggleVisuals.checked; };
   toggleTimer.onchange   = () => {
     showTimer = toggleTimer.checked;
+    if (toggleSpeed.checked) {
+      timerBar.style.display = 'none';
+      return;
+    }
     timerBar.style.display = showTimer ? 'block' : 'none';
   };
   toggleResults.onchange = () => {
     showResults = toggleResults.checked;
     resultText.style.display = showResults ? 'block' : 'none';
+  };
+  toggleSpeed.onchange = () => {
+    if (toggleSpeed.checked) {
+      timerBar.style.display = 'none';
+      capturePhase.textContent = running ? 'Perform Now (real-time mode)...' : 'Idle';
+    } else {
+      timerBar.style.display = showTimer ? 'block' : 'none';
+      if (running && state === STATE_CAPTURE) {
+        capturePhase.textContent = 'Perform Now (~5 s)...';
+      }
+    }
   };
 
   const STATE_READY=0, STATE_PREP=1, STATE_CAPTURE=2;
@@ -1099,6 +1114,10 @@ window.addEventListener("load", () => {
   let lastPersonCount=1; // Track latest person count for prediction gating
   const ALTITUDE_SAMPLE_MAX = 30;
   let recentAltitudeSamples = [];
+  const REALTIME_MIN_FRAMES = 16;
+  const REALTIME_MIN_INTERVAL_MS = 300;
+  let realtimeLastPredictMs = 0;
+  let realtimePredicting = false;
 
   function updateGestureDisplay(gesture) {
     targetLabel.textContent = gesture ? gesture : 'None';
@@ -1681,6 +1700,18 @@ window.addEventListener("load", () => {
         return { predicted: null, raw: j };
       }
 
+      if (silent) {
+        if (showResults) {
+          if (predicted) {
+            resultText.textContent = `Live: ${predicted}`;
+          } else {
+            resultText.textContent = 'Live: waiting...';
+          }
+          resultText.className = 'result-text';
+        }
+        return { predicted, raw: j };
+      }
+
       if (!silent) {
         const target = normLabel(targetGesture || '');
         if (predicted && target && predicted === target) {
@@ -2083,8 +2114,7 @@ window.addEventListener("load", () => {
   function retryCurrentSign() {
     if (!targetGesture) { startBtn.click(); return; }
 
-    const fastMode = toggleSpeed.checked;
-    CAPTURE_MS = fastMode ? 3000 : BASE_CAPTURE_MS;
+    CAPTURE_MS = BASE_CAPTURE_MS;
 
     // Keep the same targetGesture — just re-display it
     updateGestureDisplay(targetGesture);
@@ -2096,6 +2126,7 @@ window.addEventListener("load", () => {
     smoothedDistanceM = null;
     frameCounter = 0;
     autoJudge = false;
+    realtimeLastPredictMs = 0;
     setState(STATE_PREP);
 
     prepOverlay.style.display = "block";
@@ -2114,7 +2145,7 @@ window.addEventListener("load", () => {
       setState(STATE_CAPTURE);
       prepOverlay.style.display = "none";
       recBadge.style.display = "inline-block";
-      capturePhase.textContent = "Perform Now (~5 s)…";
+      capturePhase.textContent = toggleSpeed.checked ? "Perform Now (real-time mode)..." : "Perform Now (~5 s)...";
       captureStartMs = Date.now();
       startNumericTimer(toggleSpeed.checked);
     }, 1000);
@@ -2209,7 +2240,17 @@ window.addEventListener("load", () => {
       frameCounter++;
       if (frameCounter % frameSkip === 0) {
         const feat = packFeature(_displayLM);
-        if (feat) updateBuffer(feat);
+        if (feat) {
+          updateBuffer(feat);
+          if (toggleSpeed.checked && buf.length >= REALTIME_MIN_FRAMES) {
+            const now = Date.now();
+            if (!realtimePredicting && (now - realtimeLastPredictMs) >= REALTIME_MIN_INTERVAL_MS) {
+              realtimeLastPredictMs = now;
+              realtimePredicting = true;
+              predictOnce(true).finally(() => { realtimePredicting = false; });
+            }
+          }
+        }
       }
 
       const elapsed = Date.now() - captureStartMs;
@@ -2283,8 +2324,7 @@ window.addEventListener("load", () => {
   });
 
   const originalStart = () => {
-    const fastMode = toggleSpeed.checked;
-    CAPTURE_MS = fastMode ? 3000 : BASE_CAPTURE_MS;
+    CAPTURE_MS = BASE_CAPTURE_MS;
 
     targetGesture = pickEasySign();
     updateGestureDisplay(targetGesture);
@@ -2300,6 +2340,7 @@ window.addEventListener("load", () => {
     smoothedDistanceM = null;
     frameCounter = 0;
     autoJudge = false;
+    realtimeLastPredictMs = 0;
     setState(STATE_PREP);
 
     prepOverlay.style.display = "block";
@@ -2316,7 +2357,7 @@ window.addEventListener("load", () => {
       setState(STATE_CAPTURE);
       prepOverlay.style.display = "none";
       recBadge.style.display = "inline-block";
-      capturePhase.textContent = "Perform Now (~5 s)…";
+      capturePhase.textContent = toggleSpeed.checked ? "Perform Now (real-time mode)..." : "Perform Now (~5 s)...";
       captureStartMs = Date.now();
       startNumericTimer(toggleSpeed.checked);
     }, 1000);
@@ -2349,6 +2390,8 @@ window.addEventListener("load", () => {
     if (ghostTimer) clearTimeout(ghostTimer);
     buf=[]; frameCounter=0; frameCountEl.textContent='0'; progressBar.style.width='0%'; timerBar.style.width='0%';
     smoothedDistanceM=null;
+    realtimeLastPredictMs=0;
+    realtimePredicting=false;
     capturePhase.textContent='Idle'; setState(STATE_READY);
     stopNumericTimer();
     startBtn.style.display='inline-block';
@@ -2360,11 +2403,14 @@ window.addEventListener("load", () => {
   let tickInterval = null;
   const timerOverlay = document.getElementById("timerOverlay");
 
-  function startNumericTimer(fastMode) {
-    if (!showTimer) return;
+  function startNumericTimer(realtimeMode) {
+    if (!showTimer || realtimeMode) {
+      timerOverlay.style.display = "none";
+      return;
+    }
     clearInterval(tickInterval);
 
-    let countdown = fastMode ? 3 : 5;
+    let countdown = 5;
     timerOverlay.textContent = countdown;
     timerOverlay.style.display = "block";
     timerOverlay.style.background = "linear-gradient(135deg, var(--deep-blue), var(--lavender))";
