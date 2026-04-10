@@ -32,6 +32,10 @@
     position: relative;
   }
 
+  body[data-page="about"] {
+    overflow: hidden;
+  }
+
   .bg-shapes {
     position: fixed;
     inset: 0;
@@ -97,7 +101,9 @@
     position: relative;
     z-index: 1;
     width: 100%;
-    min-height: calc(100vh - 64px);
+    min-height: calc(100vh - 72px);
+    height: calc(100vh - 72px);
+    overflow: hidden;
     padding: 10px 20px 52px;
     display: flex;
     flex-direction: column;
