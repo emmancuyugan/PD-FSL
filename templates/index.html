@@ -313,12 +313,19 @@
     color: var(--deep-blue);
     font-size: 22px;
     font-weight: 800;
-    line-height: 0;
-    display: grid;
-    place-items: center;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
     z-index: 2;
     transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  }
+
+  .overlay-close .close-glyph {
+    display: block;
+    transform: translateY(-1px);
   }
 
   .overlay-close:hover {
@@ -520,7 +527,7 @@
 
 <div class="info-overlay" id="whyOverlay" aria-hidden="true">
   <div class="info-dialog" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
-    <button class="overlay-close" id="overlayCloseBtn" type="button" aria-label="Close dialog">&times;</button>
+    <button class="overlay-close" id="overlayCloseBtn" type="button" aria-label="Close dialog"><span class="close-glyph" aria-hidden="true">&times;</span></button>
     <div class="section-header">
       <h2 class="section-title overlay-title" id="overlayTitle">Why Choose Our Platform?</h2>
       <p class="section-subtitle">
