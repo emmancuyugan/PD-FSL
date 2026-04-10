@@ -619,18 +619,25 @@
   const distanceHintLabel=document.getElementById('distanceHintLabel');
 
   const PREDICT_URL=location.origin+'/predict_auto';
+  const SAVE_URL=location.origin+'/api/save_result';
   // OPTIMIZATION: Jetson Orin Nano frame skipping for auto detection
   // Skip every 2nd frame = ~15 FPS effective (from 30 FPS camera)
   const SEQ_LEN = 48;
   const CAPTURE_MAX = 80;  // Keep a rolling window for stable sequence extraction
   const REALTIME_MIN_FRAMES = 16;
   const REALTIME_MIN_INTERVAL_MS = 250;
+  const REALTIME_STABLE_HITS = 2;
+  const REALTIME_COMMIT_COOLDOWN_MS = 1200;
   let buf=[],running=false,handsPresent=false,frameCount=0,showVisuals=true,showTimer=true,showResults=true;
   let lastPersonCount=1; // Track latest person count for prediction gating
   let frameSkip=2;
   let predicting=false; // Lock: true while predict() is in-flight
   let feedbackActive=false; // True while feedback overlay is showing — pauses accumulation
   let realtimeLastPredictMs=0;
+  let realtimeStableLabel='';
+  let realtimeStableHits=0;
+  let realtimeLastCommittedLabel='';
+  let realtimeCooldownUntil=0;
   let tickInterval=null,countdown=5;
 
   const HAND_CONN=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20]];
@@ -1108,13 +1115,13 @@
         // Keep buffer at max size
         if(buf.length<CAPTURE_MAX) buf.push(feat);
         else { buf.shift(); buf.push(feat); }
-        frameInfo.textContent='Capturing: '+Math.floor(buf.length)+' frames';
+        frameInfo.textContent='Rolling window: '+Math.floor(buf.length)+'/'+CAPTURE_MAX+' frames';
         frameInfo.style.display='block';
         
         const realtimeMode = toggleSpeed.checked;
         if(realtimeMode && buf.length >= REALTIME_MIN_FRAMES){
           const nowMs = Date.now();
-          if(!predicting && (nowMs - realtimeLastPredictMs) >= REALTIME_MIN_INTERVAL_MS){
+          if(!predicting && nowMs >= realtimeCooldownUntil && (nowMs - realtimeLastPredictMs) >= REALTIME_MIN_INTERVAL_MS){
             realtimeLastPredictMs = nowMs;
             predict(true);
           }
@@ -1249,11 +1256,91 @@ async function _doPredict(isRealtime=false){
         const res = await fetch(PREDICT_URL,{
             method:'POST',
             headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({sequence:seq})
+            body:JSON.stringify({sequence:seq, realtime:isRealtime})
         });
 
         const j = await res.json();
         if(!showResults) return;
+
+        if(isRealtime){
+          const nowMs = Date.now();
+          const pred = (j.prediction || '').trim();
+          const isConcrete = !!pred &&
+            pred !== 'Incorrect' &&
+            pred !== 'No hands detected' &&
+            pred !== 'Not in FSL dataset' &&
+            pred !== 'Unrecognized Sign' &&
+            pred !== "Survival_Don't Understand" &&
+            pred !== 'Error';
+
+          if(!isConcrete){
+            realtimeStableLabel='';
+            realtimeStableHits=0;
+            detStatus.textContent='Reading next sign...';
+            return;
+          }
+
+          if(pred === realtimeStableLabel) realtimeStableHits += 1;
+          else {
+            realtimeStableLabel = pred;
+            realtimeStableHits = 1;
+          }
+
+          if(realtimeStableHits < REALTIME_STABLE_HITS){
+            detLabel.textContent = cleanLabel(pred) || '—';
+            detStatus.textContent = `Reading ${cleanLabel(pred) || 'sign'}...`;
+            return;
+          }
+
+          if(pred === realtimeLastCommittedLabel && nowMs < realtimeCooldownUntil){
+            return;
+          }
+
+          const now = new Date().toLocaleTimeString();
+          const histEntry = document.createElement('div');
+          histEntry.style.marginBottom='8px';
+          histEntry.style.padding='8px';
+          histEntry.style.borderRadius='8px';
+          histEntry.style.background='rgba(255,255,255,0.6)';
+          histEntry.innerHTML = `<strong style="color:var(--grass-green);">${now}</strong>: ✓ ${cleanLabel(pred)||'—'}`;
+
+          if(historyEl.children.length===1 && historyEl.children[0].style.color==='#999'){
+            historyEl.innerHTML='';
+          }
+          historyEl.insertBefore(histEntry, historyEl.firstChild);
+          historyEl.scrollTop = 0;
+
+          gestureOverlay.textContent = `✓ Great Job! ${cleanLabel(pred)||'—'}`;
+          gestureOverlay.style.display='block';
+          gestureOverlay.style.background='rgba(6,214,160,0.9)';
+          detLabel.textContent = cleanLabel(pred)||'—';
+          detStatus.textContent = 'Correct! Keep going!';
+          celebrate();
+
+          pendingGhostLabel='';
+          ghostBadge.style.display='none';
+          preloadGhostFor(pred);
+
+          try{
+            await fetch(SAVE_URL, {
+              method:'POST',
+              headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({label: pred, confidence: j.confidence ?? null})
+            });
+          }catch(_e){}
+
+          realtimeLastCommittedLabel = pred;
+          realtimeCooldownUntil = nowMs + REALTIME_COMMIT_COOLDOWN_MS;
+          realtimeStableHits = 0;
+          buf = [];
+          frameCount = 0;
+          feedbackActive = true;
+          setTimeout(() => {
+            feedbackActive = false;
+            if(showResults) gestureOverlay.style.display='none';
+          }, 650);
+          return;
+        }
 
         const now = new Date().toLocaleTimeString();
         const histEntry = document.createElement('div');
@@ -1425,6 +1512,10 @@ async function _doPredict(isRealtime=false){
     buf=[];
     frameCount=0;
     realtimeLastPredictMs=0;
+    realtimeStableLabel='';
+    realtimeStableHits=0;
+    realtimeLastCommittedLabel='';
+    realtimeCooldownUntil=0;
     recBadge.style.display='inline-block';
     stateBadge.textContent='Learning Mode ON! 🎓';
     stateBadge.style.background='linear-gradient(135deg, var(--coral), var(--orange))';
@@ -1449,6 +1540,10 @@ async function _doPredict(isRealtime=false){
     detLabel.textContent='—';
     detStatus.textContent='Ready to start!';
     smoothedDistanceM=null;
+    realtimeStableLabel='';
+    realtimeStableHits=0;
+    realtimeLastCommittedLabel='';
+    realtimeCooldownUntil=0;
     stopGhostPlayback();
     pendingGhostLabel='';
     ghostBadge.style.display='none';

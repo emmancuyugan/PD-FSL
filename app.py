@@ -682,6 +682,7 @@ def predict():
 def predict_auto():
     try:
         data = request.get_json(force=True) or {}
+        realtime_probe = bool(data.get("realtime", False))
         # For error handling of no hand detected
         if (
             ("sequence" not in data and "features" not in data) or
@@ -722,7 +723,8 @@ def predict_auto():
             closest_label = CLASSES[top_idx]
             closest_conf = float(probs[top_idx])
 
-            save_progress(closest_label, closest_conf)
+            if not realtime_probe:
+                save_progress(closest_label, closest_conf)
 
             return jsonify({
                 "prediction": "Incorrect",
@@ -733,7 +735,8 @@ def predict_auto():
             })
 
         else:
-            save_progress(label, conf)
+            if not realtime_probe:
+                save_progress(label, conf)
 
             return jsonify({
                 "prediction": label,
