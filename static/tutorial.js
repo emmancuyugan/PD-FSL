@@ -245,8 +245,8 @@ const Tutorial = (() => {
     currentPage = pageName;
     userId = uid || "";
 
-    // Show tutorial at least once per user, even if previous browser state exists.
-    const firstRunKey = "senyasalin_tutorial_first_run" + (userId ? "_" + userId : "");
+    // Show tutorial at least once per user per page, even if previous browser state exists.
+    const firstRunKey = "senyasalin_tutorial_first_run" + (userId ? "_" + userId : "") + (pageName ? "_" + pageName : "");
     let forceFirstRun = false;
     try {
       forceFirstRun = localStorage.getItem(firstRunKey) !== "1";

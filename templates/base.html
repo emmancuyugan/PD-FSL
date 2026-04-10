@@ -307,8 +307,6 @@
 
         <a href="{{ url_for('about') }}" class="{% if request.endpoint == 'about' %}active{% endif %}">ABOUT</a>
 
-        <a href="#" id="tutorialHelpBtn" class="tut-help-btn" title="Show tutorial">?</a>
-
         {% if session.get('user_id') %}
           <a href="{{ url_for('logout') }}">LOGOUT{% if session.get('username') %} ({{ session.get('username') }}){% endif %}</a>
         {% else %}
@@ -341,14 +339,6 @@
     document.body.dataset.page = "{{ request.endpoint or '' }}";
     document.addEventListener('DOMContentLoaded', function() {
       Tutorial.init("{{ request.endpoint or '' }}", "{{ session.get('user_id', '') }}");
-
-      const tutorialHelpBtn = document.getElementById('tutorialHelpBtn');
-      if (tutorialHelpBtn) {
-        tutorialHelpBtn.addEventListener('click', function(e) {
-          e.preventDefault();
-          Tutorial.start("{{ request.endpoint or '' }}", true);
-        });
-      }
     });
 
     // Scroll-triggered animations
