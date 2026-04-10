@@ -331,6 +331,10 @@ def run_inference(x):
 
 
 def log_top3(probs, tag="INFERENCE"): # Print top 3 predictions for debugging
+    if not np.any(np.isfinite(probs)):
+        print(f"[{tag}] Unrecognized sign (non-finite probabilities)")
+        return
+
     top3_idx = np.argsort(probs)[::-1][:3]
     print(f"[{tag}] Top-3 predictions:")
     for rank, idx in enumerate(top3_idx, 1):
@@ -647,6 +651,15 @@ def predict():
 
         probs = run_inference(x)
         log_top3(probs, tag="PREDICT")
+
+        if not np.any(np.isfinite(probs)):
+            print("[PREDICT] Unrecognized Sign (non-finite probabilities)")
+            return jsonify({
+                "prediction": "Unrecognized Sign",
+                "confidence": 0.0,
+                "message": "Unrecognized sign"
+            })
+
         pred_idx = int(np.argmax(probs))
         label = CLASSES[pred_idx]
         
@@ -701,6 +714,14 @@ def predict_auto():
 
         probs = run_inference(x)
         log_top3(probs, tag="AUTO")
+
+        if not np.any(np.isfinite(probs)):
+            print("[AUTO] Unrecognized Sign (non-finite probabilities)")
+            return jsonify({
+                "prediction": "Unrecognized Sign",
+                "confidence": 0.0,
+                "message": "Unrecognized sign"
+            })
 
         conf = float(np.max(probs)) 
         pred_idx = int(np.argmax(probs))
