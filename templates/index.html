@@ -240,18 +240,6 @@
     border: 3px solid var(--deep-blue);
   }
 
-  .features-section {
-    position: relative;
-    z-index: 1;
-    padding: 24px 24px 32px;
-    flex: 1;
-  }
-
-  .features-container {
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
   .section-header {
     text-align: center;
     margin-bottom: 16px;
@@ -308,34 +296,49 @@
     background: linear-gradient(135deg, #FFF8F0 0%, #FFE5EC 45%, #E0F4FF 100%);
     border-radius: 24px;
     box-shadow: 0 22px 50px rgba(0, 0, 0, 0.24);
-    padding: 26px;
+    padding: 24px;
     position: relative;
   }
 
   .overlay-close {
-    position: sticky;
-    top: 0;
-    float: right;
-    width: 42px;
-    height: 42px;
-    border: none;
-    border-radius: 12px;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 34px;
+    height: 34px;
+    border: 1px solid rgba(67, 97, 238, 0.24);
+    border-radius: 999px;
     cursor: pointer;
-    background: var(--white);
+    background: rgba(255, 255, 255, 0.92);
     color: var(--deep-blue);
-    font-size: 26px;
-    font-weight: 700;
-    line-height: 1;
-    box-shadow: 0 4px 14px var(--shadow);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 0;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
     z-index: 2;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
   }
 
   .overlay-close:hover {
-    transform: translateY(-2px);
+    transform: translateY(-1px) scale(1.03);
+    background: var(--white);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.16);
+  }
+
+  .overlay-close:focus-visible {
+    outline: 2px solid rgba(67, 97, 238, 0.35);
+    outline-offset: 2px;
+  }
+
+  .info-dialog .section-header {
+    padding-top: 8px;
+    padding-right: 42px;
   }
 
   .overlay-title {
-    margin-top: 6px;
+    margin-top: 0;
   }
 
   .feature-card {
@@ -452,6 +455,18 @@
       border-radius: 16px;
       max-height: 90vh;
     }
+
+    .overlay-close {
+      width: 32px;
+      height: 32px;
+      top: 10px;
+      right: 10px;
+      font-size: 20px;
+    }
+
+    .info-dialog .section-header {
+      padding-right: 36px;
+    }
   }
 </style>
 
@@ -540,47 +555,6 @@
     </div>
   </div>
 </div>
-
-<!-- Features Section -->
-<section class="features-section">
-  <div class="features-container">
-    <div class="section-header">
-      <h2 class="section-title">Why Choose Our Platform?</h2>
-      <p class="section-subtitle">
-        Advanced technology meets accessibility to create the most effective FSL learning experience!
-      </p>
-    </div>
-
-    <div class="features-grid">
-      <!-- Feature 1: AI-Powered Recognition -->
-      <div class="feature-card">
-        <div class="feature-icon icon-blue"></div>
-        <h3 class="feature-title">AI-Powered Recognition</h3>
-        <p class="feature-description">
-          Advanced LSTM neural networks with MediaPipe landmarks provide accurate gesture recognition — fully offline, no internet required.
-        </p>
-      </div>
-
-      <!-- Feature 2: Interactive Learning -->
-      <div class="feature-card">
-        <div class="feature-icon icon-green"></div>
-        <h3 class="feature-title">Interactive Learning</h3>
-        <p class="feature-description">
-          Multiple learning modes — Learn for guided video lessons, Select for choosing specific signs to practice, Activity for hands-on testing, and Auto for continuous real-time recognition.
-        </p>
-      </div>
-
-      <!-- Feature 3: Performance Feedback -->
-      <div class="feature-card">
-        <div class="feature-icon icon-coral"></div>
-        <h3 class="feature-title">Performance Feedback</h3>
-        <p class="feature-description">
-          Corrective feedback with real-time guidance, plus progress tracking with daily summaries, streaks, and practice history.
-        </p>
-      </div>
-    </div>
-  </div>
-</section>
 
 <script>
   (function () {
