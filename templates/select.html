@@ -1902,11 +1902,11 @@ window.addEventListener("load", () => {
     }
   }
 
-  async function stopAndPredict(existingResult=null) {
+  async function stopAndPredict() {
     if (state !== STATE_CAPTURE && state !== STATE_PREP) return;
     running = false;
     recBadge.style.display = "none";
-    const result = existingResult || await predictOnce(false);
+    const result = await predictOnce(false);
     setState(STATE_READY);
     capturePhase.textContent = "Idle";
     startBtn.style.display = "inline-block";
@@ -2423,20 +2423,14 @@ window.addEventListener("load", () => {
             if (!realtimePredicting && (now - realtimeLastPredictMs) >= REALTIME_MIN_INTERVAL_MS) {
               realtimeLastPredictMs = now;
               realtimePredicting = true;
-              predictOnce(false)
-                .then((result) => {
-                  if (running && state === STATE_CAPTURE && result && result.predicted) {
-                    stopAndPredict(result);
-                  }
-                })
-                .finally(() => { realtimePredicting = false; });
+              predictOnce(true).finally(() => { realtimePredicting = false; });
             }
           }
         }
       }
 
       const elapsed = Date.now() - captureStartMs;
-      if (!toggleSpeed.checked && elapsed >= CAPTURE_MS && autoJudge === false) {
+      if (elapsed >= CAPTURE_MS && autoJudge === false) {
         autoJudge = true;
         setTimeout(() => stopAndPredict(), 80);
       }
