@@ -98,14 +98,22 @@
     z-index: 1;
     width: 100%;
     min-height: calc(100vh - 64px);
-    padding: 12px 20px;
+    padding: 10px 20px 52px;
     display: flex;
     flex-direction: column;
   }
 
+  .footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+  }
+
   .hero-section {
     text-align: center;
-    margin-bottom: 14px;
+    margin-bottom: 10px;
     animation: slideDown 0.8s ease-out;
   }
 
@@ -115,7 +123,7 @@
   }
 
   .hero-title {
-    font-size: 32px;
+    font-size: 30px;
     font-weight: 900;
     background: linear-gradient(135deg, var(--deep-blue), var(--lavender), var(--coral));
     -webkit-background-clip: text;
@@ -126,7 +134,7 @@
   }
 
   .hero-subtitle {
-    font-size: 15px;
+    font-size: 14px;
     color: #333;
     max-width: 800px;
     margin: 0 auto;
@@ -135,7 +143,7 @@
 
   .mission-section {
     max-width: 1200px;
-    margin: 0 auto 16px;
+    margin: 0 auto 12px;
     animation: scaleIn 0.8s ease-out 0.2s backwards;
   }
 
@@ -147,13 +155,13 @@
   .mission-card {
     background: var(--white);
     border-radius: 16px;
-    padding: 18px 22px;
+    padding: 14px 18px;
     box-shadow: 0 2px 10px var(--shadow);
   }
 
   .mission-title {
     text-align: center;
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 900;
     background: linear-gradient(135deg, var(--deep-blue), var(--sky-blue));
     -webkit-background-clip: text;
@@ -165,11 +173,11 @@
   .mission-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    gap: 12px;
   }
 
   .mission-item h3 {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--deep-blue);
     margin-bottom: 8px;
@@ -179,9 +187,9 @@
   }
 
   .mission-item p, .mission-item li {
-    font-size: 13px;
+    font-size: 12px;
     color: #666;
-    line-height: 1.5;
+    line-height: 1.4;
   }
 
   .mission-item ul {
@@ -216,12 +224,12 @@
 
   .team-section {
     max-width: 1400px;
-    margin: 0 auto;
+    margin: 0 auto 12px;
   }
 
   .team-header {
     text-align: center;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     animation: fadeIn 0.8s ease-out 0.4s backwards;
   }
 
@@ -231,7 +239,7 @@
   }
 
   .team-title {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 900;
     background: linear-gradient(135deg, var(--coral), var(--lavender));
     -webkit-background-clip: text;
@@ -244,13 +252,13 @@
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 10px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
 
   .team-card {
     background: var(--white);
     border-radius: 16px;
-    padding: 14px 12px;
+    padding: 12px 10px;
     text-align: center;
     box-shadow: 0 2px 10px var(--shadow);
     transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
@@ -274,10 +282,10 @@
   }
 
   .team-avatar {
-    width: 80px;
-    height: 80px;
+    width: 74px;
+    height: 74px;
     border-radius: 50%;
-    margin: 0 auto 10px;
+    margin: 0 auto 8px;
     overflow: hidden;
     border: 3px solid transparent;
     background: linear-gradient(white, white) padding-box,
@@ -298,7 +306,7 @@
   }
 
   .team-name {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: #333;
     margin-bottom: 5px;
@@ -307,13 +315,13 @@
 
   .team-role {
     display: inline-block;
-    padding: 4px 12px;
+    padding: 4px 10px;
     background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
     color: var(--white);
     border-radius: 10px;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     box-shadow: 0 2px 6px rgba(67, 97, 238, 0.3);
   }
 
@@ -338,9 +346,9 @@
   }
 
   .team-description {
-    font-size: 12px;
+    font-size: 11px;
     color: #666;
-    line-height: 1.4;
+    line-height: 1.35;
   }
 
   @media (max-width: 1400px) {
@@ -394,41 +402,6 @@
     <p class="hero-subtitle">
       We're passionate innovators building the future of Filipino Sign Language education through AI-powered technology!
     </p>
-  </div>
-
-  <!-- Mission Section -->
-  <div class="mission-section">
-    <div class="mission-card">
-      <h2 class="mission-title">Our Mission</h2>
-
-      <div class="mission-grid">
-        <div class="mission-item">
-          <h3>
-            <span class="icon-circle icon-blue"></span>
-            Building Inclusive Technology
-          </h3>
-          <p>
-            We're creating an innovative AI-powered platform that makes Filipino Sign Language learning accessible,
-            interactive, and effective. Our system combines advanced LSTM neural networks with intuitive design
-            to create a comprehensive learning experience.
-          </p>
-        </div>
-
-        <div class="mission-item">
-          <h3>
-            <span class="icon-circle icon-green"></span>
-            Key Features
-          </h3>
-          <ul>
-            <li>Provide real-time visual feedback for FSL</li>
-            <li>Offer instructional videos to guide users in learning FSL</li>
-            <li>Deliver corrective feedback to help users improve their performance</li>
-            <li>Track practice progress with daily summaries, streaks, and most-practiced signs</li>
-            <li>User accounts to save and review learning history over time</li>
-          </ul>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- Team Section -->
@@ -496,6 +469,41 @@
         <p class="team-description">
           Leads model development and training, optimizing gesture recognition performance and handling all tasks related to dataset preparation, evaluation, and inference readiness.
         </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mission Section -->
+  <div class="mission-section">
+    <div class="mission-card">
+      <h2 class="mission-title">Our Mission</h2>
+
+      <div class="mission-grid">
+        <div class="mission-item">
+          <h3>
+            <span class="icon-circle icon-blue"></span>
+            Building Inclusive Technology
+          </h3>
+          <p>
+            We're creating an innovative AI-powered platform that makes Filipino Sign Language learning accessible,
+            interactive, and effective. Our system combines advanced LSTM neural networks with intuitive design
+            to create a comprehensive learning experience.
+          </p>
+        </div>
+
+        <div class="mission-item">
+          <h3>
+            <span class="icon-circle icon-green"></span>
+            Key Features
+          </h3>
+          <ul>
+            <li>Provide real-time visual feedback for FSL</li>
+            <li>Offer instructional videos to guide users in learning FSL</li>
+            <li>Deliver corrective feedback to help users improve their performance</li>
+            <li>Track practice progress with daily summaries, streaks, and most-practiced signs</li>
+            <li>User accounts to save and review learning history over time</li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
