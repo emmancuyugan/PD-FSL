@@ -96,7 +96,10 @@
   .hero-section {
     position: relative;
     z-index: 1;
-    padding: 32px 24px 20px;
+    min-height: calc(100vh - 84px);
+    padding: 56px 24px 44px;
+    display: flex;
+    align-items: center;
     text-align: center;
     animation: fadeIn 0.8s ease-out;
   }
@@ -344,6 +347,11 @@
   }
 
   @media (max-width: 768px) {
+    .hero-section {
+      min-height: calc(100vh - 72px);
+      padding: 44px 20px 32px;
+    }
+
     .hero-title {
       font-size: 40px;
     }
