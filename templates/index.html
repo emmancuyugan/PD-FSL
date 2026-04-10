@@ -216,6 +216,10 @@
     min-height: 48px;
   }
 
+  .hero-btn-modal {
+    font-family: inherit;
+  }
+
   .hero-btn:hover {
     transform: translateY(-4px) scale(1.05);
     box-shadow: 0 10px 30px var(--shadow);
@@ -275,6 +279,63 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 20px;
+  }
+
+  .info-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(20, 24, 40, 0.55);
+    backdrop-filter: blur(6px);
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .info-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .info-dialog {
+    width: min(1080px, 96vw);
+    max-height: min(86vh, 860px);
+    overflow-y: auto;
+    background: linear-gradient(135deg, #FFF8F0 0%, #FFE5EC 45%, #E0F4FF 100%);
+    border-radius: 24px;
+    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.24);
+    padding: 26px;
+    position: relative;
+  }
+
+  .overlay-close {
+    position: sticky;
+    top: 0;
+    float: right;
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    background: var(--white);
+    color: var(--deep-blue);
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: 0 4px 14px var(--shadow);
+    z-index: 2;
+  }
+
+  .overlay-close:hover {
+    transform: translateY(-2px);
+  }
+
+  .overlay-title {
+    margin-top: 6px;
   }
 
   .feature-card {
@@ -381,6 +442,16 @@
     .features-grid {
       grid-template-columns: 1fr;
     }
+
+    .info-overlay {
+      padding: 12px;
+    }
+
+    .info-dialog {
+      padding: 16px;
+      border-radius: 16px;
+      max-height: 90vh;
+    }
   }
 </style>
 
@@ -427,10 +498,48 @@
       {% else %}
         <a class="hero-btn btn-primary" href="{{ url_for('login') }}">Start Learning</a>
       {% endif %}
-      <a class="hero-btn btn-secondary" href="{{ url_for('about') }}">Learn More</a>
+      <button class="hero-btn btn-secondary hero-btn-modal" id="learnMoreBtn" type="button">Learn More</button>
     </div>
   </div>
 </section>
+
+<div class="info-overlay" id="whyOverlay" aria-hidden="true">
+  <div class="info-dialog" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
+    <button class="overlay-close" id="overlayCloseBtn" type="button" aria-label="Close dialog">&times;</button>
+    <div class="section-header">
+      <h2 class="section-title overlay-title" id="overlayTitle">Why Choose Our Platform?</h2>
+      <p class="section-subtitle">
+        Advanced technology meets accessibility to create the most effective FSL learning experience!
+      </p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon icon-blue"></div>
+        <h3 class="feature-title">AI-Powered Recognition</h3>
+        <p class="feature-description">
+          Advanced LSTM neural networks with MediaPipe landmarks provide accurate gesture recognition — fully offline, no internet required.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon icon-green"></div>
+        <h3 class="feature-title">Interactive Learning</h3>
+        <p class="feature-description">
+          Multiple learning modes — Learn for guided video lessons, Select for choosing specific signs to practice, Activity for hands-on testing, and Auto for continuous real-time recognition.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon icon-coral"></div>
+        <h3 class="feature-title">Performance Feedback</h3>
+        <p class="feature-description">
+          Corrective feedback with real-time guidance, plus progress tracking with daily summaries, streaks, and practice history.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Features Section -->
 <section class="features-section">
@@ -472,5 +581,46 @@
     </div>
   </div>
 </section>
+
+<script>
+  (function () {
+    const learnMoreBtn = document.getElementById('learnMoreBtn');
+    const overlay = document.getElementById('whyOverlay');
+    const closeBtn = document.getElementById('overlayCloseBtn');
+
+    if (!learnMoreBtn || !overlay || !closeBtn) {
+      return;
+    }
+
+    const openOverlay = function () {
+      overlay.classList.add('show');
+      overlay.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      closeBtn.focus();
+    };
+
+    const closeOverlay = function () {
+      overlay.classList.remove('show');
+      overlay.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      learnMoreBtn.focus();
+    };
+
+    learnMoreBtn.addEventListener('click', openOverlay);
+    closeBtn.addEventListener('click', closeOverlay);
+
+    overlay.addEventListener('click', function (event) {
+      if (event.target === overlay) {
+        closeOverlay();
+      }
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && overlay.classList.contains('show')) {
+        closeOverlay();
+      }
+    });
+  })();
+</script>
 
 {% endblock %}
