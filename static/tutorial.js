@@ -9,6 +9,8 @@
  */
 
 const Tutorial = (() => {
+  const TUTORIAL_VERSION = "2026-04-10-v2";
+
   // ── Step definitions keyed by Flask endpoint name ──────────────────
   const STEPS = {
     tutor: [
@@ -105,7 +107,7 @@ const Tutorial = (() => {
 
   // ── LocalStorage helpers ───────────────────────────────────────────
   function lsKey() {
-    return "senyasalin_tutorial_dismissed" + (userId ? "_" + userId : "");
+    return "senyasalin_tutorial_dismissed_" + TUTORIAL_VERSION + (userId ? "_" + userId : "");
   }
 
   function isDismissed(page) {
@@ -250,7 +252,7 @@ const Tutorial = (() => {
     userId = uid || "";
 
     // Show tutorial at least once per user per page, even if previous browser state exists.
-    const firstRunKey = "senyasalin_tutorial_first_run" + (userId ? "_" + userId : "") + (pageName ? "_" + pageName : "");
+    const firstRunKey = "senyasalin_tutorial_first_run_" + TUTORIAL_VERSION + (userId ? "_" + userId : "") + (pageName ? "_" + pageName : "");
     let forceFirstRun = false;
     try {
       forceFirstRun = localStorage.getItem(firstRunKey) !== "1";
