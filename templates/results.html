@@ -491,12 +491,13 @@
           <table>
             <thead>
               <tr>
-                <th style="width:80px;">Time</th>
+                <th style="width:110px;">Date</th>
+                <th style="width:90px;">Time</th>
                 <th>Result</th>
               </tr>
             </thead>
             <tbody id="logBody">
-              <tr><td colspan="2"><div class="empty">No records yet. Try signing in Select or Activity!</div></td></tr>
+              <tr><td colspan="3"><div class="empty">No records yet. Try signing in Select or Activity!</div></td></tr>
             </tbody>
           </table>
         </div>
@@ -707,6 +708,7 @@
         ? `<span class="pill ok">✓ ${escapeHtml(cleanLabel(r.label))}</span>`
         : `<span class="pill bad">✗ Incorrect</span>`;
       tr.innerHTML = `
+        <td>${fmtDate(r.created_at)}</td>
         <td>${fmtTime(r.created_at)}</td>
         <td>${pill}</td>
       `;
