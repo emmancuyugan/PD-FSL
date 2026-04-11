@@ -905,17 +905,25 @@
     const script = document.createElement('script');
     script.src = '{{ url_for("static", filename="vendor/html2pdf.bundle.min.js") }}';
     script.onload = () => {
-      const dataRows = mode === 'today' ? rows.filter(r => dateKey(r.created_at) === todayK) : rows;
+      const isTodayMode = mode === 'today';
+      const todayRows = rows.filter(r => dateKey(r.created_at) === todayK);
+      const fullRows = rows.slice();
+      const dataRows = isTodayMode ? todayRows : fullRows;
       const username = escapeHtml('{{ session.get("username","student") }}');
       const safeUsername = username.replace(/[^a-zA-Z0-9_-]/g, '_');
       const genDate = new Date().toLocaleString();
       const genDateShort = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
+      const modeSlug = isTodayMode ? 'today-only' : 'full-history';
 
       const pdfTotal = dataRows.length;
       const pdfCorrect = dataRows.filter(r => isCorrect(r.label)).length;
       const pdfIncorrect = pdfTotal - pdfCorrect;
       const successRate = pdfTotal === 0 ? '—' : (pdfCorrect / pdfTotal * 100).toFixed(1) + '%';
-      const modeLabel = mode === 'today' ? 'Today Only' : 'Full History';
+      const modeLabel = isTodayMode ? 'Today Only' : 'Full History';
 
       /* ── Clean label: strip category prefix & underscores ── */
       function cleanLabel(raw) {
@@ -1125,7 +1133,7 @@
 
       const opt = {
         margin: [6, 6, 7, 6],
-        filename: 'FSL_Report_' + safeUsername + '_' + genDateShort + '.pdf',
+        filename: 'FSL_Report_' + safeUsername + '_' + modeSlug + '_' + genDateShort + '_' + hh + mm + ss + '.pdf',
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, logging: false },
         jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' },
