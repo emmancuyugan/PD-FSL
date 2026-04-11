@@ -85,12 +85,21 @@
     position: relative;
     z-index: 1;
     width: 100%;
-    min-height: calc(100vh - 64px);
+    height: calc(100vh - 72px);
+    min-height: calc(100vh - 72px);
     display: flex;
     flex-direction: column;
-    padding: 8px 12px;
+    padding: 8px 12px 64px;
     gap: 8px;
     overflow: hidden;
+  }
+
+  .footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
   }
 
   .header {
@@ -214,6 +223,21 @@
     min-height: 0;
   }
 
+  .latest-card,
+  .daily-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .latest-card {
+    flex: 1 1 58%;
+  }
+
+  .daily-card {
+    flex: 1 1 42%;
+  }
+
   .card-title {
     font-size: 13px;
     font-weight: 800;
@@ -296,6 +320,13 @@
     max-height: 250px;
   }
 
+  .latest-card .table-wrap,
+  .daily-card .table-wrap {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+  }
+
   table {
     width: 100%;
     border-collapse: collapse;
@@ -367,12 +398,23 @@
       width: 100%;
       justify-content: flex-start;
     }
+
+    .latest-card,
+    .daily-card {
+      flex: 0 0 auto;
+    }
+
+    .latest-card .table-wrap,
+    .daily-card .table-wrap {
+      max-height: 280px;
+    }
   }
 
   @media(max-width:768px) {
     .app-container {
-      min-height: calc(100vh - 64px);
-      padding: 6px 10px;
+      height: calc(100vh - 72px);
+      min-height: calc(100vh - 72px);
+      padding: 6px 10px 64px;
       gap: 8px;
     }
   }
@@ -433,7 +475,7 @@
 
   <div class="grid">
     <div class="section-gap">
-      <div class="card">
+      <div class="card latest-card">
         <div class="card-title">Latest attempts</div>
         <div class="table-wrap">
           <table>
@@ -450,7 +492,7 @@
         </div>
       </div>
 
-      <div class="card" style="min-height: 0;">
+      <div class="card daily-card">
         <div class="card-title">Daily activity (last 14 days)</div>
         <div class="table-wrap">
           <table>
