@@ -105,7 +105,7 @@
     height: calc(100vh - 72px);
     overflow-x: hidden;
     overflow-y: hidden;
-    padding: 8px 16px 48px;
+    padding: 8px 16px 74px;
     display: flex;
     flex-direction: column;
   }
@@ -126,21 +126,33 @@
     background: rgba(255, 255, 255, 0.9);
     border: 2px solid rgba(67, 97, 238, 0.24);
     box-shadow: 0 6px 18px rgba(67, 97, 238, 0.14);
-    text-align: center;
+    text-align: left;
     animation: fadeIn 0.7s ease-out 0.12s backwards;
+  }
+
+  .mission-panel-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+  }
+
+  .mission-copy {
+    min-width: 0;
+    flex: 1;
   }
 
   .mission-panel-title {
     font-size: 16px;
     font-weight: 900;
     color: #2B2B2B;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
   }
 
   .mission-helper {
     font-size: 11px;
     color: #555;
-    margin-bottom: 8px;
+    margin-bottom: 0;
   }
 
   .mission-trigger {
@@ -161,6 +173,7 @@
     gap: 8px;
     transition: box-shadow 0.2s ease, filter 0.2s ease;
     animation: missionPulse 2.4s ease-in-out infinite;
+    white-space: nowrap;
   }
 
   .mission-trigger:hover {
@@ -343,7 +356,7 @@
 
   .team-section {
     max-width: 1400px;
-    margin: 0 auto 8px;
+    margin: 0 auto 14px;
   }
 
   .team-header {
@@ -470,6 +483,7 @@
     color: #666;
     line-height: 1.3;
     display: -webkit-box;
+    line-clamp: 4;
     -webkit-line-clamp: 4;
     -webkit-box-orient: vertical;
     overflow: hidden;
@@ -493,6 +507,7 @@
     }
 
     .team-description {
+      line-clamp: 5;
       -webkit-line-clamp: 5;
     }
   }
@@ -508,6 +523,13 @@
     .mission-panel {
       padding: 12px;
       margin-top: 8px;
+      text-align: center;
+    }
+
+    .mission-panel-row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
     }
 
     .mission-trigger {
@@ -553,6 +575,7 @@
     }
 
     .team-description {
+      line-clamp: 6;
       -webkit-line-clamp: 6;
     }
   }
@@ -567,12 +590,15 @@
 
 <div class="page-container">
   <div class="mission-panel" aria-label="Mission callout">
-    <h2 class="mission-panel-title">Read Our Mission Statement</h2>
-    <p class="mission-helper">Tap the button below to open our mission details.</p>
-    <button class="mission-trigger" id="missionBtn" type="button" aria-controls="missionOverlay" aria-expanded="false">
-      <span>Open Our Mission</span>
-      <span class="mission-trigger-arrow">-&gt;</span>
-    </button>
+    <div class="mission-panel-row">
+      <div class="mission-copy">
+        <h2 class="mission-panel-title">Read Our Mission Statement</h2>
+        <p class="mission-helper">Tap to open our mission details.</p>
+      </div>
+      <button class="mission-trigger" id="missionBtn" type="button" aria-controls="missionOverlay" aria-expanded="false">
+        <span>Open Our Mission</span>
+      </button>
+    </div>
   </div>
 
   <!-- Team Section -->
