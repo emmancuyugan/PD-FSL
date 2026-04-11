@@ -203,9 +203,23 @@
   .grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
     gap: 8px;
     flex: 1;
+    min-height: 0;
+  }
+
+  .left-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    min-height: 0;
+  }
+
+  .right-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     min-height: 0;
   }
 
@@ -221,6 +235,10 @@
   .daily-card {
     display: flex;
     flex-direction: column;
+    min-height: 0;
+  }
+
+  .right-stack > .card {
     min-height: 0;
   }
 
@@ -382,6 +400,10 @@
       grid-template-rows: none;
     }
 
+    .left-pair {
+      grid-template-columns: 1fr;
+    }
+
     .stats-row {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -466,57 +488,61 @@
   </div>
 
   <div class="grid">
-    <div class="card latest-card">
-      <div class="card-title">Latest attempts</div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th style="width:110px;">Date</th>
-              <th style="width:90px;">Time</th>
-              <th>Result</th>
-            </tr>
-          </thead>
-          <tbody id="logBody">
-            <tr><td colspan="3"><div class="empty">No records yet. Try signing in Select or Activity!</div></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card daily-card">
-      <div class="card-title">Daily activity (last 14 days)</div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th style="width:100px;">Date</th><th>Attempts</th><th>Correct</th><th>Incorrect</th></tr></thead>
-          <tbody id="dailyBody">
-            <tr><td colspan="4"><div class="empty">No daily data yet.</div></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Today summary</div>
-      <div class="mini" id="todaySummary">—</div>
-      <div class="common-band">
-        <div class="common-label">Most common</div>
-        <div id="statCommon">—</div>
-      </div>
-    </div>
-
-    <div class="card category-card">
-      <div class="card-title">Category Assessment - Current Session</div>
-      <div class="assessment">
-        <div class="assess-box">
-          <div class="assess-title">Needs most practice</div>
-          <div class="assess-main" id="curStruggleText">No current session attempts yet.</div>
-          <div class="assess-meta" id="curStruggleStats">—</div>
+    <div class="left-pair">
+      <div class="card latest-card">
+        <div class="card-title">Latest attempts</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:110px;">Date</th>
+                <th style="width:90px;">Time</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody id="logBody">
+              <tr><td colspan="3"><div class="empty">No records yet. Try signing in Select or Activity!</div></td></tr>
+            </tbody>
+          </table>
         </div>
-        <div class="assess-box">
-          <div class="assess-title">Your best category</div>
-          <div class="assess-main" id="curBestText">No current session attempts yet.</div>
-          <div class="assess-meta" id="curBestStats">—</div>
+      </div>
+
+      <div class="card daily-card">
+        <div class="card-title">Daily activity (last 14 days)</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th style="width:100px;">Date</th><th>Attempts</th><th>Correct</th><th>Incorrect</th></tr></thead>
+            <tbody id="dailyBody">
+              <tr><td colspan="4"><div class="empty">No daily data yet.</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-stack">
+      <div class="card">
+        <div class="card-title">Today summary</div>
+        <div class="mini" id="todaySummary">—</div>
+        <div class="common-band">
+          <div class="common-label">Most common</div>
+          <div id="statCommon">—</div>
+        </div>
+      </div>
+
+      <div class="card category-card">
+        <div class="card-title">Category Assessment - Current Session</div>
+        <div class="assessment">
+          <div class="assess-box">
+            <div class="assess-title">Needs most practice</div>
+            <div class="assess-main" id="curStruggleText">No current session attempts yet.</div>
+            <div class="assess-meta" id="curStruggleStats">—</div>
+          </div>
+          <div class="assess-box">
+            <div class="assess-title">Your best category</div>
+            <div class="assess-main" id="curBestText">No current session attempts yet.</div>
+            <div class="assess-meta" id="curBestStats">—</div>
+          </div>
         </div>
       </div>
     </div>
