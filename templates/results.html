@@ -41,6 +41,11 @@
   .pill.ok{background:rgba(6,214,160,.15);color:#057a61}
   .pill.bad{background:rgba(255,107,157,.15);color:#b0234c}
   .mini{font-size:13px;color:#777;font-weight:700}
+  .assessment{display:grid;grid-template-columns:1fr;gap:8px}
+  .assess-box{background:rgba(250,250,255,.8);border:2px solid rgba(255,255,255,.75);border-radius:10px;padding:10px}
+  .assess-title{font-size:12px;font-weight:900;color:#666;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+  .assess-main{font-size:15px;font-weight:900;color:#334155;margin-bottom:4px}
+  .assess-meta{font-size:12px;color:#64748B;font-weight:800}
 
   .section-gap{display:flex;flex-direction:column;gap:12px;min-height:0}
 
@@ -133,6 +138,22 @@
         </div>
       </div>
 
+      <div class="card">
+        <div class="card-title">Category Assessment - Current Session</div>
+        <div class="assessment">
+          <div class="assess-box">
+            <div class="assess-title">Needs most practice</div>
+            <div class="assess-main" id="curStruggleText">No current session attempts yet.</div>
+            <div class="assess-meta" id="curStruggleStats">—</div>
+          </div>
+          <div class="assess-box">
+            <div class="assess-title">Your best category</div>
+            <div class="assess-main" id="curBestText">No current session attempts yet.</div>
+            <div class="assess-meta" id="curBestStats">—</div>
+          </div>
+        </div>
+      </div>
+
       <div class="card" style="min-height:0;">
         <div class="card-title">Daily activity (last 14 days)</div>
         <div class="table-wrap" style="max-height:250px;">
@@ -151,6 +172,7 @@
 <script>
 (function(){
   const raw = {{ (db_results_json or '[]')|safe }};
+  const CURRENT_SESSION_KEY = 'fsl_current_session_attempts_v1';
 
   const fmtTime = (iso) => {
     if(!iso) return '—';
@@ -175,10 +197,55 @@
     const day = String(d.getDate()).padStart(2,'0');
     return `${y}-${m}-${day}`;
   };
-  const isCorrect = (label) => {
-    if(!label) return false;
-    return String(label) !== 'Incorrect';
+  const isIncorrectLabel = (label) => {
+    if(!label) return true;
+    const s = String(label).trim().toLowerCase();
+    return s === 'incorrect'
+      || s.startsWith('incorrect|')
+      || s.startsWith('incorrect:')
+      || s.startsWith('incorrect_')
+      || s === 'not in fsl dataset'
+      || s === 'no hands detected'
+      || s === 'unrecognized sign'
+      || s === 'error';
   };
+
+  const isCorrect = (label) => !isIncorrectLabel(label);
+
+  function categoryTitle(cat){
+    if(!cat) return 'Unknown';
+    return String(cat).charAt(0).toUpperCase() + String(cat).slice(1).toLowerCase();
+  }
+
+  function inferCategory(label){
+    if(!label) return null;
+    const raw = String(label).trim();
+    const low = raw.toLowerCase();
+
+    // Supports richer incorrect labels saved as: Incorrect|category or Incorrect:category
+    const incorrectMatch = low.match(/^incorrect[|:_-]([a-z]+)/);
+    if(incorrectMatch && incorrectMatch[1]) return incorrectMatch[1];
+
+    if(low.startsWith('numbers_')) return 'numbers';
+    if(low.startsWith('colors_') || low.startsWith('color_')) return 'colors';
+    if(low.startsWith('family_')) return 'family';
+    if(low.startsWith('relationship_')) return 'relationship';
+    if(low.startsWith('survival_')) return 'survival';
+
+    const cleaned = low.replace(/[^a-z0-9]+/g, '');
+    const numbers = new Set(['one','two','three','four','five','1','2','3','4','5']);
+    const family = new Set(['daughter','father','grandfather','grandmother','mother','son']);
+    const relationship = new Set(['boy','girl']);
+    const survival = new Set(['correct','no','understand','wrong','yes']);
+    const colors = new Set(['black','blue','green','orange','pink','red','white','yellow']);
+
+    if(numbers.has(cleaned)) return 'numbers';
+    if(family.has(cleaned)) return 'family';
+    if(relationship.has(cleaned)) return 'relationship';
+    if(survival.has(cleaned)) return 'survival';
+    if(colors.has(cleaned)) return 'colors';
+    return null;
+  }
 
   /* Clean label: strip category prefix & underscores for display */
   function cleanLabel(raw) {
@@ -201,11 +268,23 @@
   const statCommon = document.getElementById('statCommon');
   const todayBadge = document.getElementById('todayBadge');
   const todaySummary = document.getElementById('todaySummary');
+  const curStruggleText = document.getElementById('curStruggleText');
+  const curStruggleStats = document.getElementById('curStruggleStats');
+  const curBestText = document.getElementById('curBestText');
+  const curBestStats = document.getElementById('curBestStats');
 
   const exportBtn = document.getElementById('exportBtn');
   // Optional: clear button can be added later with a server endpoint.
 
   const rows = Array.isArray(raw) ? raw : [];
+  let currentSessionRows = [];
+  try {
+    const rawSession = sessionStorage.getItem(CURRENT_SESSION_KEY);
+    const parsed = rawSession ? JSON.parse(rawSession) : [];
+    currentSessionRows = Array.isArray(parsed) ? parsed : [];
+  } catch (_e) {
+    currentSessionRows = [];
+  }
 
   const total = rows.length;
   const correct = rows.filter(r => isCorrect(r.label)).length;
@@ -316,6 +395,59 @@
   todaySummary.textContent = todayAttempts
     ? `You made ${todayAttempts} attempts today. Keep going!`
     : `No entries today yet. Do a few reps in Select or Activity.`;
+
+  function renderCategoryAssessment(sourceRows, struggleEl, struggleStatsEl, bestEl, bestStatsEl, emptyMsg) {
+    const categoryStats = new Map();
+    sourceRows.forEach(r => {
+      const cat = inferCategory(r.label);
+      if(!cat) return;
+      if(!categoryStats.has(cat)){
+        categoryStats.set(cat, {attempts:0, correct:0, incorrect:0});
+      }
+      const entry = categoryStats.get(cat);
+      entry.attempts += 1;
+      if(isCorrect(r.label)) entry.correct += 1;
+      else entry.incorrect += 1;
+    });
+
+    const categories = Array.from(categoryStats.entries()).map(([name,stats]) => ({
+      name,
+      ...stats,
+      accuracy: stats.attempts ? (stats.correct / stats.attempts) : 0
+    }));
+
+    if(!categories.length){
+      struggleEl.textContent = emptyMsg;
+      struggleStatsEl.textContent = '—';
+      bestEl.textContent = emptyMsg;
+      bestStatsEl.textContent = '—';
+      return;
+    }
+
+    const weakest = [...categories].sort((a,b) => {
+      if(a.accuracy !== b.accuracy) return a.accuracy - b.accuracy;
+      return b.attempts - a.attempts;
+    })[0];
+    const strongest = [...categories].sort((a,b) => {
+      if(a.accuracy !== b.accuracy) return b.accuracy - a.accuracy;
+      return b.attempts - a.attempts;
+    })[0];
+
+    struggleEl.textContent = `You struggle most with ${categoryTitle(weakest.name)} gestures.`;
+    struggleStatsEl.textContent = `Correct: ${weakest.correct} · Incorrect: ${weakest.incorrect} · Accuracy: ${(weakest.accuracy*100).toFixed(1)}%`;
+
+    bestEl.textContent = `You are best at ${categoryTitle(strongest.name)} gestures.`;
+    bestStatsEl.textContent = `Correct: ${strongest.correct} · Incorrect: ${strongest.incorrect} · Accuracy: ${(strongest.accuracy*100).toFixed(1)}%`;
+  }
+
+  renderCategoryAssessment(
+    currentSessionRows,
+    curStruggleText,
+    curStruggleStats,
+    curBestText,
+    curBestStats,
+    'No current session attempts yet.'
+  );
 
   /* ── PDF Modal Logic ── */
   const pdfModal = document.getElementById('pdfModal');

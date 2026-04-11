@@ -620,6 +620,7 @@
 
   const PREDICT_URL=location.origin+'/predict_auto';
   const SAVE_URL=location.origin+'/api/save_result';
+  const CURRENT_SESSION_KEY = 'fsl_current_session_attempts_v1';
   // OPTIMIZATION: Jetson Orin Nano frame skipping for auto detection
   // Skip every 2nd frame = ~15 FPS effective (from 30 FPS camera)
   const SEQ_LEN = 48;
@@ -660,6 +661,22 @@
   // Survives across predictions so repeat signs are instant.
   const _ghostCache = new Map();
   let _preloadBusy = false;
+
+  async function saveResult(label, confidence = null) {
+    try {
+      await fetch(SAVE_URL, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({label, confidence})
+      });
+      try {
+        const raw = sessionStorage.getItem(CURRENT_SESSION_KEY);
+        const arr = raw ? JSON.parse(raw) : [];
+        arr.push({ label, confidence, created_at: new Date().toISOString() });
+        sessionStorage.setItem(CURRENT_SESSION_KEY, JSON.stringify(arr.slice(-2000)));
+      } catch (_e) {}
+    } catch (_e) {}
+  }
 
   function flattenHand(lms){if(!lms)return new Float32Array(63);const a=[];for(let i=0;i<21;i++){const p=lms[i];a.push(p.x,p.y,p.z);}return new Float32Array(a);}
   function lm(list,idx){if(!list||idx>=list.length)return{x:NaN,y:NaN,z:NaN};return list[idx];}
@@ -1321,13 +1338,7 @@ async function _doPredict(isRealtime=false){
           ghostBadge.style.display='none';
           preloadGhostFor(pred);
 
-          try{
-            await fetch(SAVE_URL, {
-              method:'POST',
-              headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({label: pred, confidence: j.confidence ?? null})
-            });
-          }catch(_e){}
+          await saveResult(pred, j.confidence ?? null);
 
           realtimeLastCommittedLabel = pred;
           realtimeCooldownUntil = nowMs + REALTIME_COMMIT_COOLDOWN_MS;

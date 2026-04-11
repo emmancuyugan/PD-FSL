@@ -1603,6 +1603,7 @@ window.addEventListener("load", () => {
 
   const PREDICT_URL = location.origin + '/predict';
   const SAVE_URL = location.origin + '/api/save_result';
+  const CURRENT_SESSION_KEY = 'fsl_current_session_attempts_v1';
   
   async function callPredict(sequence) {
     // Build expected class label (e.g. "Family_Father") so backend ALWAYS_CORRECT toggle can use it
@@ -1628,6 +1629,12 @@ window.addEventListener("load", () => {
         body: JSON.stringify({ label, confidence })
       };
       await fetch(SAVE_URL, payload);
+      try {
+        const raw = sessionStorage.getItem(CURRENT_SESSION_KEY);
+        const arr = raw ? JSON.parse(raw) : [];
+        arr.push({ label, confidence, created_at: new Date().toISOString() });
+        sessionStorage.setItem(CURRENT_SESSION_KEY, JSON.stringify(arr.slice(-2000)));
+      } catch (_e) {}
     } catch (e) {
       console.error('Failed to save result:', e);
     }
@@ -1658,7 +1665,8 @@ window.addEventListener("load", () => {
         const assistHint = document.getElementById("assistHint");
         assistRow.style.display = 'block';
         assistHint.textContent = hint;
-        await saveResult("Incorrect", null);
+        const incorrectLabel = targetGesture ? `Incorrect|${inferCategory(targetGesture)}` : "Incorrect";
+        await saveResult(incorrectLabel, null);
       }
       return { predicted: null, raw: null };
     }
@@ -1672,7 +1680,8 @@ window.addEventListener("load", () => {
         const assistHint = document.getElementById("assistHint");
         assistRow.style.display = 'block';
         assistHint.textContent = 'Movement too short. Hold your sign longer!';
-        await saveResult("Incorrect", null);
+        const incorrectLabel = targetGesture ? `Incorrect|${inferCategory(targetGesture)}` : "Incorrect";
+        await saveResult(incorrectLabel, null);
       }
       return { predicted: null, raw: null };
     }
@@ -1740,7 +1749,8 @@ window.addEventListener("load", () => {
           assistHint.textContent = '';
           clearFeedbackOverlayText();
           // Save incorrect result
-          await saveResult("Incorrect", j?.confidence || null);
+          const incorrectLabel = targetGesture ? `Incorrect|${inferCategory(targetGesture)}` : "Incorrect";
+          await saveResult(incorrectLabel, j?.confidence || null);
         }
       }
       return { predicted, raw: j };
