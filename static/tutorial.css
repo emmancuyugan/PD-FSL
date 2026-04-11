@@ -144,7 +144,6 @@
   box-shadow: 0 4px 14px rgba(67, 97, 238, 0.35);
 }
 .tut-btn.tut-primary:hover {
-  transform: translateY(-1px);
   box-shadow: 0 6px 20px rgba(67, 97, 238, 0.45);
 }
 

@@ -154,22 +154,28 @@
   }
 
   .mission-trigger {
-    padding: 10px 22px;
-    border: 0;
-    border-radius: 14px;
+    padding: 14px 32px;
+    border: 3px solid var(--deep-blue);
+    border-radius: 18px;
     cursor: pointer;
     font-family: inherit;
-    font-size: 13px;
-    font-weight: 800;
+    font-size: 15px;
+    font-weight: 700;
     color: var(--deep-blue);
     background: var(--white);
-    box-shadow: 0 4px 12px var(--shadow);
-    transition: all 0.25s ease;
+    box-shadow: 0 4px 14px var(--shadow);
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 
   .mission-trigger:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 24px var(--shadow);
+    box-shadow: 0 10px 30px var(--shadow);
+  }
+
+  .mission-trigger:active {
   }
 
   .mission-trigger:focus-visible {
@@ -237,7 +243,6 @@
   }
 
   .mission-close:hover {
-    transform: translateY(-1px) scale(1.03);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.16);
   }
 
@@ -390,7 +395,6 @@
   }
 
   .team-card:hover {
-    transform: translateY(-12px) scale(1.02);
     box-shadow: 0 16px 40px var(--shadow);
   }
 
@@ -408,7 +412,6 @@
   }
 
   .team-card:hover .team-avatar {
-    transform: scale(1.1) rotate(5deg);
     box-shadow: 0 12px 32px rgba(67, 97, 238, 0.4);
   }
 
@@ -493,9 +496,7 @@
 
     .mission-trigger {
       width: 100%;
-      max-width: 280px;
-      font-size: 12px;
-      padding: 9px 16px;
+      justify-content: center;
     }
 
     .mission-grid {
