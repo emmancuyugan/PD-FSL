@@ -281,6 +281,16 @@
     gap: 8px;
   }
 
+  .category-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .category-card .assessment {
+    flex: 1;
+  }
+
   .assess-box {
     background: rgba(250, 250, 255, 0.85);
     border: 2px solid rgba(255, 255, 255, 0.75);
@@ -515,7 +525,7 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card category-card">
         <div class="card-title">Category Assessment - Current Session</div>
         <div class="assessment">
           <div class="assess-box">
