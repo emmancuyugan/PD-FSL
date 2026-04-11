@@ -118,48 +118,9 @@
     z-index: 20;
   }
 
-  .hero-section {
-    text-align: center;
-    margin-bottom: 6px;
-    animation: slideDown 0.8s ease-out;
-  }
-
-  @keyframes slideDown {
-    from { transform: translateY(-50px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-  }
-
-  .hero-title {
-    font-size: 30px;
-    font-weight: 900;
-    background: linear-gradient(135deg, var(--deep-blue), var(--lavender), var(--coral));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 8px;
-    letter-spacing: -1px;
-  }
-
-  .hero-kicker {
-    font-size: 12px;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--deep-blue);
-    margin-bottom: 4px;
-  }
-
-  .hero-subtitle {
-    font-size: 13px;
-    color: #333;
-    max-width: 800px;
-    margin: 0 auto;
-    line-height: 1.4;
-  }
-
   .mission-panel {
     width: min(700px, 100%);
-    margin: 6px auto 8px;
+    margin: 4px auto 8px;
     padding: 10px 12px;
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.9);
@@ -167,15 +128,6 @@
     box-shadow: 0 6px 18px rgba(67, 97, 238, 0.14);
     text-align: center;
     animation: fadeIn 0.7s ease-out 0.12s backwards;
-  }
-
-  .mission-kicker {
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--deep-blue);
-    margin-bottom: 6px;
   }
 
   .mission-panel-title {
@@ -554,14 +506,6 @@
   }
 
   @media (max-width: 768px) {
-    .hero-title {
-      font-size: 22px;
-    }
-
-    .hero-subtitle {
-      font-size: 12px;
-    }
-
     .mission-panel {
       padding: 12px;
       margin-top: 8px;
@@ -625,17 +569,7 @@
 </div>
 
 <div class="page-container">
-  <!-- Hero Section -->
-  <div class="hero-section">
-    <p class="hero-kicker">About Senyasalin</p>
-    <h1 class="hero-title">Built with Purpose, Built for Inclusion</h1>
-    <p class="hero-subtitle">
-      We are building an accessible Filipino Sign Language learning experience powered by AI and designed for everyday learners.
-    </p>
-  </div>
-
   <div class="mission-panel" aria-label="Mission callout">
-    <p class="mission-kicker">Start Here</p>
     <h2 class="mission-panel-title">Read Our Mission Statement</h2>
     <p class="mission-helper">Tap the button below to open our mission details.</p>
     <button class="mission-trigger" id="missionBtn" type="button" aria-controls="missionOverlay" aria-expanded="false">
