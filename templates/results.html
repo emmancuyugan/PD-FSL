@@ -202,7 +202,7 @@
 
   .grid {
     display: grid;
-    grid-template-columns: 1.7fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-template-rows: minmax(0, 1fr);
     gap: 10px;
     flex: 1;
@@ -212,6 +212,7 @@
   .left-pair {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    grid-column: 1 / span 2;
     gap: 10px;
     min-height: 0;
   }
@@ -219,6 +220,7 @@
   .right-stack {
     display: flex;
     flex-direction: column;
+    grid-column: 3;
     gap: 8px;
     min-height: 0;
   }
