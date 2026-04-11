@@ -231,11 +231,11 @@
   }
 
   .latest-card {
-    flex: 1 1 58%;
+    flex: 1 1 50%;
   }
 
   .daily-card {
-    flex: 1 1 42%;
+    flex: 1 1 50%;
   }
 
   .card-title {
@@ -736,7 +736,7 @@
 
   // Render last 14 days table (including days with 0)
   const days = [];
-  for(let i=13;i>=0;i--){
+  for(let i=0;i<14;i++){
     const d = new Date();
     d.setDate(d.getDate()-i);
     const y = d.getFullYear();
