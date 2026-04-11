@@ -50,43 +50,43 @@
     animation: float 20s infinite ease-in-out;
   }
 
-  .shape:nth-child(1) { 
-    width: 120px; 
-    height: 120px; 
-    background: var(--sunshine); 
+  .shape:nth-child(1) {
+    width: 120px;
+    height: 120px;
+    background: var(--sunshine);
     border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-    top: 10%; 
-    left: 5%; 
+    top: 10%;
+    left: 5%;
     animation-delay: 0s;
   }
 
-  .shape:nth-child(2) { 
-    width: 90px; 
-    height: 90px; 
-    background: var(--coral); 
+  .shape:nth-child(2) {
+    width: 90px;
+    height: 90px;
+    background: var(--coral);
     border-radius: 50%;
-    top: 60%; 
-    left: 80%; 
+    top: 60%;
+    left: 80%;
     animation-delay: 3s;
   }
 
-  .shape:nth-child(3) { 
-    width: 150px; 
-    height: 150px; 
-    background: var(--grass-green); 
+  .shape:nth-child(3) {
+    width: 150px;
+    height: 150px;
+    background: var(--grass-green);
     border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
-    bottom: 10%; 
-    right: 10%; 
+    bottom: 10%;
+    right: 10%;
     animation-delay: 6s;
   }
 
-  .shape:nth-child(4) { 
-    width: 100px; 
-    height: 100px; 
-    background: var(--lavender); 
+  .shape:nth-child(4) {
+    width: 100px;
+    height: 100px;
+    background: var(--lavender);
     border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-    top: 30%; 
-    right: 20%; 
+    top: 30%;
+    right: 20%;
     animation-delay: 9s;
   }
 
@@ -101,13 +101,12 @@
     position: relative;
     z-index: 1;
     width: 100%;
-    min-height: calc(100vh - 72px);
     height: calc(100vh - 72px);
+    overflow-y: auto;
     overflow-x: hidden;
-    overflow-y: hidden;
-    padding: 8px 16px 74px;
-    display: flex;
-    flex-direction: column;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+    padding: 8px 16px 72px;
   }
 
   .footer {
@@ -118,199 +117,83 @@
     z-index: 20;
   }
 
-  .mission-panel {
-    width: min(700px, 100%);
-    margin: 4px auto 8px;
-    padding: 10px 12px;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.9);
-    border: 2px solid rgba(67, 97, 238, 0.24);
-    box-shadow: 0 6px 18px rgba(67, 97, 238, 0.14);
-    text-align: left;
-    animation: fadeIn 0.7s ease-out 0.12s backwards;
-  }
-
-  .mission-panel-row {
+  .about-stage {
+    min-height: calc(100vh - 152px);
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-  }
-
-  .mission-copy {
-    min-width: 0;
-    flex: 1;
-  }
-
-  .mission-panel-title {
-    font-size: 16px;
-    font-weight: 900;
-    color: #2B2B2B;
-    margin-bottom: 3px;
-  }
-
-  .mission-helper {
-    font-size: 11px;
-    color: #555;
-    margin-bottom: 0;
-  }
-
-  .mission-trigger {
-    padding: 10px 18px;
-    border: 0;
-    border-radius: 18px;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--white);
-    background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
-    box-shadow: 0 8px 22px rgba(67, 97, 238, 0.35);
-    min-height: 42px;
-    display: inline-flex;
-    align-items: center;
+    flex-direction: column;
     justify-content: center;
-    gap: 8px;
-    transition: box-shadow 0.2s ease, filter 0.2s ease;
-    animation: missionPulse 2.4s ease-in-out infinite;
-    white-space: nowrap;
   }
 
-  .mission-trigger:hover {
-    box-shadow: 0 10px 28px rgba(67, 97, 238, 0.42);
+  .mission-stage {
+    padding: 4px 0 10px;
   }
 
-  .mission-trigger:active {
-    filter: brightness(0.94);
+  .mission-stage-header {
+    text-align: center;
+    margin-bottom: 10px;
   }
 
-  .mission-trigger-arrow {
-    font-size: 14px;
-    font-weight: 900;
-    letter-spacing: 0.02em;
-  }
-
-  @keyframes missionPulse {
-    0%, 100% { box-shadow: 0 8px 22px rgba(67, 97, 238, 0.35); }
-    50% { box-shadow: 0 10px 28px rgba(67, 97, 238, 0.52); }
-  }
-
-  .mission-trigger:focus-visible {
-    outline: 2px solid rgba(67, 97, 238, 0.35);
-    outline-offset: 2px;
-  }
-
-  .mission-section {
-    max-width: 1200px;
-    margin: 0 auto 12px;
-    animation: scaleIn 0.8s ease-out 0.2s backwards;
-  }
-
-  .mission-overlay {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    background: rgba(20, 24, 40, 0.55);
-    backdrop-filter: blur(6px);
-    z-index: 999;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
-  }
-
-  .mission-overlay.show {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .mission-dialog {
-    width: min(1020px, 96vw);
-    max-height: min(86vh, 720px);
-    overflow-y: auto;
-    background: linear-gradient(135deg, #FFF8F0 0%, #FFE5EC 45%, #E0F4FF 100%);
-    border-radius: 22px;
-    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.24);
-    padding: 20px;
-    position: relative;
-  }
-
-  .mission-close {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 34px;
-    height: 34px;
-    border: 1px solid rgba(67, 97, 238, 0.24);
-    border-radius: 999px;
-    cursor: pointer;
-    background: rgba(255, 255, 255, 0.92);
-    color: var(--deep-blue);
-    font-size: 22px;
+  .mission-kicker {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
     font-weight: 800;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    color: var(--deep-blue);
+    margin-bottom: 4px;
   }
 
-  .mission-close:hover {
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.16);
+  .mission-heading {
+    font-size: 32px;
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--deep-blue), var(--lavender), var(--coral));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
   }
 
-  .mission-close:focus-visible {
-    outline: 2px solid rgba(67, 97, 238, 0.35);
-    outline-offset: 2px;
-  }
-
-  .mission-dialog .mission-card {
-    margin-top: 8px;
-  }
-
-  @keyframes scaleIn {
-    from { transform: scale(0.9); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
+  .mission-subheading {
+    max-width: 840px;
+    margin: 0 auto;
+    font-size: 14px;
+    color: #333;
+    line-height: 1.4;
   }
 
   .mission-card {
-    background: var(--white);
-    border-radius: 16px;
-    padding: 14px 18px;
-    box-shadow: 0 2px 10px var(--shadow);
+    width: min(1000px, 100%);
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.93);
+    border: 2px solid rgba(67, 97, 238, 0.22);
+    border-radius: 20px;
+    box-shadow: 0 10px 24px rgba(67, 97, 238, 0.12);
+    padding: 16px 18px;
   }
 
-  .mission-title {
+  .mission-card-title {
     text-align: center;
-    font-size: 20px;
+    font-size: 23px;
     font-weight: 900;
     background: linear-gradient(135deg, var(--deep-blue), var(--sky-blue));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
   }
 
   .mission-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    align-items: start;
-  }
-
-  .mission-item {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
+    gap: 14px;
   }
 
   .mission-item h3 {
-    font-size: 14px;
-    font-weight: 700;
+    font-size: 15px;
+    font-weight: 800;
     color: var(--deep-blue);
     margin-bottom: 8px;
     display: flex;
@@ -318,9 +201,10 @@
     gap: 8px;
   }
 
-  .mission-item p, .mission-item li {
-    font-size: 12px;
-    color: #666;
+  .mission-item p,
+  .mission-item li {
+    font-size: 13px;
+    color: #555;
     line-height: 1.4;
   }
 
@@ -330,17 +214,16 @@
   }
 
   .mission-item li {
-    margin-bottom: 0;
+    margin-bottom: 2px;
   }
 
   .icon-circle {
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
     flex-shrink: 0;
   }
 
@@ -354,30 +237,50 @@
     box-shadow: 0 4px 12px rgba(6, 214, 160, 0.3);
   }
 
-  .team-section {
-    max-width: 1400px;
-    margin: 0 auto 14px;
+  .scroll-cue {
+    margin: 14px auto 0;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--deep-blue);
+    letter-spacing: 0.04em;
+  }
+
+  .scroll-cue::after {
+    content: "v";
+    display: block;
+    margin-top: 3px;
+    font-size: 14px;
+    animation: nudgeDown 1.4s ease-in-out infinite;
+  }
+
+  @keyframes nudgeDown {
+    0%, 100% { transform: translateY(0); opacity: 0.8; }
+    50% { transform: translateY(3px); opacity: 1; }
+  }
+
+  .team-stage {
+    padding: 8px 0 2px;
   }
 
   .team-header {
     text-align: center;
-    margin-bottom: 6px;
-    animation: fadeIn 0.8s ease-out 0.4s backwards;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    margin-bottom: 8px;
   }
 
   .team-title {
-    font-size: 22px;
+    font-size: 28px;
     font-weight: 900;
     background: linear-gradient(135deg, var(--coral), var(--lavender));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 2px;
+    margin-bottom: 6px;
+  }
+
+  .team-subtitle {
+    font-size: 13px;
+    color: #555;
   }
 
   .team-grid {
@@ -385,7 +288,6 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 10px;
-    margin-bottom: 6px;
   }
 
   .team-card {
@@ -396,23 +298,6 @@
     flex: 0 1 calc((100% - 20px) / 3);
     max-width: calc((100% - 20px) / 3);
     box-shadow: 0 2px 10px var(--shadow);
-    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    animation: popUp 0.6s ease-out backwards;
-  }
-
-  .team-card:nth-child(1) { animation-delay: 0.1s; }
-  .team-card:nth-child(2) { animation-delay: 0.2s; }
-  .team-card:nth-child(3) { animation-delay: 0.3s; }
-  .team-card:nth-child(4) { animation-delay: 0.4s; }
-  .team-card:nth-child(5) { animation-delay: 0.5s; }
-
-  @keyframes popUp {
-    from { transform: translateY(50px) scale(0.9); opacity: 0; }
-    to { transform: translateY(0) scale(1); opacity: 1; }
-  }
-
-  .team-card:hover {
-    box-shadow: 0 16px 40px var(--shadow);
   }
 
   .team-avatar {
@@ -425,11 +310,6 @@
     background: linear-gradient(white, white) padding-box,
                 linear-gradient(135deg, var(--deep-blue), var(--lavender), var(--coral)) border-box;
     box-shadow: 0 2px 10px var(--shadow);
-    transition: all 0.3s ease;
-  }
-
-  .team-card:hover .team-avatar {
-    box-shadow: 0 12px 32px rgba(67, 97, 238, 0.4);
   }
 
   .team-avatar img {
@@ -449,7 +329,6 @@
   .team-role {
     display: inline-block;
     padding: 4px 10px;
-    background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
     color: var(--white);
     border-radius: 10px;
     font-size: 10px;
@@ -458,25 +337,11 @@
     box-shadow: 0 2px 6px rgba(67, 97, 238, 0.3);
   }
 
-  .team-card:nth-child(1) .team-role {
-    background: linear-gradient(135deg, var(--deep-blue), var(--sky-blue));
-  }
-
-  .team-card:nth-child(2) .team-role {
-    background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
-  }
-
-  .team-card:nth-child(3) .team-role {
-    background: linear-gradient(135deg, var(--coral), var(--orange));
-  }
-
-  .team-card:nth-child(4) .team-role {
-    background: linear-gradient(135deg, var(--lavender), var(--coral));
-  }
-
-  .team-card:nth-child(5) .team-role {
-    background: linear-gradient(135deg, var(--orange), var(--sunshine));
-  }
+  .team-card:nth-child(1) .team-role { background: linear-gradient(135deg, var(--deep-blue), var(--sky-blue)); }
+  .team-card:nth-child(2) .team-role { background: linear-gradient(135deg, var(--grass-green), var(--sky-blue)); }
+  .team-card:nth-child(3) .team-role { background: linear-gradient(135deg, var(--coral), var(--orange)); }
+  .team-card:nth-child(4) .team-role { background: linear-gradient(135deg, var(--lavender), var(--coral)); }
+  .team-card:nth-child(5) .team-role { background: linear-gradient(135deg, var(--orange), var(--sunshine)); }
 
   .team-description {
     font-size: 11px;
@@ -489,21 +354,19 @@
     overflow: hidden;
   }
 
-  @media (max-width: 1400px) {
-    .team-card {
-      flex-basis: calc((100% - 20px) / 3);
-      max-width: calc((100% - 20px) / 3);
-    }
-  }
-
   @media (max-width: 1200px) {
-    .page-container {
-      overflow-y: auto;
+    .mission-heading {
+      font-size: 28px;
+    }
+
+    .mission-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
     }
 
     .team-card {
-      flex-basis: calc((100% - 20px) / 3);
-      max-width: calc((100% - 20px) / 3);
+      flex-basis: calc((100% - 10px) / 2);
+      max-width: calc((100% - 10px) / 2);
     }
 
     .team-description {
@@ -512,60 +375,41 @@
     }
   }
 
-  @media (max-width: 1024px) {
-    .team-card {
-      flex-basis: calc((100% - 10px) / 2);
-      max-width: calc((100% - 10px) / 2);
-    }
-  }
-
   @media (max-width: 768px) {
-    .mission-panel {
+    .page-container {
+      scroll-snap-type: y proximity;
+      padding: 8px 12px 72px;
+    }
+
+    .about-stage {
+      min-height: auto;
+      justify-content: flex-start;
+      padding-top: 4px;
+    }
+
+    .mission-heading {
+      font-size: 24px;
+    }
+
+    .mission-subheading {
+      font-size: 13px;
+    }
+
+    .mission-card {
       padding: 12px;
-      margin-top: 8px;
-      text-align: center;
-    }
-
-    .mission-panel-row {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 8px;
-    }
-
-    .mission-trigger {
-      width: 100%;
-      justify-content: center;
-    }
-
-    .mission-grid {
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
-
-    .mission-overlay {
-      padding: 12px;
-    }
-
-    .mission-dialog {
-      padding: 16px;
       border-radius: 16px;
-      max-height: 90vh;
     }
 
-    .mission-close {
-      width: 32px;
-      height: 32px;
+    .mission-card-title {
       font-size: 20px;
-      top: 10px;
-      right: 10px;
     }
 
     .team-title {
-      font-size: 18px;
+      font-size: 22px;
     }
 
-    .team-grid {
-      gap: 8px;
+    .team-subtitle {
+      font-size: 12px;
     }
 
     .team-card {
@@ -589,25 +433,54 @@
 </div>
 
 <div class="page-container">
-  <div class="mission-panel" aria-label="Mission callout">
-    <div class="mission-panel-row">
-      <div class="mission-copy">
-        <h2 class="mission-panel-title">Read Our Mission Statement</h2>
-        <p class="mission-helper">Tap to open our mission details.</p>
-      </div>
-      <button class="mission-trigger" id="missionBtn" type="button" aria-controls="missionOverlay" aria-expanded="false">
-        <span>Open Our Mission</span>
-      </button>
+  <section class="about-stage mission-stage" aria-label="Mission section">
+    <div class="mission-stage-header">
+      <p class="mission-kicker">Meet Our Team</p>
+      <h1 class="mission-heading">Mission First, Team Next</h1>
+      <p class="mission-subheading">
+        Senyasalin is built to make Filipino Sign Language learning accessible, practical, and engaging through reliable AI guidance.
+      </p>
     </div>
-  </div>
 
-  <!-- Team Section -->
-  <div class="team-section">
+    <div class="mission-card">
+      <h2 class="mission-card-title">Our Mission</h2>
+      <div class="mission-grid">
+        <div class="mission-item">
+          <h3>
+            <span class="icon-circle icon-blue"></span>
+            Building Inclusive Technology
+          </h3>
+          <p>
+            We are creating a learner-friendly platform where people can practice Filipino Sign Language with real-time visual feedback,
+            clear guidance, and a consistent experience that supports everyday progress.
+          </p>
+        </div>
+
+        <div class="mission-item">
+          <h3>
+            <span class="icon-circle icon-green"></span>
+            What We Deliver
+          </h3>
+          <ul>
+            <li>Real-time recognition and corrective feedback</li>
+            <li>Instructional videos for guided sign practice</li>
+            <li>Progress tracking with summaries and streak insights</li>
+            <li>Account-based history to review improvement over time</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <p class="scroll-cue">Scroll down to meet the development team</p>
+  </section>
+
+  <section class="about-stage team-stage" aria-label="Development team section">
     <div class="team-header">
       <h2 class="team-title">Development Team</h2>
+      <p class="team-subtitle">The people designing, engineering, and training Senyasalin.</p>
     </div>
+
     <div class="team-grid">
-      <!-- Bernardo, Christian Emmanuel M. -->
       <div class="team-card">
         <div class="team-avatar">
           <img src="{{ url_for('static', filename='img/Bernardo.png') }}" alt="Bernardo, Christian Emmanuel M.">
@@ -619,7 +492,6 @@
         </p>
       </div>
 
-      <!-- Carale, Alyzza R. -->
       <div class="team-card">
         <div class="team-avatar">
           <img src="{{ url_for('static', filename='img/Carale.png') }}" alt="Carale, Alyzza R.">
@@ -631,7 +503,6 @@
         </p>
       </div>
 
-      <!-- Cuyugan, Emmanuel Luis B. -->
       <div class="team-card">
         <div class="team-avatar">
           <img src="{{ url_for('static', filename='img/Cuyugan.jpg') }}" alt="Cuyugan, Emmanuel Luis B.">
@@ -643,7 +514,6 @@
         </p>
       </div>
 
-      <!-- Doria, Jhon D. -->
       <div class="team-card">
         <div class="team-avatar">
           <img src="{{ url_for('static', filename='img/Doria.png') }}" alt="Doria, Jhon D.">
@@ -655,7 +525,6 @@
         </p>
       </div>
 
-      <!-- Montojo, Lance M. -->
       <div class="team-card">
         <div class="team-avatar">
           <img src="{{ url_for('static', filename='img/Montojo.png') }}" alt="Montojo, Lance M.">
@@ -667,90 +536,7 @@
         </p>
       </div>
     </div>
-  </div>
-
+  </section>
 </div>
-
-<div class="mission-overlay" id="missionOverlay" aria-hidden="true">
-  <div class="mission-dialog" role="dialog" aria-modal="true" aria-labelledby="missionTitle">
-    <button class="mission-close" id="missionCloseBtn" type="button" aria-label="Close mission dialog">&times;</button>
-    <div class="mission-section">
-      <div class="mission-card">
-        <h2 class="mission-title" id="missionTitle">Our Mission</h2>
-
-        <div class="mission-grid">
-          <div class="mission-item">
-            <h3>
-              <span class="icon-circle icon-blue"></span>
-              Building Inclusive Technology
-            </h3>
-            <p>
-              We're creating an innovative AI-powered platform that makes Filipino Sign Language learning accessible,
-              interactive, and effective. Our system combines advanced LSTM neural networks with intuitive design
-              to create a comprehensive learning experience.
-            </p>
-          </div>
-
-          <div class="mission-item">
-            <h3>
-              <span class="icon-circle icon-green"></span>
-              Key Features
-            </h3>
-            <ul>
-              <li>Provide real-time visual feedback for FSL</li>
-              <li>Offer instructional videos to guide users in learning FSL</li>
-              <li>Deliver corrective feedback to help users improve their performance</li>
-              <li>Track practice progress with daily summaries, streaks, and most-practiced signs</li>
-              <li>User accounts to save and review learning history over time</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-  (function () {
-    const missionBtn = document.getElementById('missionBtn');
-    const missionOverlay = document.getElementById('missionOverlay');
-    const missionCloseBtn = document.getElementById('missionCloseBtn');
-
-    if (!missionBtn || !missionOverlay || !missionCloseBtn) {
-      return;
-    }
-
-    const openMission = function () {
-      missionOverlay.classList.add('show');
-      missionOverlay.setAttribute('aria-hidden', 'false');
-      missionBtn.setAttribute('aria-expanded', 'true');
-      document.body.style.overflow = 'hidden';
-      missionCloseBtn.focus();
-    };
-
-    const closeMission = function () {
-      missionOverlay.classList.remove('show');
-      missionOverlay.setAttribute('aria-hidden', 'true');
-      missionBtn.setAttribute('aria-expanded', 'false');
-      document.body.style.overflow = '';
-      missionBtn.focus();
-    };
-
-    missionBtn.addEventListener('click', openMission);
-    missionCloseBtn.addEventListener('click', closeMission);
-
-    missionOverlay.addEventListener('click', function (event) {
-      if (event.target === missionOverlay) {
-        closeMission();
-      }
-    });
-
-    document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape' && missionOverlay.classList.contains('show')) {
-        closeMission();
-      }
-    });
-  })();
-</script>
 
 {% endblock %}
