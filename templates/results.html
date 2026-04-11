@@ -202,9 +202,9 @@
 
   .grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1.7fr 1fr;
     grid-template-rows: minmax(0, 1fr);
-    gap: 8px;
+    gap: 10px;
     flex: 1;
     min-height: 0;
   }
@@ -212,7 +212,7 @@
   .left-pair {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 10px;
     min-height: 0;
   }
 
@@ -339,6 +339,23 @@
     flex: 1;
     min-height: 0;
     max-height: none;
+  }
+
+  .latest-card th,
+  .latest-card td,
+  .daily-card th,
+  .daily-card td {
+    white-space: nowrap;
+  }
+
+  .latest-card th:nth-child(1),
+  .latest-card td:nth-child(1) {
+    width: 95px;
+  }
+
+  .latest-card th:nth-child(2),
+  .latest-card td:nth-child(2) {
+    width: 86px;
   }
 
   table {
@@ -596,6 +613,14 @@
       return d.toLocaleDateString(undefined, {year:'numeric', month:'short', day:'2-digit'});
     }catch(e){return '—';}
   };
+  const fmtDateShort = (iso) => {
+    if(!iso) return '—';
+    try{
+      const d = parseLocalDateTime(iso);
+      if(!d) return '—';
+      return d.toLocaleDateString(undefined, {month:'short', day:'2-digit'});
+    }catch(e){return '—';}
+  };
   const dateKey = (iso) => {
     if(!iso) return null;
     const d = parseLocalDateTime(iso);
@@ -712,7 +737,7 @@
         ? `<span class="pill ok">✓ ${escapeHtml(cleanLabel(r.label))}</span>`
         : `<span class="pill bad">✗ Incorrect</span>`;
       tr.innerHTML = `
-        <td>${fmtDate(r.created_at)}</td>
+        <td>${fmtDateShort(r.created_at)}</td>
         <td>${fmtTime(r.created_at)}</td>
         <td>${pill}</td>
       `;
