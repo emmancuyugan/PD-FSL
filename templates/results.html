@@ -1015,104 +1015,121 @@
           '</tr>';
       }).join('');
 
-      /* ── Shared table-header style ── */
-      const TH = 'padding:8px 12px;font-size:9px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #CBD5E1;';
+      /* ── Academic compact report style ── */
+      const TH = 'padding:6px 8px;border:1px solid #9CA3AF;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;background:#EEF2F7;color:#111827;';
+      const TD = 'padding:5px 8px;border:1px solid #D1D5DB;font-size:10px;color:#111827;';
 
-      /* ── Build final HTML document ── */
+      const topSignRowsHtml = signKeys.slice(0, 15).map((lab, i) => {
+        const att = signCounts.get(lab) || 0;
+        const cor = signCorrect.get(lab) || 0;
+        const acc = att > 0 ? (cor / att * 100).toFixed(1) + '%' : '—';
+        const bg = i % 2 === 0 ? '#FFFFFF' : '#F9FAFB';
+        return '<tr style="background:'+bg+';page-break-inside:avoid;">' +
+          '<td style="'+TD+'font-weight:600;">'+escapeHtml(lab)+'</td>' +
+          '<td style="'+TD+'text-align:center;">'+att+'</td>' +
+          '<td style="'+TD+'text-align:center;">'+cor+'</td>' +
+          '<td style="'+TD+'text-align:center;">'+acc+'</td>' +
+          '</tr>';
+      }).join('');
+
       const element = document.createElement('div');
       element.innerHTML = `
-        <div style="font-family:'Inter','Segoe UI',Arial,Helvetica,sans-serif;color:#1E293B;padding:0;">
-
-          <!-- HEADER -->
-          <div style="background:linear-gradient(135deg,#4361EE,#7C3AED);padding:28px 32px;">
-            <h1 style="margin:0 0 4px 0;font-size:24px;font-weight:800;color:#FFFFFF;letter-spacing:-0.5px;">Filipino Sign Language</h1>
-            <p style="margin:0;font-size:13px;color:rgba(255,255,255,0.85);font-weight:600;">Student Progress Report — ${modeLabel}</p>
-            <div style="margin-top:14px;display:flex;gap:20px;flex-wrap:wrap;">
-              <div style="font-size:11px;color:rgba(255,255,255,0.7);">Student: <strong style="color:#FFF;">${username}</strong></div>
-              <div style="font-size:11px;color:rgba(255,255,255,0.7);">Generated: <strong style="color:#FFF;">${genDate}</strong></div>
-              <div style="font-size:11px;color:rgba(255,255,255,0.7);">Period: <strong style="color:#FFF;">${firstDay} → ${lastDay}</strong></div>
-              <div style="font-size:11px;color:rgba(255,255,255,0.7);">Streak: <strong style="color:#FFF;">${streak} day(s)</strong></div>
-            </div>
-          </div>
-
-          <!-- OVERALL STATISTICS -->
-          <div style="padding:22px 32px 0 32px;">
-            <h2 style="font-size:13px;font-weight:800;color:#334155;margin:0 0 12px 0;text-transform:uppercase;letter-spacing:1px;border-left:4px solid #4361EE;padding-left:10px;">Overall Statistics</h2>
-            <table style="width:100%;border-collapse:separate;border-spacing:6px 0;margin-bottom:4px;">
+        <div style="font-family:'Times New Roman', Georgia, serif;color:#111827;padding:0 0 4px 0;line-height:1.25;">
+          <div style="padding:8px 10px 4px;border-bottom:2px solid #1F2937;">
+            <div style="font-size:16px;font-weight:700;text-align:center;letter-spacing:.02em;">FILIPINO SIGN LANGUAGE LEARNING SYSTEM</div>
+            <div style="font-size:12px;font-weight:700;text-align:center;margin-top:2px;">Academic Progress Report (${modeLabel})</div>
+            <table style="width:100%;border-collapse:collapse;margin-top:6px;">
               <tr>
-                <td style="width:25%;padding:14px 8px;background:#F0F4FF;border-radius:8px;text-align:center;">
-                  <div style="font-size:24px;font-weight:900;color:#4361EE;">${pdfTotal}</div>
-                  <div style="font-size:9px;font-weight:700;color:#64748B;margin-top:3px;text-transform:uppercase;">Total Attempts</div>
-                </td>
-                <td style="width:25%;padding:14px 8px;background:#ECFDF5;border-radius:8px;text-align:center;">
-                  <div style="font-size:24px;font-weight:900;color:#059669;">${pdfCorrect}</div>
-                  <div style="font-size:9px;font-weight:700;color:#64748B;margin-top:3px;text-transform:uppercase;">Correct</div>
-                </td>
-                <td style="width:25%;padding:14px 8px;background:#FFF1F2;border-radius:8px;text-align:center;">
-                  <div style="font-size:24px;font-weight:900;color:#DC2626;">${pdfIncorrect}</div>
-                  <div style="font-size:9px;font-weight:700;color:#64748B;margin-top:3px;text-transform:uppercase;">Incorrect</div>
-                </td>
-                <td style="width:25%;padding:14px 8px;background:#F5F3FF;border-radius:8px;text-align:center;">
-                  <div style="font-size:24px;font-weight:900;color:#7C3AED;">${successRate}</div>
-                  <div style="font-size:9px;font-weight:700;color:#64748B;margin-top:3px;text-transform:uppercase;">Success Rate</div>
-                </td>
+                <td style="${TD}width:18%;font-weight:700;background:#F3F4F6;">Student</td>
+                <td style="${TD}width:32%;">${username}</td>
+                <td style="${TD}width:18%;font-weight:700;background:#F3F4F6;">Generated</td>
+                <td style="${TD}width:32%;">${genDate}</td>
+              </tr>
+              <tr>
+                <td style="${TD}font-weight:700;background:#F3F4F6;">Coverage</td>
+                <td style="${TD}">${firstDay} to ${lastDay}</td>
+                <td style="${TD}font-weight:700;background:#F3F4F6;">Streak</td>
+                <td style="${TD}">${streak} day(s)</td>
               </tr>
             </table>
           </div>
 
-          <!-- PAGE BREAK before Daily Activity -->
-          <div style="page-break-before:always;"></div>
-
-          <!-- DAILY ACTIVITY (FULL HISTORY) -->
-          <div style="padding:22px 32px 0 32px;">
-            <h2 style="font-size:13px;font-weight:800;color:#334155;margin:0 0 10px 0;text-transform:uppercase;letter-spacing:1px;border-left:4px solid #F59E0B;padding-left:10px;">Daily Activity Log (${firstDay} — ${lastDay})</h2>
+          <div style="padding:6px 10px 0;">
+            <div style="font-size:11px;font-weight:700;margin:0 0 4px;">I. Summary Statistics</div>
             <table style="width:100%;border-collapse:collapse;">
               <thead>
-                <tr style="background:#F1F5F9;">
-                  <th style="${TH}text-align:left;">Date</th>
-                  <th style="${TH}text-align:center;">Attempts</th>
-                  <th style="${TH}text-align:center;">Correct</th>
-                  <th style="${TH}text-align:center;">Incorrect</th>
-                  <th style="${TH}text-align:center;">Accuracy</th>
+                <tr>
+                  <th style="${TH}text-align:left;">Metric</th>
+                  <th style="${TH}text-align:center;width:20%;">Value</th>
+                  <th style="${TH}text-align:left;">Notes</th>
                 </tr>
               </thead>
-              <tbody>${dailyRowsHtml || '<tr><td colspan="5" style="padding:10px;color:#94A3B8;font-size:11px;">No daily activity recorded yet.</td></tr>'}</tbody>
+              <tbody>
+                <tr><td style="${TD}font-weight:600;">Total Attempts</td><td style="${TD}text-align:center;">${pdfTotal}</td><td style="${TD}">Recorded attempts in selected range.</td></tr>
+                <tr><td style="${TD}font-weight:600;">Correct Attempts</td><td style="${TD}text-align:center;">${pdfCorrect}</td><td style="${TD}">Classified as correct by model logic.</td></tr>
+                <tr><td style="${TD}font-weight:600;">Incorrect Attempts</td><td style="${TD}text-align:center;">${pdfIncorrect}</td><td style="${TD}">Includes incorrect and unrecognized outputs.</td></tr>
+                <tr><td style="${TD}font-weight:600;">Accuracy</td><td style="${TD}text-align:center;">${successRate}</td><td style="${TD}">Accuracy = correct / total attempts.</td></tr>
+              </tbody>
             </table>
           </div>
 
-          <!-- PAGE BREAK before Complete Attempt History -->
-          <div style="page-break-before:always;"></div>
-
-          <!-- COMPLETE ATTEMPT HISTORY -->
-          <div style="padding:22px 32px 0 32px;">
-            <h2 style="font-size:13px;font-weight:800;color:#334155;margin:0 0 10px 0;text-transform:uppercase;letter-spacing:1px;border-left:4px solid #7C3AED;padding-left:10px;">Complete Attempt History</h2>
+          <div style="padding:6px 10px 0;">
+            <div style="font-size:11px;font-weight:700;margin:0 0 4px;">II. Daily Activity</div>
             <table style="width:100%;border-collapse:collapse;">
               <thead>
-                <tr style="background:#F1F5F9;">
-                  <th style="${TH}text-align:left;">Date &amp; Time</th>
+                <tr>
+                  <th style="${TH}text-align:left;">Date</th>
+                  <th style="${TH}text-align:center;width:14%;">Attempts</th>
+                  <th style="${TH}text-align:center;width:14%;">Correct</th>
+                  <th style="${TH}text-align:center;width:14%;">Incorrect</th>
+                  <th style="${TH}text-align:center;width:16%;">Accuracy</th>
+                </tr>
+              </thead>
+              <tbody>${dailyRowsHtml || '<tr><td colspan="5" style="'+TD+'text-align:center;">No daily activity recorded yet.</td></tr>'}</tbody>
+            </table>
+          </div>
+
+          <div style="padding:6px 10px 0;">
+            <div style="font-size:11px;font-weight:700;margin:0 0 4px;">III. Sign Performance Breakdown</div>
+            <table style="width:100%;border-collapse:collapse;">
+              <thead>
+                <tr>
+                  <th style="${TH}text-align:left;">Sign Label</th>
+                  <th style="${TH}text-align:center;width:14%;">Attempts</th>
+                  <th style="${TH}text-align:center;width:14%;">Correct</th>
+                  <th style="${TH}text-align:center;width:16%;">Accuracy</th>
+                </tr>
+              </thead>
+              <tbody>${topSignRowsHtml || '<tr><td colspan="4" style="'+TD+'text-align:center;">No sign breakdown available.</td></tr>'}</tbody>
+            </table>
+          </div>
+
+          <div style="padding:6px 10px 0;">
+            <div style="font-size:11px;font-weight:700;margin:0 0 4px;">IV. Detailed Attempt Log</div>
+            <table style="width:100%;border-collapse:collapse;">
+              <thead>
+                <tr>
+                  <th style="${TH}text-align:left;width:34%;">Date and Time</th>
                   <th style="${TH}text-align:left;">Result</th>
                 </tr>
               </thead>
-              <tbody>${attemptRowsHtml || '<tr><td colspan="2" style="padding:10px;color:#94A3B8;font-size:11px;">No attempts recorded yet.</td></tr>'}</tbody>
+              <tbody>${attemptRowsHtml || '<tr><td colspan="2" style="'+TD+'text-align:center;">No attempts recorded yet.</td></tr>'}</tbody>
             </table>
           </div>
 
-          <!-- FOOTER -->
-          <div style="padding:24px 32px 16px 32px;margin-top:16px;border-top:2px solid #E2E8F0;text-align:center;">
-            <p style="margin:0;font-size:9px;color:#94A3B8;font-weight:600;">FSL Learning System — Automatically generated progress report</p>
-            <p style="margin:3px 0 0 0;font-size:9px;color:#CBD5E1;">Complete activity record for <strong>${username}</strong> · ${genDate}</p>
+          <div style="padding:8px 10px 0;margin-top:6px;border-top:1px solid #9CA3AF;text-align:center;font-size:9px;color:#4B5563;">
+            Generated by Senyasalin FSL Learning System for academic tracking and progress documentation.
           </div>
-
         </div>
       `;
 
       const opt = {
-        margin: [10, 10, 12, 10],
+        margin: [6, 6, 7, 6],
         filename: 'FSL_Report_' + safeUsername + '_' + genDateShort + '.pdf',
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, logging: false },
         jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' },
-        pagebreak: { mode: ['css'], avoid: ['tr', 'thead'] }
+        pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'thead'] }
       };
 
       html2pdf().set(opt).from(element).save();
