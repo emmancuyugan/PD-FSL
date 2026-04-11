@@ -497,7 +497,9 @@
   const raw = {{ (db_results_json or '[]')|safe }};
   const CURRENT_SESSION_KEY = 'fsl_current_session_attempts_v1';
 
-  // If timezone is present (Z or +hh:mm), respect it. Otherwise treat as local wall-clock.
+  // Normalize to device-local time for display/grouping.
+  // DB values are timezone-naive, but are produced from server clock and behave like UTC.
+  // So: timezone-aware strings => native Date parse; naive strings => force UTC parse.
   const parseLocalDateTime = (value) => {
     if (!value) return null;
     if (value instanceof Date) return isNaN(value) ? null : value;
@@ -514,8 +516,8 @@
       const h = Number(m[4]);
       const mi = Number(m[5]);
       const se = Number(m[6] || 0);
-      const local = new Date(y, mo, d, h, mi, se);
-      if (!isNaN(local)) return local;
+      const utc = new Date(Date.UTC(y, mo, d, h, mi, se));
+      if (!isNaN(utc)) return utc;
     }
     const fallback = new Date(s);
     return isNaN(fallback) ? null : fallback;
