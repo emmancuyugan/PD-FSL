@@ -89,7 +89,6 @@
     min-height: 40px;
   }
   .btn-manual:hover {
-    transform: translateY(-2px);
     box-shadow: 0 6px 20px var(--shadow);
   }
   .btn-print {
@@ -248,27 +247,26 @@
   <div class="manual-section" id="sec-overview">
     <h2>1. Overview</h2>
     <p>
-      <strong>Senyasalin</strong> is an AI-powered, offline Filipino Sign Language (FSL) learning platform.
-      It uses an LSTM neural network with MediaPipe body/hand tracking to recognize sign language gestures
-      in real time through your webcam — no internet connection required after initial setup.
+      <strong>Senyasalin</strong> is an offline Filipino Sign Language (FSL) learning and recognition system.
+      It uses MediaPipe landmarks and an LSTM model to evaluate signs through your webcam in real time.
     </p>
     <h3>Key Features</h3>
     <ul>
-      <li><strong>Real-time gesture recognition</strong> using deep learning (LSTM) and MediaPipe landmarks</li>
-      <li><strong>Multiple learning modes</strong> — Learn, Select, Activity, and Auto</li>
-      <li><strong>Demonstration videos</strong> for each sign across 5 categories</li>
-      <li><strong>Ghost overlay</strong> for visual movement guidance</li>
-      <li><strong>Instant feedback</strong> with confidence scoring</li>
-      <li><strong>Progress tracking</strong> with daily stats, streaks, and exportable reports</li>
-      <li><strong>Fully offline</strong> — works without internet once installed</li>
+      <li><strong>Account-based practice</strong> with login-required training pages</li>
+      <li><strong>Learn Mode</strong> with category-based sign videos</li>
+      <li><strong>Select Mode</strong> for focused practice on a chosen sign</li>
+      <li><strong>Activity Mode</strong> for random sign challenges</li>
+      <li><strong>Auto Mode</strong> for continuous recognition</li>
+      <li><strong>Distance guidance</strong> with live meter and color status</li>
+      <li><strong>Result logging</strong> with streaks, daily summaries, and PDF export</li>
     </ul>
     <h3>Supported Sign Categories</h3>
     <ul>
-      <li><strong>Colors</strong></li>
-      <li><strong>Family</strong></li>
-      <li><strong>Numbers</strong></li>
-      <li><strong>Relationships</strong></li>
-      <li><strong>Survival</strong></li>
+      <li><strong>Numbers</strong> (5 signs)</li>
+      <li><strong>Colors</strong> (8 signs)</li>
+      <li><strong>Family</strong> (6 signs)</li>
+      <li><strong>Relationship</strong> (2 signs)</li>
+      <li><strong>Survival</strong> (5 signs)</li>
     </ul>
   </div>
 
@@ -287,8 +285,14 @@
     <ol>
       <li>Click <strong>LOGIN</strong> in the navigation bar.</li>
       <li>Enter your username and password.</li>
-      <li>Click <strong>Log In</strong>. After logging in, you'll see all learning modes in the navbar.</li>
+      <li>Click <strong>Log In</strong>. After logging in, LEARN, SELECT, ACTIVITY, AUTO, and RESULTS appear in the navigation bar.</li>
     </ol>
+
+    <h3>Access Rules</h3>
+    <ul>
+      <li><strong>Public pages:</strong> HOME, ABOUT, USER MANUAL, LOGIN, SIGN UP</li>
+      <li><strong>Login required:</strong> LEARN, SELECT, ACTIVITY, AUTO, RESULTS</li>
+    </ul>
 
     <div class="tip-box">
       <strong>Tip:</strong> The first time you visit each page, an interactive tutorial will appear automatically.
@@ -300,6 +304,7 @@
     <ul>
       <li>A device with a <strong>webcam</strong> (laptop, desktop with external camera, or tablet)</li>
       <li>Allow camera permissions when prompted</li>
+      <li>Enough CPU/GPU resources for live video processing</li>
     </ul>
   </div>
 
@@ -307,20 +312,18 @@
   <div class="manual-section" id="sec-learn">
     <h2>3. Learn Mode</h2>
     <p>
-      The Learn page is your starting point for studying FSL signs. It provides demonstration videos
-      for every supported sign.
+      Learn Mode is the study page. You choose a category and sign, then watch its demonstration clip.
     </p>
     <h3>How to Use</h3>
     <ol>
       <li>Navigate to <strong>LEARN</strong> from the navbar.</li>
-      <li>Browse the available sign categories.</li>
-      <li>Click on a sign to play its demonstration video.</li>
-      <li>Use video controls to pause, replay, or slow down playback.</li>
-      <li>Study the hand movements carefully before moving on to practice modes.</li>
+      <li>Select a category card (Numbers, Colors, Family, Relationship, Survival).</li>
+      <li>Click a sign badge to load that sign video.</li>
+      <li>Read the short learning steps shown below the video panel.</li>
+      <li>Repeat with multiple signs before moving to SELECT or ACTIVITY.</li>
     </ol>
     <div class="tip-box">
-      <strong>Tip:</strong> Watch each video multiple times. Pay attention to hand shape, orientation,
-      movement direction, and facial expressions — they all contribute to the meaning of the sign.
+      <strong>Tip:</strong> Focus on hand shape, hand height, and movement path. The practice modes use landmark motion, so consistency matters.
     </div>
   </div>
 
@@ -328,25 +331,31 @@
   <div class="manual-section" id="sec-select">
     <h2>4. Select & Practice Mode</h2>
     <p>
-      Choose a specific sign, then practice it in front of your camera. The AI evaluates your gesture
-      and provides instant feedback.
+      Select Mode lets you choose one target sign and practice it repeatedly with immediate feedback.
     </p>
     <h3>How to Use</h3>
     <ol>
       <li>Navigate to <strong>SELECT</strong> from the navbar.</li>
       <li>Pick a category and a specific sign you want to practice.</li>
-      <li>The camera will show your live feed with a <strong>ghost overlay</strong> displaying the correct pose.</li>
-      <li>Perform the sign, matching your movements to the ghost landmarks.</li>
-      <li>The system will display the AI's prediction and a confidence score.</li>
+      <li>Click <strong>Start Practice</strong> and wait through the 1-second prep phase.</li>
+      <li>Perform the sign during capture (around 5 seconds in standard mode).</li>
+      <li>Review the result: correct/incorrect plus guidance messages.</li>
+      <li>Use <strong>Show again</strong> and <strong>Try again</strong> when shown after an incorrect attempt.</li>
     </ol>
-    <h3>Ghost Overlay</h3>
+    <h3>Mode Options</h3>
+    <ul>
+      <li><strong>Real-Time Recognition:</strong> shorter rolling prediction while signing</li>
+      <li><strong>Show Timer:</strong> shows/hides the capture timer bar</li>
+      <li><strong>Show Results:</strong> shows/hides the live text feedback</li>
+      <li><strong>Show Visuals:</strong> shows/hides landmark visualization overlays</li>
+    </ul>
+    <h3>Feedback Behavior</h3>
     <p>
-      The translucent landmark overlay shows the ideal body and hand positions for the selected sign.
-      Try to align your own pose landmarks with the ghost for the best accuracy.
+      Incorrect attempts can trigger a skeleton/video feedback guide. The app may also show warnings such as
+      <em>No hands detected</em>, <em>Too few frames</em>, or <em>One person at a time please</em>.
     </p>
     <div class="warn-box">
-      <strong>Note:</strong> The ghost overlay is a guide, not a rigid requirement. Natural variation
-      in your body proportions is expected — focus on matching the general shape and movement.
+      <strong>Note:</strong> Select and Activity save <strong>Correct</strong> and <strong>Incorrect</strong> attempts to your results history.
     </div>
   </div>
 
@@ -354,20 +363,19 @@
   <div class="manual-section" id="sec-activity">
     <h2>5. Activity Mode</h2>
     <p>
-      Test your skills in a structured exercise. The system presents signs for you to perform and
-      evaluates your accuracy.
+      Activity Mode is a challenge flow. The system selects a random sign from supported categories,
+      then you perform it under the same capture logic used in Select Mode.
     </p>
     <h3>How to Use</h3>
     <ol>
       <li>Navigate to <strong>ACTIVITY</strong> from the navbar.</li>
-      <li>Select a difficulty level (if available).</li>
-      <li>The system will prompt you with a sign to perform.</li>
-      <li>Perform the sign within the allotted time.</li>
-      <li>Receive feedback — your results are saved automatically for progress tracking.</li>
+      <li>Click <strong>Start Activity</strong>.</li>
+      <li>Read the challenge sign shown in <strong>Your Challenge</strong>.</li>
+      <li>Perform the sign during capture and wait for evaluation.</li>
+      <li>Use <strong>Try again</strong> to retry the same sign after feedback.</li>
     </ol>
     <div class="tip-box">
-      <strong>Tip:</strong> Start with easier categories (like Numbers) and gradually move to more complex
-      ones (like Survival phrases) as your confidence grows.
+      <strong>Tip:</strong> There is no visible difficulty selector in this build. Difficulty comes from the randomness of selected signs.
     </div>
   </div>
 
@@ -375,58 +383,73 @@
   <div class="manual-section" id="sec-auto">
     <h2>6. Auto Recognition Mode</h2>
     <p>
-      Continuous, real-time sign language recognition. Simply sign naturally and the AI identifies
-      each gesture as you go — no need to select a specific sign first.
+      Auto Mode continuously evaluates your signing and appends recognized results to the on-screen history.
     </p>
     <h3>How to Use</h3>
     <ol>
       <li>Navigate to <strong>AUTO</strong> from the navbar.</li>
       <li>Allow camera access if prompted.</li>
-      <li>Start signing. The AI continuously collects pose data and runs predictions.</li>
-      <li>Recognized signs and confidence levels appear on screen in real time.</li>
+      <li>Click <strong>Start Learning!</strong> to begin capture.</li>
+      <li>Sign naturally while keeping hands visible.</li>
+      <li>Watch the detection card, result overlay, and history panel for updates.</li>
+      <li>Click <strong>Stop</strong> to end the session.</li>
     </ol>
-    <h3>Best Practices</h3>
+    <h3>Recognition Thresholds Used by Auto Mode</h3>
     <ul>
-      <li>Sign at a <strong>natural pace</strong> — don't rush or go too slowly.</li>
-      <li>Keep your <strong>hands visible</strong> within the camera frame at all times.</li>
-      <li>Ensure consistent <strong>lighting</strong> — avoid backlighting or very dim environments.</li>
-      <li>Results above <strong>92% confidence</strong> are marked as correct.</li>
+      <li><strong>Confidence &lt; 0.70:</strong> Unrecognized Sign</li>
+      <li><strong>0.70 to &lt; 0.92:</strong> Incorrect (closest sign hint shown)</li>
+      <li><strong>&gt;= 0.92:</strong> Correct</li>
     </ul>
+    <div class="tip-box">
+      <strong>Tip:</strong> Enable <strong>Real-Time Recognition</strong> for faster rolling commits, or disable it for slower, full-window evaluations.
+    </div>
   </div>
 
   <!-- 7. Results & Progress -->
   <div class="manual-section" id="sec-results">
     <h2>7. Results & Progress Tracking</h2>
     <p>
-      The Results page gives you a comprehensive view of your learning journey.
+      The Results page summarizes your attempts and trends from the database for the logged-in user.
     </p>
     <h3>Summary Dashboard</h3>
     <ul>
-      <li><strong>Today's Count</strong> — how many signs you've practiced today</li>
-      <li><strong>Last 7 Days</strong> — total practice in the past week</li>
-      <li><strong>Current Streak</strong> — consecutive days of practice</li>
-      <li><strong>Most Practiced</strong> — your most frequently practiced sign</li>
+      <li><strong>Total Attempts</strong>, <strong>Correct</strong>, <strong>Incorrect</strong>, and <strong>Streak (days)</strong></li>
+      <li><strong>Today summary</strong> badge with today correct/incorrect totals</li>
+      <li><strong>Most common</strong> sign based on recent data</li>
     </ul>
-    <h3>Practice History Table</h3>
+    <h3>History Views</h3>
     <p>
-      A scrollable table showing every sign you've practiced, including label, confidence score,
-      and timestamp.
+      You can review latest attempts and a daily activity table (last 14 days) with attempts,
+      correct, and incorrect counts.
     </p>
     <h3>Exporting Your Data</h3>
     <p>
-      Use the export buttons on the Results page to download your practice history for record-keeping
-      or to share your progress with instructors.
+      <strong>Export Results (PDF)</strong> supports two scopes:
+      <strong>Today only</strong> or <strong>Full history</strong>.
     </p>
   </div>
 
   <!-- 8. Camera Tips -->
   <div class="manual-section" id="sec-camera">
     <h2>8. Camera & Environment Tips</h2>
+    <h3>Distance Guide (Exact Values Used in App)</h3>
+    <ul>
+      <li><strong>Perfect (green):</strong> <strong>0.36 m to 0.38 m</strong> (36-38 cm)</li>
+      <li><strong>Acceptable (yellow):</strong> <strong>0.33-0.35 m</strong> or <strong>0.39-0.41 m</strong></li>
+      <li><strong>Poor (red):</strong> below 0.33 m or above 0.41 m</li>
+    </ul>
+    <div class="tip-box">
+      <strong>Important:</strong> The distance meter is an estimate based on shoulder width and camera field-of-view.
+      Use it as guidance, not a medical-grade measurement.
+    </div>
+
+    <h3>General Camera Setup</h3>
     <ul>
       <li><strong>Lighting:</strong> Face a light source (e.g., a window or lamp). Avoid having bright light behind you.</li>
       <li><strong>Background:</strong> A plain, uncluttered background helps the AI focus on your body.</li>
-      <li><strong>Distance:</strong> Position yourself so your head, torso, and hands are all visible in the frame.</li>
-      <li><strong>Clothing:</strong> Wear clothes that contrast with your skin tone for better hand detection.</li>
+      <li><strong>Framing:</strong> Keep face, shoulders, and both hands clearly visible.</li>
+      <li><strong>One person only:</strong> If multiple people appear, prediction may be blocked.</li>
+      <li><strong>Clothing:</strong> Avoid sleeves/backgrounds that blend with your hand color.</li>
       <li><strong>Stability:</strong> Keep the camera steady. A tripod or stable surface is ideal.</li>
     </ul>
     <div class="warn-box">
@@ -446,12 +469,26 @@
       <li>Try refreshing the page or restarting the app.</li>
     </ul>
 
+    <h3>Distance warning is always red</h3>
+    <ul>
+      <li>Move until the meter is near <strong>0.36-0.38 m</strong>.</li>
+      <li>Center your shoulders in frame.</li>
+      <li>Ensure only one person is visible.</li>
+    </ul>
+
     <h3>Low recognition accuracy</h3>
     <ul>
       <li>Improve lighting conditions (see Camera Tips above).</li>
       <li>Make sure your full upper body and hands are in the frame.</li>
-      <li>Review the demonstration video and align your movements more closely.</li>
-      <li>Practice the sign several times — the AI improves its recognition with consistent motions.</li>
+      <li>Hold the sign long enough to avoid <strong>Too few frames</strong>.</li>
+      <li>In Select/Activity, use <strong>Show again</strong> and retry the same sign.</li>
+    </ul>
+
+    <h3>Status says "No hands detected"</h3>
+    <ul>
+      <li>Raise both hands into the visible frame area.</li>
+      <li>Increase contrast between your hands and the background.</li>
+      <li>Do not move too fast at the start of capture.</li>
     </ul>
 
     <h3>Page loads slowly</h3>
@@ -475,16 +512,21 @@
     <h3>Does the app need internet?</h3>
     <p>No. Senyasalin runs fully offline. All AI models and resources are bundled locally.</p>
 
+    <h3>What is the recommended camera distance?</h3>
+    <p>
+      The implemented target range is <strong>0.36-0.38 m</strong> (green).
+      Yellow ranges are 0.33-0.35 m and 0.39-0.41 m.
+    </p>
+
     <h3>What signs are supported?</h3>
     <p>
-      The system currently recognizes signs across five categories: Colors, Family, Numbers,
-      Relationships, and Survival phrases.
+      The system recognizes signs across Numbers, Colors, Family, Relationship, and Survival.
     </p>
 
     <h3>How is my data stored?</h3>
     <p>
-      All practice results are stored in a local database on the machine running Senyasalin.
-      No data is sent to external servers.
+      Practice results are stored in a local SQLite database used by the app runtime.
+      No external cloud upload is performed by default.
     </p>
   </div>
 

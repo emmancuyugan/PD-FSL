@@ -96,7 +96,10 @@
   .hero-section {
     position: relative;
     z-index: 1;
-    padding: 32px 24px 20px;
+    min-height: calc(100vh - 132px);
+    padding: 36px 24px 20px;
+    display: flex;
+    align-items: center;
     text-align: center;
     animation: fadeIn 0.8s ease-out;
   }
@@ -164,7 +167,6 @@
   }
 
   .feature-badge:hover {
-    transform: translateY(-4px);
     box-shadow: 0 8px 20px var(--shadow);
   }
 
@@ -213,13 +215,15 @@
     min-height: 48px;
   }
 
+  .hero-btn-modal {
+    font-family: inherit;
+  }
+
   .hero-btn:hover {
-    transform: translateY(-4px) scale(1.05);
     box-shadow: 0 10px 30px var(--shadow);
   }
 
   .hero-btn:active {
-    transform: translateY(-2px) scale(1.02);
   }
 
   .btn-primary {
@@ -231,18 +235,6 @@
     background: var(--white);
     color: var(--deep-blue);
     border: 3px solid var(--deep-blue);
-  }
-
-  .features-section {
-    position: relative;
-    z-index: 1;
-    padding: 24px 24px 32px;
-    flex: 1;
-  }
-
-  .features-container {
-    max-width: 1200px;
-    margin: 0 auto;
   }
 
   .section-header {
@@ -274,6 +266,84 @@
     gap: 20px;
   }
 
+  .info-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(20, 24, 40, 0.55);
+    backdrop-filter: blur(6px);
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .info-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .info-dialog {
+    width: min(1080px, 96vw);
+    max-height: min(86vh, 860px);
+    overflow-y: auto;
+    background: linear-gradient(135deg, #FFF8F0 0%, #FFE5EC 45%, #E0F4FF 100%);
+    border-radius: 24px;
+    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.24);
+    padding: 24px;
+    position: relative;
+  }
+
+  .overlay-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 34px;
+    height: 34px;
+    border: 1px solid rgba(67, 97, 238, 0.24);
+    border-radius: 999px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--deep-blue);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+    z-index: 2;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  }
+
+  .overlay-close .close-glyph {
+    display: block;
+    transform: translateY(-1px);
+  }
+
+  .overlay-close:hover {
+    background: var(--white);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.16);
+  }
+
+  .overlay-close:focus-visible {
+    outline: 2px solid rgba(67, 97, 238, 0.35);
+    outline-offset: 2px;
+  }
+
+  .info-dialog .section-header {
+    padding-top: 8px;
+    padding-right: 42px;
+  }
+
+  .overlay-title {
+    margin-top: 0;
+  }
+
   .feature-card {
     background: var(--white);
     border-radius: 20px;
@@ -297,7 +367,6 @@
   }
 
   .feature-card:hover {
-    transform: translateY(-12px) scale(1.02);
     box-shadow: 0 16px 40px var(--shadow);
   }
 
@@ -315,7 +384,6 @@
   }
 
   .feature-card:hover .feature-icon {
-    transform: scale(1.1) rotate(5deg);
   }
 
   .icon-blue {
@@ -344,6 +412,11 @@
   }
 
   @media (max-width: 768px) {
+    .hero-section {
+      min-height: calc(100vh - 110px);
+      padding: 26px 20px 14px;
+    }
+
     .hero-title {
       font-size: 40px;
     }
@@ -372,6 +445,28 @@
 
     .features-grid {
       grid-template-columns: 1fr;
+    }
+
+    .info-overlay {
+      padding: 12px;
+    }
+
+    .info-dialog {
+      padding: 16px;
+      border-radius: 16px;
+      max-height: 90vh;
+    }
+
+    .overlay-close {
+      width: 32px;
+      height: 32px;
+      top: 10px;
+      right: 10px;
+      font-size: 20px;
+    }
+
+    .info-dialog .section-header {
+      padding-right: 36px;
     }
   }
 </style>
@@ -419,23 +514,22 @@
       {% else %}
         <a class="hero-btn btn-primary" href="{{ url_for('login') }}">Start Learning</a>
       {% endif %}
-      <a class="hero-btn btn-secondary" href="{{ url_for('about') }}">Learn More</a>
+      <button class="hero-btn btn-secondary hero-btn-modal" id="learnMoreBtn" type="button">Learn More</button>
     </div>
   </div>
 </section>
 
-<!-- Features Section -->
-<section class="features-section">
-  <div class="features-container">
+<div class="info-overlay" id="whyOverlay" aria-hidden="true">
+  <div class="info-dialog" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
+    <button class="overlay-close" id="overlayCloseBtn" type="button" aria-label="Close dialog"><span class="close-glyph" aria-hidden="true">&times;</span></button>
     <div class="section-header">
-      <h2 class="section-title">Why Choose Our Platform?</h2>
+      <h2 class="section-title overlay-title" id="overlayTitle">Why Choose Our Platform?</h2>
       <p class="section-subtitle">
         Advanced technology meets accessibility to create the most effective FSL learning experience!
       </p>
     </div>
 
     <div class="features-grid">
-      <!-- Feature 1: AI-Powered Recognition -->
       <div class="feature-card">
         <div class="feature-icon icon-blue"></div>
         <h3 class="feature-title">AI-Powered Recognition</h3>
@@ -444,7 +538,6 @@
         </p>
       </div>
 
-      <!-- Feature 2: Interactive Learning -->
       <div class="feature-card">
         <div class="feature-icon icon-green"></div>
         <h3 class="feature-title">Interactive Learning</h3>
@@ -453,7 +546,6 @@
         </p>
       </div>
 
-      <!-- Feature 3: Performance Feedback -->
       <div class="feature-card">
         <div class="feature-icon icon-coral"></div>
         <h3 class="feature-title">Performance Feedback</h3>
@@ -463,6 +555,47 @@
       </div>
     </div>
   </div>
-</section>
+</div>
+
+<script>
+  (function () {
+    const learnMoreBtn = document.getElementById('learnMoreBtn');
+    const overlay = document.getElementById('whyOverlay');
+    const closeBtn = document.getElementById('overlayCloseBtn');
+
+    if (!learnMoreBtn || !overlay || !closeBtn) {
+      return;
+    }
+
+    const openOverlay = function () {
+      overlay.classList.add('show');
+      overlay.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      closeBtn.focus();
+    };
+
+    const closeOverlay = function () {
+      overlay.classList.remove('show');
+      overlay.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      learnMoreBtn.focus();
+    };
+
+    learnMoreBtn.addEventListener('click', openOverlay);
+    closeBtn.addEventListener('click', closeOverlay);
+
+    overlay.addEventListener('click', function (event) {
+      if (event.target === overlay) {
+        closeOverlay();
+      }
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && overlay.classList.contains('show')) {
+        closeOverlay();
+      }
+    });
+  })();
+</script>
 
 {% endblock %}

@@ -32,6 +32,10 @@
     position: relative;
   }
 
+  body[data-page="about"] {
+    overflow: hidden;
+  }
+
   .bg-shapes {
     position: fixed;
     inset: 0;
@@ -46,43 +50,43 @@
     animation: float 20s infinite ease-in-out;
   }
 
-  .shape:nth-child(1) { 
-    width: 120px; 
-    height: 120px; 
-    background: var(--sunshine); 
+  .shape:nth-child(1) {
+    width: 120px;
+    height: 120px;
+    background: var(--sunshine);
     border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-    top: 10%; 
-    left: 5%; 
+    top: 10%;
+    left: 5%;
     animation-delay: 0s;
   }
 
-  .shape:nth-child(2) { 
-    width: 90px; 
-    height: 90px; 
-    background: var(--coral); 
+  .shape:nth-child(2) {
+    width: 90px;
+    height: 90px;
+    background: var(--coral);
     border-radius: 50%;
-    top: 60%; 
-    left: 80%; 
+    top: 60%;
+    left: 80%;
     animation-delay: 3s;
   }
 
-  .shape:nth-child(3) { 
-    width: 150px; 
-    height: 150px; 
-    background: var(--grass-green); 
+  .shape:nth-child(3) {
+    width: 150px;
+    height: 150px;
+    background: var(--grass-green);
     border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
-    bottom: 10%; 
-    right: 10%; 
+    bottom: 10%;
+    right: 10%;
     animation-delay: 6s;
   }
 
-  .shape:nth-child(4) { 
-    width: 100px; 
-    height: 100px; 
-    background: var(--lavender); 
+  .shape:nth-child(4) {
+    width: 100px;
+    height: 100px;
+    background: var(--lavender);
     border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-    top: 30%; 
-    right: 20%; 
+    top: 30%;
+    right: 20%;
     animation-delay: 9s;
   }
 
@@ -97,110 +101,118 @@
     position: relative;
     z-index: 1;
     width: 100%;
-    min-height: calc(100vh - 64px);
-    padding: 12px 20px;
+    height: calc(100vh - 72px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+    padding: 8px 16px 72px;
+  }
+
+  .footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+  }
+
+  .about-stage {
+    min-height: calc(100vh - 112px);
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
     display: flex;
     flex-direction: column;
+    justify-content: center;
   }
 
-  .hero-section {
+  .mission-stage {
+    padding: 4px 0 10px;
+  }
+
+  .mission-stage-header {
     text-align: center;
-    margin-bottom: 14px;
-    animation: slideDown 0.8s ease-out;
+    margin-bottom: 10px;
   }
 
-  @keyframes slideDown {
-    from { transform: translateY(-50px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+  .mission-kicker {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: var(--deep-blue);
+    margin-bottom: 4px;
   }
 
-  .hero-title {
+  .mission-heading {
     font-size: 32px;
     font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
     background: linear-gradient(135deg, var(--deep-blue), var(--lavender), var(--coral));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 8px;
-    letter-spacing: -1px;
   }
 
-  .hero-subtitle {
-    font-size: 15px;
-    color: #333;
-    max-width: 800px;
+  .mission-subheading {
+    max-width: 840px;
     margin: 0 auto;
+    font-size: 14px;
+    color: #333;
     line-height: 1.4;
   }
 
-  .mission-section {
-    max-width: 1200px;
-    margin: 0 auto 16px;
-    animation: scaleIn 0.8s ease-out 0.2s backwards;
-  }
-
-  @keyframes scaleIn {
-    from { transform: scale(0.9); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-  }
-
   .mission-card {
-    background: var(--white);
-    border-radius: 16px;
-    padding: 18px 22px;
-    box-shadow: 0 2px 10px var(--shadow);
-  }
-
-  .mission-title {
-    text-align: center;
-    font-size: 22px;
-    font-weight: 900;
-    background: linear-gradient(135deg, var(--deep-blue), var(--sky-blue));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 14px;
+    width: min(1140px, 100%);
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.93);
+    border: 2px solid rgba(67, 97, 238, 0.22);
+    border-radius: 20px;
+    box-shadow: 0 10px 24px rgba(67, 97, 238, 0.12);
+    padding: 22px 26px;
   }
 
   .mission-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    gap: 24px;
   }
 
   .mission-item h3 {
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 19px;
+    font-weight: 800;
     color: var(--deep-blue);
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  .mission-item p, .mission-item li {
-    font-size: 13px;
-    color: #666;
-    line-height: 1.5;
+  .mission-item p,
+  .mission-item li {
+    font-size: 15px;
+    color: #555;
+    line-height: 1.55;
   }
 
   .mission-item ul {
     margin: 0;
-    padding-left: 24px;
+    padding-left: 20px;
   }
 
   .mission-item li {
-    margin-bottom: 0;
+    margin-bottom: 2px;
   }
 
   .icon-circle {
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
     flex-shrink: 0;
   }
 
@@ -214,81 +226,79 @@
     box-shadow: 0 4px 12px rgba(6, 214, 160, 0.3);
   }
 
-  .team-section {
-    max-width: 1400px;
-    margin: 0 auto;
+  .scroll-cue {
+    margin: 14px auto 0;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--deep-blue);
+    letter-spacing: 0.04em;
+  }
+
+  .scroll-cue::after {
+    content: "v";
+    display: block;
+    margin-top: 3px;
+    font-size: 14px;
+    animation: nudgeDown 1.4s ease-in-out infinite;
+  }
+
+  @keyframes nudgeDown {
+    0%, 100% { transform: translateY(0); opacity: 0.8; }
+    50% { transform: translateY(3px); opacity: 1; }
+  }
+
+  .team-stage {
+    padding: 8px 0 2px;
   }
 
   .team-header {
     text-align: center;
-    margin-bottom: 12px;
-    animation: fadeIn 0.8s ease-out 0.4s backwards;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    margin-bottom: 8px;
   }
 
   .team-title {
-    font-size: 24px;
+    font-size: 28px;
     font-weight: 900;
     background: linear-gradient(135deg, var(--coral), var(--lavender));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
+  }
+
+  .team-subtitle {
+    font-size: 13px;
+    color: #555;
   }
 
   .team-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 10px;
-    margin-bottom: 12px;
   }
 
   .team-card {
     background: var(--white);
     border-radius: 16px;
-    padding: 14px 12px;
+    padding: 12px 10px;
     text-align: center;
+    flex: 0 1 calc((100% - 20px) / 3);
+    max-width: calc((100% - 20px) / 3);
     box-shadow: 0 2px 10px var(--shadow);
-    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    animation: popUp 0.6s ease-out backwards;
-  }
-
-  .team-card:nth-child(1) { animation-delay: 0.1s; }
-  .team-card:nth-child(2) { animation-delay: 0.2s; }
-  .team-card:nth-child(3) { animation-delay: 0.3s; }
-  .team-card:nth-child(4) { animation-delay: 0.4s; }
-  .team-card:nth-child(5) { animation-delay: 0.5s; }
-
-  @keyframes popUp {
-    from { transform: translateY(50px) scale(0.9); opacity: 0; }
-    to { transform: translateY(0) scale(1); opacity: 1; }
-  }
-
-  .team-card:hover {
-    transform: translateY(-12px) scale(1.02);
-    box-shadow: 0 16px 40px var(--shadow);
   }
 
   .team-avatar {
-    width: 80px;
-    height: 80px;
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
-    margin: 0 auto 10px;
+    margin: 0 auto 8px;
     overflow: hidden;
     border: 3px solid transparent;
     background: linear-gradient(white, white) padding-box,
                 linear-gradient(135deg, var(--deep-blue), var(--lavender), var(--coral)) border-box;
     box-shadow: 0 2px 10px var(--shadow);
-    transition: all 0.3s ease;
-  }
-
-  .team-card:hover .team-avatar {
-    transform: scale(1.1) rotate(5deg);
-    box-shadow: 0 12px 32px rgba(67, 97, 238, 0.4);
   }
 
   .team-avatar img {
@@ -298,7 +308,7 @@
   }
 
   .team-name {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: #333;
     margin-bottom: 5px;
@@ -307,61 +317,35 @@
 
   .team-role {
     display: inline-block;
-    padding: 4px 12px;
-    background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
+    padding: 4px 10px;
     color: var(--white);
     border-radius: 10px;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     box-shadow: 0 2px 6px rgba(67, 97, 238, 0.3);
   }
 
-  .team-card:nth-child(1) .team-role {
-    background: linear-gradient(135deg, var(--deep-blue), var(--sky-blue));
-  }
-
-  .team-card:nth-child(2) .team-role {
-    background: linear-gradient(135deg, var(--grass-green), var(--sky-blue));
-  }
-
-  .team-card:nth-child(3) .team-role {
-    background: linear-gradient(135deg, var(--coral), var(--orange));
-  }
-
-  .team-card:nth-child(4) .team-role {
-    background: linear-gradient(135deg, var(--lavender), var(--coral));
-  }
-
-  .team-card:nth-child(5) .team-role {
-    background: linear-gradient(135deg, var(--orange), var(--sunshine));
-  }
+  .team-card:nth-child(1) .team-role { background: linear-gradient(135deg, var(--deep-blue), var(--sky-blue)); }
+  .team-card:nth-child(2) .team-role { background: linear-gradient(135deg, var(--grass-green), var(--sky-blue)); }
+  .team-card:nth-child(3) .team-role { background: linear-gradient(135deg, var(--coral), var(--orange)); }
+  .team-card:nth-child(4) .team-role { background: linear-gradient(135deg, var(--lavender), var(--coral)); }
+  .team-card:nth-child(5) .team-role { background: linear-gradient(135deg, var(--orange), var(--sunshine)); }
 
   .team-description {
-    font-size: 12px;
+    font-size: 11px;
     color: #666;
-    line-height: 1.4;
+    line-height: 1.3;
+    display: -webkit-box;
+    line-clamp: 4;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
-  @media (max-width: 1400px) {
-    .team-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-
-  @media (max-width: 1024px) {
-    .team-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
-  @media (max-width: 768px) {
-    .hero-title {
-      font-size: 22px;
-    }
-
-    .hero-subtitle {
-      font-size: 11px;
+  @media (max-width: 1200px) {
+    .mission-heading {
+      font-size: 28px;
     }
 
     .mission-grid {
@@ -369,13 +353,63 @@
       gap: 12px;
     }
 
-    .team-title {
-      font-size: 18px;
+    .team-card {
+      flex-basis: calc((100% - 10px) / 2);
+      max-width: calc((100% - 10px) / 2);
     }
 
-    .team-grid {
-      grid-template-columns: 1fr;
-      gap: 8px;
+    .team-description {
+      line-clamp: 5;
+      -webkit-line-clamp: 5;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .page-container {
+      scroll-snap-type: y proximity;
+      padding: 8px 12px 72px;
+    }
+
+    .about-stage {
+      min-height: auto;
+      justify-content: flex-start;
+      padding-top: 4px;
+    }
+
+    .mission-heading {
+      font-size: 24px;
+    }
+
+    .mission-subheading {
+      font-size: 13px;
+    }
+
+    .mission-card {
+      padding: 12px;
+      border-radius: 16px;
+    }
+
+    .mission-card-title {
+      font-size: 20px;
+    }
+
+    .team-title {
+      font-size: 22px;
+    }
+
+    .team-subtitle {
+      font-size: 12px;
+    }
+
+    .team-card {
+      flex-basis: 100%;
+      max-width: 100%;
+      padding: 11px 10px;
+    }
+
+    .team-description {
+      line-clamp: 6;
+      -webkit-line-clamp: 6;
     }
   }
 </style>
@@ -388,19 +422,16 @@
 </div>
 
 <div class="page-container">
-  <!-- Hero Section -->
-  <div class="hero-section">
-    <h1 class="hero-title">Meet Our Team!</h1>
-    <p class="hero-subtitle">
-      We're passionate innovators building the future of Filipino Sign Language education through AI-powered technology!
-    </p>
-  </div>
+  <section class="about-stage mission-stage" aria-label="Mission section">
+    <div class="mission-stage-header">
+      <p class="mission-kicker">About Senyasalin</p>
+      <h1 class="mission-heading">Our Mission</h1>
+      <p class="mission-subheading">
+        Senyasalin is built to make Filipino Sign Language learning accessible, practical, and engaging through reliable AI guidance.
+      </p>
+    </div>
 
-  <!-- Mission Section -->
-  <div class="mission-section">
     <div class="mission-card">
-      <h2 class="mission-title">Our Mission</h2>
-
       <div class="mission-grid">
         <div class="mission-item">
           <h3>
@@ -408,37 +439,36 @@
             Building Inclusive Technology
           </h3>
           <p>
-            We're creating an innovative AI-powered platform that makes Filipino Sign Language learning accessible,
-            interactive, and effective. Our system combines advanced LSTM neural networks with intuitive design
-            to create a comprehensive learning experience.
+            We are creating a learner-friendly platform where people can practice Filipino Sign Language with real-time visual feedback,
+            clear guidance, and a consistent experience that supports everyday progress.
           </p>
         </div>
 
         <div class="mission-item">
           <h3>
             <span class="icon-circle icon-green"></span>
-            Key Features
+            What We Deliver
           </h3>
           <ul>
-            <li>Provide real-time visual feedback for FSL</li>
-            <li>Offer instructional videos to guide users in learning FSL</li>
-            <li>Deliver corrective feedback to help users improve their performance</li>
-            <li>Track practice progress with daily summaries, streaks, and most-practiced signs</li>
-            <li>User accounts to save and review learning history over time</li>
+            <li>Real-time recognition and corrective feedback</li>
+            <li>Instructional videos for guided sign practice</li>
+            <li>Progress tracking with summaries and streak insights</li>
+            <li>Account-based history to review improvement over time</li>
           </ul>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Team Section -->
-  <div class="team-section">
+    <p class="scroll-cue">Scroll down to meet the development team</p>
+  </section>
+
+  <section class="about-stage team-stage" aria-label="Development team section">
     <div class="team-header">
-      <h2 class="team-title">Our Development Team</h2>
+      <h2 class="team-title">Development Team</h2>
+      <p class="team-subtitle">The people designing, engineering, and training Senyasalin.</p>
     </div>
 
     <div class="team-grid">
-      <!-- Bernardo, Christian Emmanuel M. -->
       <div class="team-card">
         <div class="team-avatar">
           <img src="{{ url_for('static', filename='img/Bernardo.png') }}" alt="Bernardo, Christian Emmanuel M.">
@@ -450,7 +480,6 @@
         </p>
       </div>
 
-      <!-- Carale, Alyzza R. -->
       <div class="team-card">
         <div class="team-avatar">
           <img src="{{ url_for('static', filename='img/Carale.png') }}" alt="Carale, Alyzza R.">
@@ -462,7 +491,6 @@
         </p>
       </div>
 
-      <!-- Cuyugan, Emmanuel Luis B. -->
       <div class="team-card">
         <div class="team-avatar">
           <img src="{{ url_for('static', filename='img/Cuyugan.jpg') }}" alt="Cuyugan, Emmanuel Luis B.">
@@ -474,7 +502,6 @@
         </p>
       </div>
 
-      <!-- Doria, Jhon D. -->
       <div class="team-card">
         <div class="team-avatar">
           <img src="{{ url_for('static', filename='img/Doria.png') }}" alt="Doria, Jhon D.">
@@ -486,7 +513,6 @@
         </p>
       </div>
 
-      <!-- Montojo, Lance M. -->
       <div class="team-card">
         <div class="team-avatar">
           <img src="{{ url_for('static', filename='img/Montojo.png') }}" alt="Montojo, Lance M.">
@@ -498,7 +524,7 @@
         </p>
       </div>
     </div>
-  </div>
+  </section>
 </div>
 
 {% endblock %}

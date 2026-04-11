@@ -409,7 +409,6 @@
   }
 
   .feedback-close-btn:hover {
-    transform: scale(1.1);
     background: rgba(255, 60, 120, 1);
   }
 
@@ -462,17 +461,21 @@
     min-height: 0;
   }
 
-  .timer-display {
-    text-align: center;
-    font-weight: 700;
-    color: var(--white);
-    padding: 8px;
+  .timer-overlay {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--sunshine);
+    color: #333;
+    padding: 6px 12px;
     border-radius: 10px;
-    margin-bottom: 6px;
-    font-size: 18px;
-    background: linear-gradient(135deg, var(--deep-blue), var(--lavender));
-    box-shadow: 0 2px 6px rgba(67, 97, 238, 0.3);
+    font-size: 20px;
+    font-weight: 700;
     display: none;
+    z-index: 22;
+    box-shadow: 0 4px 12px rgba(255, 217, 61, 0.5);
+    min-width: 40px;
+    text-align: center;
   }
 
   .gesture-info {
@@ -596,7 +599,7 @@
   }
 
   .stats-section {
-    margin-top: auto;
+    margin-top: 10px;
     padding-top: 4px;
     border-top: 2px solid var(--off-white);
   }
@@ -745,9 +748,9 @@
   }
 
   .card {
-    flex: 1;
+    flex: 0 0 auto;
     min-height: 0;
-    overflow: hidden;
+    overflow: visible;
   }
 </style>
 
@@ -780,10 +783,12 @@
           <video id="mainCamera" autoplay playsinline muted></video>
           <canvas id="overlayCanvas"></canvas>
           <div class="fps-counter" id="fpsCounter">FPS: 0</div>
-          <div id="distanceHintBadge" style="position:absolute;top:8px;right:8px;background:transparent;color:var(--grass-green);padding:8px 12px;border-radius:8px;font-size:15px;font-weight:800;font-family:'Courier New', monospace;z-index:21;box-shadow:none;width:350px;text-align:left;line-height:1.3;text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;">
+          <div id="distanceHintBadge" style="position:absolute;bottom:8px;right:8px;background:transparent;color:var(--grass-green);padding:8px 12px;border-radius:8px;font-size:15px;font-weight:800;font-family:'Courier New', monospace;z-index:21;box-shadow:none;width:350px;text-align:left;line-height:1.3;text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;">
             <div style="white-space:nowrap;">Distance: <span id="distanceValueLabel">-- m</span></div>
             <div id="distanceHintLabel" style="margin-top:2px;white-space:normal;">Too far or too close</div>
           </div>
+
+          <div class="timer-overlay" id="timerOverlay">5</div>
         </div>
 
         <!-- Skeleton AI display (shown only for corrective feedback) -->
@@ -849,8 +854,6 @@
 
     <div class="sidebar">
       <div class="card">
-        <div class="timer-display" id="timerOverlay">5</div>
-
         <div class="gesture-info">
           <div class="gesture-label">
             <h6>Your Challenge:</h6>
@@ -1082,9 +1085,13 @@ window.addEventListener("load", () => {
     showTimer = toggleTimer.checked;
     if (toggleSpeed.checked) {
       timerBar.style.display = 'none';
+      timerOverlay.style.display = 'none';
       return;
     }
     timerBar.style.display = showTimer ? 'block' : 'none';
+    if (!showTimer) {
+      timerOverlay.style.display = 'none';
+    }
   };
   toggleResults.onchange = () => {
     showResults = toggleResults.checked;
@@ -1093,6 +1100,7 @@ window.addEventListener("load", () => {
   toggleSpeed.onchange = () => {
     if (toggleSpeed.checked) {
       timerBar.style.display = 'none';
+      timerOverlay.style.display = 'none';
       capturePhase.textContent = running ? 'Perform Now (real-time mode)...' : 'Idle';
     } else {
       timerBar.style.display = showTimer ? 'block' : 'none';
@@ -2419,6 +2427,12 @@ window.addEventListener("load", () => {
   let tickInterval = null;
   const timerOverlay = document.getElementById("timerOverlay");
 
+  function applyTimerOverlayStyle(value){
+    if(value <= 1) timerOverlay.style.background='var(--coral)';
+    else if(value <= 2) timerOverlay.style.background='var(--orange)';
+    else timerOverlay.style.background='var(--sunshine)';
+  }
+
   function startNumericTimer(realtimeMode) {
     if (!showTimer || realtimeMode) {
       timerOverlay.style.display = "none";
@@ -2428,22 +2442,17 @@ window.addEventListener("load", () => {
 
     let countdown = 5;
     timerOverlay.textContent = countdown;
+    applyTimerOverlayStyle(countdown);
     timerOverlay.style.display = "block";
-    timerOverlay.style.background = "linear-gradient(135deg, var(--deep-blue), var(--lavender))";
 
     tickInterval = setInterval(() => {
       countdown--;
-      if (countdown <= 0) {
-        timerOverlay.textContent = "0";
-        timerOverlay.style.background = "linear-gradient(135deg, var(--coral), var(--orange))";
-        clearInterval(tickInterval);
-        setTimeout(() => (timerOverlay.style.display = "none"), 600);
-        return;
-      }
       timerOverlay.textContent = countdown;
-      if (countdown <= 1) timerOverlay.style.background = "linear-gradient(135deg, var(--coral), var(--orange))";
-      else if (countdown <= 2) timerOverlay.style.background = "linear-gradient(135deg, var(--orange), var(--sunshine))";
-      else timerOverlay.style.background = "linear-gradient(135deg, var(--deep-blue), var(--lavender))";
+      applyTimerOverlayStyle(countdown);
+
+      if (countdown <= 0) {
+        clearInterval(tickInterval);
+      }
     }, 1000);
   }
 

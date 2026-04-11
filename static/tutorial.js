@@ -9,84 +9,90 @@
  */
 
 const Tutorial = (() => {
+  const TUTORIAL_VERSION = "2026-04-10-v2";
+
   // ── Step definitions keyed by Flask endpoint name ──────────────────
   const STEPS = {
     tutor: [
       {
         title: "Learn Mode",
-        body:  "This page plays <b>demonstration videos</b> for each Filipino Sign Language sign. " +
-               "Watch closely and try to imitate the hand movements shown.",
+        body:  "This page is your <b>study area</b>. Pick a category and sign to watch the demonstration video before practicing.",
       },
       {
         title: "Category & Sign Selection",
-        body:  "Browse signs organized by category (Colors, Family, Numbers, Relationships, Survival). " +
-               "Select a category, then pick a specific sign to see its video.",
+        body:  "Signs are grouped into <b>Numbers, Colors, Family, Relationship, and Survival</b>. " +
+               "Click a sign badge to load its demo clip.",
       },
       {
-        title: "Playback Controls",
-        body:  "Use the video controls to <b>pause, replay, and slow down</b> the demonstration so you can study each gesture at your own pace.",
+        title: "Practice Prep",
+        body:  "Focus on hand shape, hand height, and movement path. " +
+               "Then move to <b>Select</b> for a specific target sign or <b>Activity</b> for random challenges.",
       },
     ],
     select: [
       {
         title: "Select & Practice Mode",
-        body:  "Choose a specific sign you want to practice. The system will ask you to perform it in front of your camera.",
+        body:  "Choose a specific sign, then click <b>Start Practice</b>. " +
+               "The flow is: Get Ready (~1s) → Perform (~5s standard mode) → Evaluate.",
       },
       {
-        title: "Camera Feed",
-        body:  "Your webcam feed appears on screen. Position yourself so your <b>hands and upper body</b> are clearly visible.",
+        title: "Distance & Framing",
+        body:  "Keep one person in frame with face, shoulders, and both hands visible. " +
+               "Use the distance guide: <b>green 0.36-0.38 m</b>, yellow near/far bands around it.",
       },
       {
-        title: "Ghost Overlay",
-        body:  "A translucent <b>ghost overlay</b> shows the correct pose landmarks. Try to match your movements to the ghost for best results.",
+        title: "Feedback Tools",
+        body:  "After an incorrect attempt, you can use <b>Show again</b> and <b>Try again</b>. " +
+               "The system may display correction guidance and skeleton/video feedback.",
       },
       {
-        title: "Recognition Feedback",
-        body:  "After performing the sign, the AI will evaluate your gesture and show a confidence score. " +
-               "Aim for high confidence to master each sign!",
+        title: "Mode Options",
+        body:  "Use toggles such as <b>Real-Time Recognition</b>, Show Timer, Show Results, and Show Visuals to adjust practice behavior.",
       },
     ],
     activity: [
       {
         title: "Activity Mode",
-        body:  "Test your skills! The system presents a sign for you to perform, then evaluates your attempt.",
+        body:  "This is challenge practice. The app picks a random sign and you perform it using the same capture/evaluation flow as Select Mode.",
       },
       {
-        title: "Timer & Scoring",
-        body:  "You'll have a limited time to perform the sign. Results are saved automatically and contribute to your progress tracking.",
+        title: "Challenge Flow",
+        body:  "Tap <b>Start Activity</b>, read <b>Your Challenge</b>, perform the sign, and review the result. " +
+               "Correct/Incorrect attempts are saved to your results.",
       },
       {
-        title: "Difficulty",
-        body:  "Choose your difficulty level to adjust the complexity of the signs presented and the strictness of evaluation.",
+        title: "Retries & Guidance",
+        body:  "Use <b>Show again</b> and <b>Try again</b> after feedback to improve the same sign. " +
+               "This build uses random sign selection (no visible difficulty selector).",
       },
     ],
     auto_recognition: [
       {
         title: "Auto Recognition Mode",
-        body:  "Continuous, real-time sign language recognition. Just sign naturally and the AI identifies each gesture as you go.",
+        body:  "Auto mode continuously evaluates signs and appends recognized results to history while the camera is running.",
       },
       {
-        title: "How It Works",
-        body:  "The AI collects a sequence of your pose landmarks and runs inference continuously. " +
-               "Results appear on screen in real time.",
+        title: "Start / Stop Flow",
+        body:  "Click <b>Start Learning!</b> to begin and <b>Stop</b> to end. " +
+               "Use Show Results and Real-Time Recognition toggles to adjust live behavior.",
       },
       {
-        title: "Best Practices",
-        body:  "Ensure good lighting, keep your hands within the camera frame, and perform signs at a natural pace for the most accurate recognition.",
+        title: "Recognition Thresholds",
+        body:  "Auto mode treats predictions as: <b>&lt; 0.70 Unrecognized</b>, <b>0.70 to &lt; 0.92 Incorrect</b>, and <b>&ge; 0.92 Correct</b>.",
       },
     ],
     results: [
       {
         title: "Your Results",
-        body:  "View your complete practice history — every sign you've practiced, with confidence scores and timestamps.",
+        body:  "Review your latest attempts, daily activity, and progress summary for the current logged-in account.",
       },
       {
-        title: "Summary Stats",
-        body:  "See your <b>daily count</b>, <b>7-day total</b>, <b>current streak</b>, and <b>most-practiced sign</b> at a glance.",
+        title: "What You See",
+        body:  "Key metrics include <b>Total Attempts</b>, Correct, Incorrect, streak days, and a today summary badge.",
       },
       {
         title: "Export Options",
-        body:  "Download your results as a <b>PDF report</b> for record-keeping or to share your progress.",
+        body:  "Export a <b>PDF report</b> as either <b>Today only</b> or <b>Full history</b>.",
       },
     ],
   };
@@ -101,7 +107,7 @@ const Tutorial = (() => {
 
   // ── LocalStorage helpers ───────────────────────────────────────────
   function lsKey() {
-    return "senyasalin_tutorial_dismissed" + (userId ? "_" + userId : "");
+    return "senyasalin_tutorial_dismissed_" + TUTORIAL_VERSION + (userId ? "_" + userId : "");
   }
 
   function isDismissed(page) {
@@ -244,8 +250,23 @@ const Tutorial = (() => {
   function init(pageName, uid) {
     currentPage = pageName;
     userId = uid || "";
-    // Auto-show after a brief delay so the page finishes rendering
-    setTimeout(() => start(pageName, false), 600);
+
+    // Show tutorial at least once per user per page, even if previous browser state exists.
+    const firstRunKey = "senyasalin_tutorial_first_run_" + TUTORIAL_VERSION + (userId ? "_" + userId : "") + (pageName ? "_" + pageName : "");
+    let forceFirstRun = false;
+    try {
+      forceFirstRun = localStorage.getItem(firstRunKey) !== "1";
+    } catch {
+      forceFirstRun = false;
+    }
+
+    // Auto-show after a brief delay so the page finishes rendering.
+    setTimeout(() => {
+      start(pageName, forceFirstRun);
+      if (forceFirstRun) {
+        try { localStorage.setItem(firstRunKey, "1"); } catch { /* ignore */ }
+      }
+    }, 600);
   }
 
   return { init, start, resetAll };

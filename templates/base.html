@@ -246,7 +246,7 @@
 
     @media (hover: none), (pointer: coarse) {
       nav a::before { display: none !important; }
-      nav a:hover { transform: none !important; box-shadow: none !important; }
+      nav a:hover { box-shadow: none !important; }
       nav a:hover::before { left: -100% !important; }
 
       .big-button:hover,
@@ -257,7 +257,6 @@
       .control-btn:hover,
       .btn:hover,
       button:hover {
-        transform: none !important;
         box-shadow: inherit !important;
         filter: none !important;
       }

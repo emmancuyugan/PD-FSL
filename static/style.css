@@ -184,7 +184,7 @@ header.navbar{
   overflow:hidden;
   background:var(--white);
 }
-.brand-logo:hover{transform:none}
+
 .brand-title{
   font-weight:800;
   font-size:1.25rem;
@@ -226,10 +226,8 @@ nav a::before{
 }
 nav a:hover{
   background:rgba(255,255,255,0.15);
-  transform:translateY(-2px);
 }
 nav a:hover::before{
-  transform:translateX(-50%) scaleX(1);
 }
 nav a.active{
   background:rgba(255,255,255,0.2);
@@ -244,7 +242,6 @@ nav a.active::before{
 }
 nav a.active:hover{
   background:rgba(255,255,255,0.25);
-  transform:translateY(-2px);
 }
 
 /* Right corner auth button styling */
@@ -264,7 +261,6 @@ nav a.active:hover{
 }
 .nav-inner .auth-corner-btn:hover {
   background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-50%) translateY(-1px);
 }
 .nav-inner .auth-corner-btn.active {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%);
@@ -275,7 +271,6 @@ nav a.active:hover{
 }
 .nav-inner .auth-corner-btn.active:hover {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.2) 100%);
-  transform: translateY(-50%) translateY(-1px);
 }
 
 /* Login/Logout button styling */
@@ -329,12 +324,10 @@ nav a[style*="accent"]:hover {
   background-size:200% 200%;
   animation:gradientShift 3s ease infinite;
   box-shadow:var(--shadow-xl), var(--shadow-colored-hover);
-  transform:translateY(-3px) scale(1.05);
   color:var(--white);
 }
 .btn:hover::before{left:100%}
 .btn:active{
-  transform:translateY(-1px) scale(1.02);
   box-shadow:var(--shadow-md);
 }
 .btn-outline{
@@ -348,7 +341,6 @@ nav a[style*="accent"]:hover {
   background:var(--gradient-primary);
   color:var(--white);
   border-color:transparent;
-  transform:translateY(-3px) scale(1.05);
   box-shadow:var(--shadow-lg), var(--shadow-colored);
 }
 .btn-primary{
@@ -362,7 +354,6 @@ nav a[style*="accent"]:hover {
   background-size:200% 200%;
   animation:gradientShift 3s ease infinite;
   color:var(--white);
-  transform:translateY(-3px) scale(1.05);
   box-shadow:var(--shadow-xl), var(--shadow-colored-hover);
 }
 .btn-pill{
@@ -506,7 +497,6 @@ body[data-page="about"] .section:nth-of-type(2) .card * {
   pointer-events:none;
 }
 .card:hover{
-  transform:translateY(-8px) scale(1.02);
   box-shadow:var(--shadow-2xl), var(--shadow-colored-hover), inset 0 1px 0 0 rgba(255, 255, 255, 0.95);
   border-color:rgba(59, 130, 246, 0.3);
 }
@@ -549,7 +539,6 @@ body[data-page="about"] .section:nth-of-type(2) .card * {
   box-shadow:var(--shadow-sm);
 }
 .pill:hover{
-  transform:translateY(-2px);
   box-shadow:var(--shadow-md);
 }
 .pill.success{
@@ -652,7 +641,6 @@ input[autocomplete="off"]::after {
   box-shadow:var(--shadow-md);
   transition:transform 0.2s ease;
 }
-.video-wrap:hover{transform:scale(1.02)}
 .video-wrap video{
   display:block;
   width:100%;
@@ -693,9 +681,6 @@ input[autocomplete="off"]::after {
     min-width:44px;
     padding:1rem 1.5rem;
   }
-
-  /* Remove hover effects on touch devices */
-  .card:hover,.video-wrap:hover{transform:none}
 
   /* Larger form elements */
   input,select,textarea{
@@ -1039,7 +1024,6 @@ a:focus-visible {
 }
 .brand-logo:hover{
   box-shadow:0 8px 20px rgba(0,0,0,0.25);
-  transform:scale(1.05) rotate(2deg);
 }
 
 /* Improved Video Wrapper */
@@ -1050,7 +1034,6 @@ a:focus-visible {
   backdrop-filter:blur(10px);
 }
 .video-wrap:hover{
-  transform:scale(1.02);
   border-color:rgba(59, 130, 246, 0.5);
   box-shadow:var(--shadow-xl), 0 0 30px rgba(59, 130, 246, 0.2);
 }
@@ -1073,7 +1056,6 @@ a:focus-visible {
 }
 
 .category-card:hover {
-  transform: translateY(-4px);
   box-shadow: 0 12px 30px rgba(0,0,0,0.15);
 }
 
@@ -1096,7 +1078,6 @@ a:focus-visible {
 }
 
 .number-badge:hover {
-  transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
 
@@ -1118,7 +1099,6 @@ a:focus-visible {
 }
 
 .color-badge:hover {
-  transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
 
@@ -1138,7 +1118,6 @@ a:focus-visible {
 }
 
 .shape-badge:hover {
-  transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
 
@@ -1158,7 +1137,6 @@ a:focus-visible {
 }
 
 .family-badge:hover {
-  transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
 
