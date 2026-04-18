@@ -903,11 +903,16 @@
 
 <script>
 window.addEventListener("load", () => {
-  const NUMBER_SIGNS = ["One","Two","Three","Four","Five"];
-  const COLOR_SIGNS  = ["Black","Blue","Green","Orange","Pink","Red","White","Yellow"];
-  const FAMILY_SIGNS = ["Daughter","Father","Grandfather","Grandmother","Mother","Son"];
+  const NUMBER_SIGNS = [
+    "One","Two","Three","Four","Five",
+    "Six","Seven","Eight","Nine","Ten",
+    "Eleven","Twelve","Thirteen","Fourteen","Fifteen",
+    "Sixteen","Seventeen","Eighteen","Nineteen","Twenty"
+  ];
+  const COLOR_SIGNS  = ["Black","Blue","Green","Orange","Pink","Red","Violet","White","Yellow"];
+  const FAMILY_SIGNS = ["Daughter","Father","Grandfather","Grandmother","Mother","Son","Auntie","Uncle","Cousin"];
   const RELATIONSHIP_SIGNS = ["Boy","Girl"];
-  const SURVIVAL_SIGNS = ["Correct","No","Understand","Wrong","Yes"];
+  const SURVIVAL_SIGNS = ["Correct","No","Understand","Wrong","Yes","Please","Thank You"];
 
   const EASY_ALL_SIGNS = [...NUMBER_SIGNS, ...COLOR_SIGNS, ...FAMILY_SIGNS, ...RELATIONSHIP_SIGNS, ...SURVIVAL_SIGNS];
 
@@ -1271,23 +1276,28 @@ window.addEventListener("load", () => {
     const x = String(s).toLowerCase().replace(/[^a-z0-9]+/g,'');
     const map = {
       "1":"one","2":"two","3":"three","4":"four","5":"five",
+      "6":"six","7":"seven","8":"eight","9":"nine","10":"ten",
+      "11":"eleven","12":"twelve","13":"thirteen","14":"fourteen","15":"fifteen",
+      "16":"sixteen","17":"seventeen","18":"eighteen","19":"nineteen","20":"twenty",
       "grandmother":"grandmother","grandma":"grandmother","lola":"grandmother",
       "grandfather":"grandfather","grandpa":"grandfather","lolo":"grandfather",
       "mom":"mother","mother":"mother","nanay":"mother",
       "dad":"father","father":"father","tatay":"father",
+      "auntie":"auntie","uncle":"uncle","cousin":"cousin",
       "boy":"boy","girl":"girl",
       "son":"son","daughter":"daughter",
-      "black":"black","blue":"blue","green":"green","orange":"orange","pink":"pink","red":"red","white":"white","yellow":"yellow",
-      "correct":"correct","no":"no","understand":"understand","wrong":"wrong","yes":"yes"
+      "black":"black","blue":"blue","green":"green","orange":"orange","pink":"pink","red":"red","violet":"violet","white":"white","yellow":"yellow",
+      "correct":"correct","no":"no","understand":"understand","wrong":"wrong","yes":"yes",
+      "please":"please","thankyou":"thankyou","thanks":"thankyou"
     };
     return map[x] || x;
   }
   function inferCategory(label){
     const l = normLabel(label);
-    if (["one","two","three","four","five"].includes(l)) return "numbers";
-    if (["daughter","father","grandfather","grandmother","mother","son"].includes(l)) return "family";
+    if (["one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen","twenty"].includes(l)) return "numbers";
+    if (["daughter","father","grandfather","grandmother","mother","son","auntie","uncle","cousin"].includes(l)) return "family";
     if (["boy","girl"].includes(l)) return "relationship";
-    if (["correct","no","understand","wrong","yes"].includes(l)) return "survival";
+    if (["correct","no","understand","wrong","yes","please","thankyou"].includes(l)) return "survival";
     return "colors";
   }
 
