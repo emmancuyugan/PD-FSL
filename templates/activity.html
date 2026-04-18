@@ -1506,9 +1506,19 @@ window.addEventListener("load", () => {
   function get3DFeedbackUrl(label) {
     const category = inferCategory(label);
     const key = normLabel(label);
-    const prefixMap = { numbers: 'number' };
+    const prefixMap = { numbers: 'number', colors: 'color' };
     const prefix = prefixMap[category] || category;
-    return `/static/video/3d_feedback/${category}/${feedbackGender}_${prefix}_${key}.mp4`;
+    const candidates = [];
+
+    candidates.push(`/static/video/3d_feedback/${category}/${feedbackGender}_${prefix}_${key}.mp4`);
+    candidates.push(`/static/video/3d_feedback/${category}/${feedbackGender}_${prefix}s_${key}.mp4`);
+
+    if (key === 'thankyou') {
+      candidates.push(`/static/video/3d_feedback/${category}/${feedbackGender}_${prefix}_thank you.mp4`);
+      candidates.push(`/static/video/3d_feedback/${category}/${feedbackGender}_${prefix}s_thank you.mp4`);
+    }
+
+    return candidates;
   }
 
   function getLearnFeedbackUrl(label) {
@@ -1527,14 +1537,20 @@ window.addEventListener("load", () => {
 
   async function resolveFeedbackUrl(label) {
     const preferred = feedbackSource === '3d' ? get3DFeedbackUrl(label) : getLearnFeedbackUrl(label);
-    if (await fileExists(preferred)) {
-      return { url: preferred, source: feedbackSource };
+    const preferredList = Array.isArray(preferred) ? preferred : [preferred];
+    for (const candidate of preferredList) {
+      if (await fileExists(candidate)) {
+        return { url: candidate, source: feedbackSource };
+      }
     }
 
     const alternateSource = feedbackSource === '3d' ? 'learn' : '3d';
     const alternate = alternateSource === '3d' ? get3DFeedbackUrl(label) : getLearnFeedbackUrl(label);
-    if (await fileExists(alternate)) {
-      return { url: alternate, source: alternateSource };
+    const alternateList = Array.isArray(alternate) ? alternate : [alternate];
+    for (const candidate of alternateList) {
+      if (await fileExists(candidate)) {
+        return { url: candidate, source: alternateSource };
+      }
     }
 
     const legacy = getLegacyFeedbackUrl(label);
