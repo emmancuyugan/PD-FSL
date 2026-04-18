@@ -94,48 +94,187 @@ def save_progress(label: str, confidence=None):
     db.session.commit()
 
 # For model loading and inference
-MODEL_PATH = r"run47.pt"
+MODEL_A_PATH = os.getenv("MODEL_A_PATH", r"run20.pt")
+MODEL_B_PATH = os.getenv("MODEL_B_PATH", r"run47.pt")
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 print("CUDA Available:", torch.cuda.is_available())
 if torch.cuda.is_available():
     print("GPU:", torch.cuda.get_device_name(0))
 
-checkpoint = torch.load( 
-    MODEL_PATH,
-    map_location=device,
-    weights_only=False
-)
 
-config = checkpoint["config"]
+def _build_model_from_checkpoint(model_path):
+    checkpoint = torch.load(
+        model_path,
+        map_location=device,
+        weights_only=False,
+    )
+    config = checkpoint["config"]
 
-CLASSES = config["CLASSES"]
-INPUT_SIZE = config["FEATURE_DIM"]
-HIDDEN_SIZE = config["HIDDEN_SIZE"]
-NUM_LAYERS = config["NUM_LAYERS"]
-DROPOUT = config["DROPOUT"]
-SEQ_LEN = config.get("SEQ_LEN", config.get("SEQUENCE_LENGTH", 48))
+    classes = config["CLASSES"]
+    input_size = config["FEATURE_DIM"]
+    hidden_size = config["HIDDEN_SIZE"]
+    num_layers = config["NUM_LAYERS"]
+    dropout = config["DROPOUT"]
+    seq_len = config.get("SEQ_LEN", config.get("SEQUENCE_LENGTH", 48))
 
-model = ModifiedLSTM(
-    INPUT_SIZE,
-    HIDDEN_SIZE,
-    NUM_LAYERS,
-    len(CLASSES),
-    dropout=DROPOUT,
-    use_layernorm=True
-).to(device)
+    loaded_model = ModifiedLSTM(
+        input_size,
+        hidden_size,
+        num_layers,
+        len(classes),
+        dropout=dropout,
+        use_layernorm=True,
+    ).to(device)
 
-model.load_state_dict(checkpoint["model_state_dict"])
-model.to(device)
+    loaded_model.load_state_dict(checkpoint["model_state_dict"])
+    loaded_model.to(device)
 
-if device.type == "cuda":
-    model.half()
+    if device.type == "cuda":
+        loaded_model.half()
 
-model.eval()
+    loaded_model.eval()
+
+    return {
+        "path": model_path,
+        "classes": classes,
+        "input_size": input_size,
+        "hidden_size": hidden_size,
+        "num_layers": num_layers,
+        "dropout": dropout,
+        "seq_len": seq_len,
+        "model": loaded_model,
+    }
+
+
+MODEL_PROFILES = {
+    "A": _build_model_from_checkpoint(MODEL_A_PATH),
+    "B": _build_model_from_checkpoint(MODEL_B_PATH),
+}
+
+INPUT_SIZE = MODEL_PROFILES["A"]["input_size"]
+SEQ_LEN = MODEL_PROFILES["A"]["seq_len"]
+
+for model_key, profile in MODEL_PROFILES.items():
+    if profile["input_size"] != INPUT_SIZE:
+        raise ValueError(
+            f"Model {model_key} FEATURE_DIM mismatch: {profile['input_size']} vs {INPUT_SIZE}"
+        )
+    if profile["seq_len"] != SEQ_LEN:
+        raise ValueError(
+            f"Model {model_key} SEQ_LEN mismatch: {profile['seq_len']} vs {SEQ_LEN}"
+        )
+
+
+def _normalize_sign_key(raw_label):
+    if raw_label is None:
+        return ""
+
+    text = str(raw_label).strip().lower()
+    if not text:
+        return ""
+
+    if "+" in text:
+        text = text.split("+", 1)[0].strip()
+
+    if "_" in text:
+        text = text.split("_")[-1]
+
+    token = "".join(ch for ch in text if ch.isalnum())
+
+    aliases = {
+        "1": "one", "one": "one",
+        "2": "two", "two": "two",
+        "3": "three", "three": "three",
+        "4": "four", "four": "four",
+        "5": "five", "five": "five",
+        "6": "six", "six": "six",
+        "7": "seven", "seven": "seven",
+        "8": "eight", "eight": "eight",
+        "9": "nine", "nine": "nine",
+        "10": "ten", "ten": "ten",
+        "11": "eleven", "eleven": "eleven",
+        "12": "twelve", "twelve": "twelve",
+        "13": "thirteen", "thirteen": "thirteen",
+        "14": "fourteen", "fourteen": "fourteen",
+        "15": "fifteen", "fifteen": "fifteen",
+        "16": "sixteen", "sixteen": "sixteen",
+        "17": "seventeen", "seventeen": "seventeen",
+        "18": "eighteen", "eighteen": "eighteen",
+        "19": "nineteen", "nineteen": "nineteen",
+        "20": "twenty", "twenty": "twenty",
+        "mother": "mother",
+        "father": "father",
+        "son": "son",
+        "daughter": "daughter",
+        "grandfather": "grandfather",
+        "grandmother": "grandmother",
+        "auntie": "auntie",
+        "uncle": "uncle",
+        "cousin": "cousin",
+        "black": "black",
+        "white": "white",
+        "pink": "pink",
+        "red": "red",
+        "yellow": "yellow",
+        "blue": "blue",
+        "green": "green",
+        "orange": "orange",
+        "violet": "violet",
+        "boy": "boy",
+        "girl": "girl",
+        "yes": "yes",
+        "no": "no",
+        "understand": "understand",
+        "wrong": "wrong",
+        "correct": "correct",
+        "please": "please",
+        "thankyou": "thankyou",
+        "thanks": "thankyou",
+    }
+
+    return aliases.get(token, token)
+
+
+MODEL_A_SIGNS = {
+    "one", "two", "three", "four", "five",
+    "mother", "father", "son", "daughter", "grandfather", "grandmother",
+    "black", "white", "pink", "red", "yellow", "blue", "green", "orange",
+    "boy", "girl",
+    "yes", "no", "understand", "wrong", "correct",
+}
+
+MODEL_B_SIGNS = {
+    "six", "seven", "eight", "nine", "ten",
+    "eleven", "twelve", "thirteen", "fourteen", "fifteen",
+    "sixteen", "seventeen", "eighteen", "nineteen", "twenty",
+    "auntie", "uncle", "cousin",
+    "violet",
+    "please", "thankyou",
+}
+
+
+def _route_model_for_sign(raw_label):
+    sign_key = _normalize_sign_key(raw_label)
+    if sign_key in MODEL_A_SIGNS:
+        return "A"
+    if sign_key in MODEL_B_SIGNS:
+        return "B"
+    return None
+
+
+def _pick_model_for_request(data):
+    for key in ("expected", "target", "label", "sign", "requested_sign"):
+        routed = _route_model_for_sign((data or {}).get(key))
+        if routed:
+            return routed
+    return "A"
 
 # Get tensor dtypes for TensorRT engine if available
 TRT_ENGINE_PATH = os.path.join(os.path.dirname(__file__), "model.engine")
 use_trt = False
+TRT_MODEL_KEY = "A"
 
 # Helper: map TensorRT dtype enum → numpy dtype
 def _trt_dtype_to_np(trt_dtype):
@@ -167,7 +306,7 @@ if HAS_TRT and os.path.exists(TRT_ENGINE_PATH):
     trt_output_dtype = _trt_dtype_to_np(engine.get_tensor_dtype(trt_output_name))
 
     input_shape  = (1, SEQ_LEN, INPUT_SIZE)
-    output_shape = (1, len(CLASSES))
+    output_shape = (1, len(MODEL_PROFILES[TRT_MODEL_KEY]["classes"]))
 
     input_nbytes  = int(np.prod(input_shape)  * np.dtype(trt_input_dtype).itemsize)
     output_nbytes = int(np.prod(output_shape) * np.dtype(trt_output_dtype).itemsize)
@@ -187,12 +326,13 @@ else:
         print("TensorRT engine not found. Using PyTorch.")
 
 print("Loaded Config:")
-print("Hidden:", HIDDEN_SIZE)
-print("Layers:", NUM_LAYERS)
-print("Dropout:", DROPOUT)
-print("Classes:", len(CLASSES))
 print("SEQ_LEN from config:", SEQ_LEN)
-print(f"[APP] Loaded model → hidden={HIDDEN_SIZE}, layers={NUM_LAYERS}, dropout={DROPOUT}")
+for model_key, profile in MODEL_PROFILES.items():
+    print(
+        f"[APP] Loaded model {model_key} from {profile['path']} "
+        f"→ hidden={profile['hidden_size']}, layers={profile['num_layers']}, "
+        f"dropout={profile['dropout']}, classes={len(profile['classes'])}"
+    )
 
 _mp_holistic_mod = mp.solutions.holistic
 
@@ -299,9 +439,12 @@ def get_demo_video_path(label):
     chosen = random.choice(candidates)
     return f"static/video/{category}/{chosen}"
 
-def run_inference(x):
-    """Run inference via TensorRT (if available) or PyTorch."""
-    if use_trt:
+def run_inference(x, model_key="A"):
+    """Run inference via TensorRT (model A only) or PyTorch for selected model."""
+    profile = MODEL_PROFILES[model_key]
+    model_classes = profile["classes"]
+
+    if use_trt and model_key == TRT_MODEL_KEY:
         # Cast input to whatever dtype the engine actually expects
         input_data = x.cpu().numpy().astype(trt_input_dtype)
 
@@ -312,7 +455,7 @@ def run_inference(x):
 
         trt_context.execute_async_v3(stream_handle=trt_stream.handle)
 
-        output_data = np.empty((1, len(CLASSES)), dtype=trt_output_dtype)
+        output_data = np.empty((1, len(model_classes)), dtype=trt_output_dtype)
         cuda.memcpy_dtoh_async(output_data, d_output, trt_stream)
         trt_stream.synchronize()
 
@@ -324,13 +467,13 @@ def run_inference(x):
 
     else:
         with torch.no_grad():
-            logits = model(x)
+            logits = profile["model"](x)
             probs = torch.softmax(logits, dim=1).cpu().numpy()[0]
 
     return probs
 
 
-def log_top3(probs, tag="INFERENCE"): # Print top 3 predictions for debugging
+def log_top3(probs, classes, tag="INFERENCE"): # Print top 3 predictions for debugging
     if not np.any(np.isfinite(probs)):
         print(f"[{tag}] Unrecognized sign (non-finite probabilities)")
         return
@@ -338,7 +481,7 @@ def log_top3(probs, tag="INFERENCE"): # Print top 3 predictions for debugging
     top3_idx = np.argsort(probs)[::-1][:3]
     print(f"[{tag}] Top-3 predictions:")
     for rank, idx in enumerate(top3_idx, 1):
-        print(f"  {rank}. {CLASSES[idx]:.<30s} {probs[idx]*100:6.2f}%")
+        print(f"  {rank}. {classes[idx]:.<30s} {probs[idx]*100:6.2f}%")
 
 @app.route("/")
 def launch():
@@ -649,8 +792,11 @@ def predict():
         np.save("tmp_live_seq.npy", live_seq)
         print(f"[DEBUG] Saved live sequence to tmp_live_seq.npy  shape={live_seq.shape}")
 
-        probs = run_inference(x)
-        log_top3(probs, tag="PREDICT")
+        model_key = _pick_model_for_request(data)
+        classes = MODEL_PROFILES[model_key]["classes"]
+
+        probs = run_inference(x, model_key=model_key)
+        log_top3(probs, classes, tag=f"PREDICT-{model_key}")
 
         if not np.any(np.isfinite(probs)):
             print("[PREDICT] Unrecognized Sign (non-finite probabilities)")
@@ -661,7 +807,7 @@ def predict():
             })
 
         pred_idx = int(np.argmax(probs))
-        label = CLASSES[pred_idx]
+        label = classes[pred_idx]
         
         conf = float(np.max(probs))
         
@@ -681,9 +827,10 @@ def predict():
         response = {
             "prediction": label,
             "confidence": conf,
+            "model": model_key,
             "demo": demo_path or f"No demo found for {label}"
         }
-        print(f"[PREDICT] {label} (conf={conf:.4f}) → {demo_path}")
+        print(f"[PREDICT-{model_key}] {label} (conf={conf:.4f}) → {demo_path}")
         return jsonify(response)
 
     except Exception as e:
@@ -712,10 +859,27 @@ def predict_auto():
         else:
             x = prepare_sequence({"features": data["features"]})
 
-        probs = run_inference(x)
-        log_top3(probs, tag="AUTO")
+        model_results = []
+        for model_key, profile in MODEL_PROFILES.items():
+            probs = run_inference(x, model_key=model_key)
+            classes = profile["classes"]
+            log_top3(probs, classes, tag=f"AUTO-{model_key}")
 
-        if not np.any(np.isfinite(probs)):
+            if not np.any(np.isfinite(probs)):
+                continue
+
+            pred_idx = int(np.argmax(probs))
+            conf = float(np.max(probs))
+            model_results.append({
+                "model": model_key,
+                "probs": probs,
+                "classes": classes,
+                "pred_idx": pred_idx,
+                "label": classes[pred_idx],
+                "conf": conf,
+            })
+
+        if not model_results:
             print("[AUTO] Unrecognized Sign (non-finite probabilities)")
             return jsonify({
                 "prediction": "Unrecognized Sign",
@@ -723,26 +887,27 @@ def predict_auto():
                 "message": "Unrecognized sign"
             })
 
-        conf = float(np.max(probs)) 
-        pred_idx = int(np.argmax(probs))
-        label = CLASSES[pred_idx]
-
         NOT_FSL_THRESHOLD = 0.70
         THRESHOLD = 0.92
 
-        if conf < NOT_FSL_THRESHOLD:
-            print(f"[AUTO] Unrecognized Sign (max_conf={conf:.4f})")
+        best_any = max(model_results, key=lambda r: r["conf"])
+        candidates = [r for r in model_results if r["conf"] >= NOT_FSL_THRESHOLD]
+
+        if not candidates:
+            print(f"[AUTO] Unrecognized Sign (max_conf={best_any['conf']:.4f})")
             return jsonify({
                 "prediction": "Unrecognized Sign",
-                "confidence": conf,
+                "confidence": best_any["conf"],
                 "message": "Unrecognized sign"
             })
 
+        best = max(candidates, key=lambda r: r["conf"])
+        conf = best["conf"]
+        label = best["label"]
+
         if conf < THRESHOLD:
-            sorted_indices = np.argsort(probs)[::-1]
-            top_idx = sorted_indices[0]
-            closest_label = CLASSES[top_idx]
-            closest_conf = float(probs[top_idx])
+            closest_label = best["label"]
+            closest_conf = best["conf"]
 
             if not realtime_probe:
                 save_progress(closest_label, closest_conf)
@@ -752,6 +917,7 @@ def predict_auto():
                 "closest_sign": closest_label,
                 "closest_confidence": round(closest_conf, 4),
                 "confidence": conf,
+                "model": best["model"],
                 "message": f"Incorrect — closest sign is {closest_label.replace('_', ' ')}"
             })
 
@@ -762,6 +928,7 @@ def predict_auto():
             return jsonify({
                 "prediction": label,
                 "confidence": conf,
+                "model": best["model"],
                 "message": f"Correct — {label.replace('_', ' ')}"
             })
 
@@ -778,16 +945,20 @@ def assess():
         data = request.get_json(force=True)
         x = prepare_sequence(data)
 
-        probs = run_inference(x)
-        log_top3(probs, tag="ASSESS")
+        model_key = _pick_model_for_request(data)
+        classes = MODEL_PROFILES[model_key]["classes"]
+
+        probs = run_inference(x, model_key=model_key)
+        log_top3(probs, classes, tag=f"ASSESS-{model_key}")
         pred_idx = int(np.argmax(probs))
-        label = CLASSES[pred_idx]
+        label = classes[pred_idx]
 
         save_progress(label, float(np.max(probs)))
 
         demo_path = get_demo_video_path(label)
         return jsonify({
             "label": label,
+            "model": model_key,
             "probabilities": probs.tolist(),
             "demo": demo_path
         })
