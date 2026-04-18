@@ -363,6 +363,17 @@
     box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.95), 0 0 0 7px rgba(51, 65, 85, 0.35), 0 2px 8px var(--shadow);
   }
 
+  .category-colors .item-badge[data-item="violet"] {
+    background: #7c3aed;
+    border-color: #6d28d9;
+  }
+  .category-colors .item-badge[data-item="violet"].active {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    border-color: #6d28d9;
+    outline-color: #5b21b6;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.95), 0 0 0 7px rgba(109, 40, 217, 0.4), 0 2px 8px var(--shadow);
+  }
+
   .category-colors .item-badge[data-item="yellow"] {
     background: #facc15;
     color: #422006;
@@ -774,11 +785,18 @@
   async function resolveLearnVideoSource(category, item) {
     const prefixMap = { numbers: 'number' };
     const prefix = prefixMap[category] || category;
-    const primarySrc = `/static/learn_videos/${prefix}_${item}.mp4`;
-    try {
-      const head = await fetch(primarySrc, { method: 'HEAD', cache: 'no-store' });
-      if (head.ok) return primarySrc;
-    } catch (_e) {}
+    const candidateSources = [
+      `/static/learn_videos/${prefix}_${item}.mp4`,
+      `/static/learn_videos/${prefix}_${item}.MOV`,
+      `/static/learn_videos/${prefix}_${item}.mov`,
+    ];
+
+    for (const source of candidateSources) {
+      try {
+        const head = await fetch(source, { method: 'HEAD', cache: 'no-store' });
+        if (head.ok) return source;
+      } catch (_e) {}
+    }
 
     const manifest = await loadManifest();
     const manifestClips = manifest?.[category]?.[item];
@@ -786,7 +804,7 @@
       return pickRandom(manifestClips);
     }
 
-    return primarySrc;
+    return candidateSources[0];
   }
 
   function setCategoryState(categoryKey) {

@@ -1511,12 +1511,24 @@ window.addEventListener("load", () => {
     return `/static/video/3d_feedback/${category}/${feedbackGender}_${prefix}_${key}.mp4`;
   }
 
-  function getLearnFeedbackUrl(label) {
+  async function getLearnFeedbackUrl(label) {
     const category = inferCategory(label);
     const key = normLabel(label);
     const prefixMap = { numbers: 'number' };
     const prefix = prefixMap[category] || category;
-    return `/static/learn_videos/${prefix}_${key}.mp4`;
+    const candidateSources = [
+      `/static/learn_videos/${prefix}_${key}.mp4`,
+      `/static/learn_videos/${prefix}_${key}.MOV`,
+      `/static/learn_videos/${prefix}_${key}.mov`,
+    ];
+
+    for (const source of candidateSources) {
+      if (await fileExists(source)) {
+        return source;
+      }
+    }
+
+    return candidateSources[0];
   }
 
   function getLegacyFeedbackUrl(label) {
@@ -1526,13 +1538,13 @@ window.addEventListener("load", () => {
   }
 
   async function resolveFeedbackUrl(label) {
-    const preferred = feedbackSource === '3d' ? get3DFeedbackUrl(label) : getLearnFeedbackUrl(label);
+    const preferred = feedbackSource === '3d' ? get3DFeedbackUrl(label) : await getLearnFeedbackUrl(label);
     if (await fileExists(preferred)) {
       return { url: preferred, source: feedbackSource };
     }
 
     const alternateSource = feedbackSource === '3d' ? 'learn' : '3d';
-    const alternate = alternateSource === '3d' ? get3DFeedbackUrl(label) : getLearnFeedbackUrl(label);
+    const alternate = alternateSource === '3d' ? get3DFeedbackUrl(label) : await getLearnFeedbackUrl(label);
     if (await fileExists(alternate)) {
       return { url: alternate, source: alternateSource };
     }
