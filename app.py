@@ -96,6 +96,7 @@ def save_progress(label: str, confidence=None):
 # For model loading and inference
 MODEL_A_PATH = os.getenv("MODEL_A_PATH", r"run20.pt")
 MODEL_B_PATH = os.getenv("MODEL_B_PATH", r"run47.pt")
+MODEL_C_PATH = os.getenv("MODEL_C_PATH", r"run51.pt")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -151,6 +152,7 @@ def _build_model_from_checkpoint(model_path):
 MODEL_PROFILES = {
     "A": _build_model_from_checkpoint(MODEL_A_PATH),
     "B": _build_model_from_checkpoint(MODEL_B_PATH),
+    "C": _build_model_from_checkpoint(MODEL_C_PATH),
 }
 
 INPUT_SIZE = MODEL_PROFILES["A"]["input_size"]
@@ -232,6 +234,14 @@ def _normalize_sign_key(raw_label):
         "please": "please",
         "thankyou": "thankyou",
         "thanks": "thankyou",
+        "coffee": "coffee",
+        "cold": "cold",
+        "hot": "hot",
+        "juice": "juice",
+        "meat": "meat",
+        "rice": "rice",
+        "milk": "milk",
+        "eggs": "eggs",
     }
 
     return aliases.get(token, token)
@@ -254,6 +264,10 @@ MODEL_B_SIGNS = {
     "please", "thankyou",
 }
 
+MODEL_C_SIGNS = {
+    "coffee", "cold", "hot", "juice", "meat", "rice", "milk", "eggs",
+}
+
 
 def _route_model_for_sign(raw_label):
     sign_key = _normalize_sign_key(raw_label)
@@ -261,6 +275,8 @@ def _route_model_for_sign(raw_label):
         return "A"
     if sign_key in MODEL_B_SIGNS:
         return "B"
+    if sign_key in MODEL_C_SIGNS:
+        return "C"
     return None
 
 

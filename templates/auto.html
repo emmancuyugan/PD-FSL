@@ -864,7 +864,7 @@
 
   function cleanLabel(s){
     if(!s) return s;
-    let t = String(s).replace(/^(Numbers_|Colors_|Color_|Family_|Relationship_|Survival_)/i,'');
+    let t = String(s).replace(/^(Numbers_|Colors_|Color_|Family_|Relationship_|Survival_|Additional_)/i,'');
     t = t.replace(/_/g,' ');
     return t.split(' ').map(w => w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
   }
@@ -872,7 +872,7 @@
   function normLabel(s){
     if(!s)return "";
     let x=String(s).toLowerCase();
-    x=x.replace(/^(numbers_|colors_|color_|family_|relationship_|survival_)/,"");
+    x=x.replace(/^(numbers_|colors_|color_|family_|relationship_|survival_|additional_)/,"");
     x=x.replace(/[^a-z0-9]+/g,'');
     const map={
       "1":"one","2":"two","3":"three","4":"four","5":"five",
@@ -887,7 +887,8 @@
       "boy":"boy","girl":"girl","son":"son","daughter":"daughter",
       "black":"black","blue":"blue","green":"green","orange":"orange","pink":"pink","red":"red","violet":"violet","white":"white","yellow":"yellow",
       "correct":"correct","no":"no","understand":"understand","wrong":"wrong","yes":"yes",
-      "please":"please","thankyou":"thankyou","thanks":"thankyou"
+      "please":"please","thankyou":"thankyou","thanks":"thankyou",
+      "coffee":"coffee","cold":"cold","hot":"hot","juice":"juice","meat":"meat","rice":"rice","milk":"milk","eggs":"eggs"
     };
     return map[x]||x;
   }
@@ -899,15 +900,18 @@
     if(raw.startsWith("family_"))return "family";
     if(raw.startsWith("relationship_"))return "relationship";
     if(raw.startsWith("survival_"))return "survival";
+    if(raw.startsWith("additional_"))return "additional";
     const l=normLabel(label);
     const numbers=["one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen","twenty"];
     const family=["daughter","father","grandfather","grandmother","mother","son","auntie","uncle","cousin"];
     const relationship=["boy","girl"];
     const survival=["correct","no","understand","wrong","yes","please","thankyou"];
+    const additional=["coffee","cold","hot","juice","meat","rice","milk","eggs"];
     if(numbers.includes(l))return "numbers";
     if(family.includes(l))return "family";
     if(relationship.includes(l))return "relationship";
     if(survival.includes(l))return "survival";
+    if(additional.includes(l))return "additional";
     return "colors";
   }
 

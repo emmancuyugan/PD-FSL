@@ -865,6 +865,7 @@
               <option value="family">Family</option>
               <option value="relationship">Relationship</option>
               <option value="survival">Survival</option>
+              <option value="additional">Additional</option>
             </select>
           </div>
           <div class="input-group">
@@ -983,6 +984,7 @@ window.addEventListener("load", () => {
   const FAMILY_SIGNS = ["Daughter","Father","Grandfather","Grandmother","Mother","Son","Auntie","Uncle","Cousin"];
   const RELATIONSHIP_SIGNS = ["Boy","Girl"];
   const SURVIVAL_SIGNS = ["Correct","No","Understand","Wrong","Yes","Please","Thank You"];
+  const ADDITIONAL_SIGNS = ["Coffee","Cold","Hot","Juice","Meat","Rice","Milk","Eggs"];
   const NUMBER_LABELS = {
     One: "One (1)",
     Two: "Two (2)",
@@ -1066,6 +1068,7 @@ window.addEventListener("load", () => {
     if (category === "family")  signs = FAMILY_SIGNS;
     if (category === "relationship")  signs = RELATIONSHIP_SIGNS;
     if (category === "survival")  signs = SURVIVAL_SIGNS;
+    if (category === "additional") signs = ADDITIONAL_SIGNS;
 
     signs.forEach(s => {
       const opt = document.createElement("option");
@@ -1437,7 +1440,8 @@ window.addEventListener("load", () => {
       "son":"son","daughter":"daughter",
       "black":"black","blue":"blue","green":"green","orange":"orange","pink":"pink","red":"red","violet":"violet","white":"white","yellow":"yellow",
       "correct":"correct","no":"no","understand":"understand","wrong":"wrong","yes":"yes",
-      "please":"please","thankyou":"thankyou","thanks":"thankyou"
+      "please":"please","thankyou":"thankyou","thanks":"thankyou",
+      "coffee":"coffee","cold":"cold","hot":"hot","juice":"juice","meat":"meat","rice":"rice","milk":"milk","eggs":"eggs"
     };
     return map[x] || x;
   }
@@ -1448,6 +1452,7 @@ window.addEventListener("load", () => {
     if (["daughter","father","grandfather","grandmother","mother","son","auntie","uncle","cousin"].includes(l)) return "family";
     if (["boy","girl"].includes(l)) return "relationship";
     if (["correct","no","understand","wrong","yes","please","thankyou"].includes(l)) return "survival";
+    if (["coffee","cold","hot","juice","meat","rice","milk","eggs"].includes(l)) return "additional";
     return "colors";
   }
 
