@@ -511,10 +511,11 @@ def _normalized_confidence(max_prob, num_classes):
 MODEL_SCORE_WEIGHTS = {
     "A": float(os.getenv("AUTO_MODEL_A_WEIGHT", "1.0")),
     "B": float(os.getenv("AUTO_MODEL_B_WEIGHT", "1.0")),
-    "C": float(os.getenv("AUTO_MODEL_C_WEIGHT", "1.0")),
+    "C": float(os.getenv("AUTO_MODEL_C_WEIGHT", "0.97")),
 }
 
-MODEL_C_OVERRIDE_MARGIN = float(os.getenv("AUTO_MODEL_C_OVERRIDE_MARGIN", "0.0"))
+MODEL_C_OVERRIDE_MARGIN = float(os.getenv("AUTO_MODEL_C_OVERRIDE_MARGIN", "0.04"))
+NON_C_STRONG_CONF = float(os.getenv("AUTO_NON_C_STRONG_CONF", "0.985"))
 EXPECTED_MODEL_SCORE_BONUS = float(os.getenv("AUTO_EXPECTED_MODEL_SCORE_BONUS", "0.08"))
 
 
@@ -971,7 +972,7 @@ def predict_auto():
         best = max(candidates, key=lambda r: r["weighted_score"])
 
         # Guard against model C dominating due to easier calibration:
-        # if C only narrowly beats A/B, prefer the best non-C candidate.
+        # if C only narrowly beats a very confident A/B, prefer non-C.
         if (
             best["model"] == "C"
             and not expected_model_hint
@@ -980,10 +981,13 @@ def predict_auto():
             non_c = [r for r in candidates if r["model"] != "C"]
             if non_c:
                 best_non_c = max(non_c, key=lambda r: r["weighted_score"])
-                if best_non_c["weighted_score"] >= (best["weighted_score"] - MODEL_C_OVERRIDE_MARGIN):
+                close_score = best_non_c["weighted_score"] >= (best["weighted_score"] - MODEL_C_OVERRIDE_MARGIN)
+                strong_non_c = best_non_c["conf"] >= NON_C_STRONG_CONF
+                if close_score and strong_non_c:
                     print(
                         f"[AUTO] Overriding C with {best_non_c['model']} "
-                        f"(C={best['weighted_score']:.4f}, nonC={best_non_c['weighted_score']:.4f})"
+                        f"(C_score={best['weighted_score']:.4f}, nonC_score={best_non_c['weighted_score']:.4f}, "
+                        f"nonC_raw={best_non_c['conf']:.4f})"
                     )
                     best = best_non_c
 
