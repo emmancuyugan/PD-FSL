@@ -1,0 +1,127 @@
+{
+  "weights": {
+    "A": 1.0,
+    "B": 1.0,
+    "C": 1.0
+  },
+  "biases": {
+    "A": 0.0,
+    "B": 0.0,
+    "C": 0.0
+  },
+  "expected_bonus": 0.08,
+  "agg": {
+    "A": {
+      "n": 523,
+      "correct_no_hint": 353,
+      "correct_with_hint": 518,
+      "no_hint_rate": 0.6749521988527725,
+      "with_hint_rate": 0.9904397705544933
+    },
+    "B": {
+      "n": 438,
+      "correct_no_hint": 212,
+      "correct_with_hint": 436,
+      "no_hint_rate": 0.4840182648401826,
+      "with_hint_rate": 0.9954337899543378
+    },
+    "C": {
+      "n": 140,
+      "correct_no_hint": 116,
+      "correct_with_hint": 140,
+      "no_hint_rate": 0.8285714285714286,
+      "with_hint_rate": 1.0
+    }
+  },
+  "focus": {
+    "Additionals_Chicken": {
+      "n_total": 20,
+      "n_scored": 20,
+      "sign_key": "chicken",
+      "expected_model": "C",
+      "no_hint": {
+        "C": 20
+      },
+      "with_hint": {
+        "C": 20
+      },
+      "no_hint_expected_rate": 1.0,
+      "with_hint_expected_rate": 1.0
+    },
+    "Additionals_Fish": {
+      "n_total": 20,
+      "n_scored": 20,
+      "sign_key": "fish",
+      "expected_model": "C",
+      "no_hint": {
+        "C": 20
+      },
+      "with_hint": {
+        "C": 20
+      },
+      "no_hint_expected_rate": 1.0,
+      "with_hint_expected_rate": 1.0
+    },
+    "Additionals_Juice": {
+      "n_total": 15,
+      "n_scored": 15,
+      "sign_key": "juice",
+      "expected_model": "C",
+      "no_hint": {
+        "C": 11,
+        "A": 4
+      },
+      "with_hint": {
+        "C": 15
+      },
+      "no_hint_expected_rate": 0.7333333333333333,
+      "with_hint_expected_rate": 1.0
+    },
+    "Additionals_Meat": {
+      "n_total": 17,
+      "n_scored": 17,
+      "sign_key": "meat",
+      "expected_model": "C",
+      "no_hint": {
+        "C": 17
+      },
+      "with_hint": {
+        "C": 17
+      },
+      "no_hint_expected_rate": 1.0,
+      "with_hint_expected_rate": 1.0
+    },
+    "Numbers_Eleven": {
+      "n_total": 21,
+      "n_scored": 21,
+      "sign_key": "eleven",
+      "expected_model": "B",
+      "no_hint": {
+        "B": 10,
+        "C": 11
+      },
+      "with_hint": {
+        "B": 21
+      },
+      "no_hint_expected_rate": 0.47619047619047616,
+      "with_hint_expected_rate": 1.0
+    },
+    "Numbers_One": {
+      "n_total": 20,
+      "n_scored": 20,
+      "sign_key": "one",
+      "expected_model": "A",
+      "no_hint": {
+        "C": 6,
+        "A": 14
+      },
+      "with_hint": {
+        "A": 20
+      },
+      "no_hint_expected_rate": 0.7,
+      "with_hint_expected_rate": 1.0
+    }
+  },
+  "bad_shape_count": 0,
+  "bad_shape_files": []
+}

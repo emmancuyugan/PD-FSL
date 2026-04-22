@@ -96,7 +96,7 @@ def save_progress(label: str, confidence=None):
 # For model loading and inference
 MODEL_A_PATH = os.getenv("MODEL_A_PATH", r"run20.pt")
 MODEL_B_PATH = os.getenv("MODEL_B_PATH", r"run47.pt")
-MODEL_C_PATH = os.getenv("MODEL_C_PATH", r"run51.pt")
+MODEL_C_PATH = os.getenv("MODEL_C_PATH", r"run53.pt")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -235,13 +235,13 @@ def _normalize_sign_key(raw_label):
         "thankyou": "thankyou",
         "thanks": "thankyou",
         "coffee": "coffee",
-        "cold": "cold",
-        "hot": "hot",
         "juice": "juice",
         "meat": "meat",
         "rice": "rice",
         "milk": "milk",
         "eggs": "eggs",
+        "fish": "fish",
+        "chicken": "chicken",
     }
 
     return aliases.get(token, token)
@@ -265,7 +265,7 @@ MODEL_B_SIGNS = {
 }
 
 MODEL_C_SIGNS = {
-    "coffee", "cold", "hot", "juice", "meat", "rice", "milk", "eggs",
+    "coffee", "juice", "meat", "rice", "milk", "eggs", "fish", "chicken",
 }
 
 
@@ -286,6 +286,15 @@ def _pick_model_for_request(data):
         if routed:
             return routed
     return "A"
+
+
+def _pick_model_hint_for_request(data):
+    """Return routed model from request labels, or None if no routable hint exists."""
+    for key in ("expected", "target", "label", "sign", "requested_sign"):
+        routed = _route_model_for_sign((data or {}).get(key))
+        if routed:
+            return routed
+    return None
 
 # Get tensor dtypes for TensorRT engine if available
 TRT_ENGINE_PATH = os.path.join(os.path.dirname(__file__), "model.engine")
@@ -487,6 +496,26 @@ def run_inference(x, model_key="A"):
             probs = torch.softmax(logits, dim=1).cpu().numpy()[0]
 
     return probs
+
+
+def _normalized_confidence(max_prob, num_classes):
+    """Map max softmax to [0,1] while accounting for class-count baseline (1/N)."""
+    if num_classes <= 1:
+        return float(max_prob)
+    baseline = 1.0 / float(num_classes)
+    denom = max(1e-8, 1.0 - baseline)
+    norm = (float(max_prob) - baseline) / denom
+    return max(0.0, min(1.0, norm))
+
+
+MODEL_SCORE_WEIGHTS = {
+    "A": float(os.getenv("AUTO_MODEL_A_WEIGHT", "1.0")),
+    "B": float(os.getenv("AUTO_MODEL_B_WEIGHT", "1.0")),
+    "C": float(os.getenv("AUTO_MODEL_C_WEIGHT", "1.0")),
+}
+
+MODEL_C_OVERRIDE_MARGIN = float(os.getenv("AUTO_MODEL_C_OVERRIDE_MARGIN", "0.0"))
+EXPECTED_MODEL_SCORE_BONUS = float(os.getenv("AUTO_EXPECTED_MODEL_SCORE_BONUS", "0.08"))
 
 
 def log_top3(probs, classes, tag="INFERENCE"): # Print top 3 predictions for debugging
@@ -859,6 +888,7 @@ def predict_auto():
     try:
         data = request.get_json(force=True) or {}
         realtime_probe = bool(data.get("realtime", False))
+        expected_model_hint = _pick_model_hint_for_request(data)
         # For error handling of no hand detected
         if (
             ("sequence" not in data and "features" not in data) or
@@ -886,6 +916,10 @@ def predict_auto():
 
             pred_idx = int(np.argmax(probs))
             conf = float(np.max(probs))
+            norm_conf = _normalized_confidence(conf, len(classes))
+            weighted_score = norm_conf * MODEL_SCORE_WEIGHTS.get(model_key, 1.0)
+            if expected_model_hint and model_key == expected_model_hint:
+                weighted_score += EXPECTED_MODEL_SCORE_BONUS
             model_results.append({
                 "model": model_key,
                 "probs": probs,
@@ -893,7 +927,16 @@ def predict_auto():
                 "pred_idx": pred_idx,
                 "label": classes[pred_idx],
                 "conf": conf,
+                "norm_conf": norm_conf,
+                "weighted_score": weighted_score,
             })
+            print(
+                f"[AUTO-SCORE] model={model_key} label={classes[pred_idx]} "
+                f"raw={conf:.4f} norm={norm_conf:.4f} "
+                f"weight={MODEL_SCORE_WEIGHTS.get(model_key, 1.0):.3f} "
+                f"bonus={EXPECTED_MODEL_SCORE_BONUS if (expected_model_hint and model_key == expected_model_hint) else 0.0:.3f} "
+                f"score={weighted_score:.4f}"
+            )
 
         if not model_results:
             print("[AUTO] Unrecognized Sign (non-finite probabilities)")
@@ -905,23 +948,55 @@ def predict_auto():
 
         NOT_FSL_THRESHOLD = 0.70
         THRESHOLD = 0.92
+        NOT_FSL_NORM_THRESHOLD = 0.72
+        THRESHOLD_NORM = 0.90
 
-        best_any = max(model_results, key=lambda r: r["conf"])
-        candidates = [r for r in model_results if r["conf"] >= NOT_FSL_THRESHOLD]
+        best_any = max(model_results, key=lambda r: r["weighted_score"])
+        candidates = [
+            r for r in model_results
+            if r["conf"] >= NOT_FSL_THRESHOLD and r["norm_conf"] >= NOT_FSL_NORM_THRESHOLD
+        ]
 
         if not candidates:
-            print(f"[AUTO] Unrecognized Sign (max_conf={best_any['conf']:.4f})")
+            print(
+                f"[AUTO] Unrecognized Sign (best_model={best_any['model']}, "
+                f"raw={best_any['conf']:.4f}, norm={best_any['norm_conf']:.4f})"
+            )
             return jsonify({
                 "prediction": "Unrecognized Sign",
                 "confidence": best_any["conf"],
                 "message": "Unrecognized sign"
             })
 
-        best = max(candidates, key=lambda r: r["conf"])
+        best = max(candidates, key=lambda r: r["weighted_score"])
+
+        # Guard against model C dominating due to easier calibration:
+        # if C only narrowly beats A/B, prefer the best non-C candidate.
+        if (
+            best["model"] == "C"
+            and not expected_model_hint
+            and MODEL_C_OVERRIDE_MARGIN > 0.0
+        ):
+            non_c = [r for r in candidates if r["model"] != "C"]
+            if non_c:
+                best_non_c = max(non_c, key=lambda r: r["weighted_score"])
+                if best_non_c["weighted_score"] >= (best["weighted_score"] - MODEL_C_OVERRIDE_MARGIN):
+                    print(
+                        f"[AUTO] Overriding C with {best_non_c['model']} "
+                        f"(C={best['weighted_score']:.4f}, nonC={best_non_c['weighted_score']:.4f})"
+                    )
+                    best = best_non_c
+
         conf = best["conf"]
         label = best["label"]
+        norm_conf = best["norm_conf"]
+        print(
+            f"[AUTO-CHOSEN] model={best['model']} label={label} "
+            f"raw={conf:.4f} norm={norm_conf:.4f} score={best['weighted_score']:.4f} "
+            f"expected_hint={expected_model_hint or 'none'}"
+        )
 
-        if conf < THRESHOLD:
+        if conf < THRESHOLD or norm_conf < THRESHOLD_NORM:
             closest_label = best["label"]
             closest_conf = best["conf"]
 
@@ -932,6 +1007,7 @@ def predict_auto():
                 "prediction": "Incorrect",
                 "closest_sign": closest_label,
                 "closest_confidence": round(closest_conf, 4),
+                "normalized_confidence": round(norm_conf, 4),
                 "confidence": conf,
                 "model": best["model"],
                 "message": f"Incorrect — closest sign is {closest_label.replace('_', ' ')}"
@@ -944,6 +1020,7 @@ def predict_auto():
             return jsonify({
                 "prediction": label,
                 "confidence": conf,
+                "normalized_confidence": round(norm_conf, 4),
                 "model": best["model"],
                 "message": f"Correct — {label.replace('_', ' ')}"
             })
