@@ -94,9 +94,7 @@ def save_progress(label: str, confidence=None):
     db.session.commit()
 
 # For model loading and inference
-MODEL_A_PATH = os.getenv("MODEL_A_PATH", r"run20.pt")
-MODEL_B_PATH = os.getenv("MODEL_B_PATH", r"run47.pt")
-MODEL_C_PATH = os.getenv("MODEL_C_PATH", r"run53.pt")
+MODEL_A_PATH = os.getenv("MODEL_A_PATH", r"run55.pt")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -151,8 +149,6 @@ def _build_model_from_checkpoint(model_path):
 
 MODEL_PROFILES = {
     "A": _build_model_from_checkpoint(MODEL_A_PATH),
-    "B": _build_model_from_checkpoint(MODEL_B_PATH),
-    "C": _build_model_from_checkpoint(MODEL_C_PATH),
 }
 
 INPUT_SIZE = MODEL_PROFILES["A"]["input_size"]
@@ -247,54 +243,21 @@ def _normalize_sign_key(raw_label):
     return aliases.get(token, token)
 
 
-MODEL_A_SIGNS = {
-    "one", "two", "three", "four", "five",
-    "mother", "father", "son", "daughter", "grandfather", "grandmother",
-    "black", "white", "pink", "red", "yellow", "blue", "green", "orange",
-    "boy", "girl",
-    "yes", "no", "understand", "wrong", "correct",
-}
-
-MODEL_B_SIGNS = {
-    "six", "seven", "eight", "nine", "ten",
-    "eleven", "twelve", "thirteen", "fourteen", "fifteen",
-    "sixteen", "seventeen", "eighteen", "nineteen", "twenty",
-    "auntie", "uncle", "cousin",
-    "violet",
-    "please", "thankyou",
-}
-
-MODEL_C_SIGNS = {
-    "coffee", "juice", "meat", "rice", "milk", "eggs", "fish", "chicken",
-}
-
-
 def _route_model_for_sign(raw_label):
-    sign_key = _normalize_sign_key(raw_label)
-    if sign_key in MODEL_A_SIGNS:
-        return "A"
-    if sign_key in MODEL_B_SIGNS:
-        return "B"
-    if sign_key in MODEL_C_SIGNS:
-        return "C"
-    return None
+    # Single-model experiment: route every sign to model A.
+    _ = _normalize_sign_key(raw_label)
+    return "A"
 
 
 def _pick_model_for_request(data):
-    for key in ("expected", "target", "label", "sign", "requested_sign"):
-        routed = _route_model_for_sign((data or {}).get(key))
-        if routed:
-            return routed
+    _ = data
     return "A"
 
 
 def _pick_model_hint_for_request(data):
-    """Return routed model from request labels, or None if no routable hint exists."""
-    for key in ("expected", "target", "label", "sign", "requested_sign"):
-        routed = _route_model_for_sign((data or {}).get(key))
-        if routed:
-            return routed
-    return None
+    """Single-model experiment: no hint needed."""
+    _ = data
+    return "A"
 
 # Get tensor dtypes for TensorRT engine if available
 TRT_ENGINE_PATH = os.path.join(os.path.dirname(__file__), "model.engine")
