@@ -864,7 +864,9 @@
 
   function cleanLabel(s){
     if(!s) return s;
-    let t = String(s).replace(/^(Numbers_|Colors_|Color_|Family_|Relationship_|Survival_|Additional_)/i,'');
+    let t = String(s)
+      .trim()
+      .replace(/^(Numbers|Colors|Color|Family|Relationship|Survival|Additional|Additionals)[_\s]+/i,'');
     t = t.replace(/_/g,' ');
     return t.split(' ').map(w => w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
   }
@@ -872,7 +874,7 @@
   function normLabel(s){
     if(!s)return "";
     let x=String(s).toLowerCase();
-    x=x.replace(/^(numbers_|colors_|color_|family_|relationship_|survival_|additional_)/,"");
+    x=x.replace(/^(numbers|colors|color|family|relationship|survival|additional|additionals)[_\s]+/,"");
     x=x.replace(/[^a-z0-9]+/g,'');
     const map={
       "1":"one","2":"two","3":"three","4":"four","5":"five",
@@ -900,7 +902,7 @@
     if(raw.startsWith("family_"))return "family";
     if(raw.startsWith("relationship_"))return "relationship";
     if(raw.startsWith("survival_"))return "survival";
-    if(raw.startsWith("additional_"))return "additional";
+    if(raw.startsWith("additional_")||raw.startsWith("additionals_"))return "additional";
     const l=normLabel(label);
     const numbers=["one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen","twenty"];
     const family=["daughter","father","grandfather","grandmother","mother","son","auntie","uncle","cousin"];
