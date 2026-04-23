@@ -94,7 +94,7 @@ def save_progress(label: str, confidence=None):
     db.session.commit()
 
 # For model loading and inference
-MODEL_A_PATH = os.getenv("MODEL_A_PATH", r"run55.pt")
+MODEL_A_PATH = os.getenv("MODEL_A_PATH", r"run57.pt")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

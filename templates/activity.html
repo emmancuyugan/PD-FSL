@@ -913,9 +913,8 @@ window.addEventListener("load", () => {
   const FAMILY_SIGNS = ["Daughter","Father","Grandfather","Grandmother","Mother","Son","Auntie","Uncle","Cousin"];
   const RELATIONSHIP_SIGNS = ["Boy","Girl"];
   const SURVIVAL_SIGNS = ["Correct","No","Understand","Wrong","Yes","Please","Thank You"];
-  const ADDITIONAL_SIGNS = ["Coffee","Cold","Hot","Juice","Meat","Rice","Milk","Eggs"];
 
-  const EASY_ALL_SIGNS = [...NUMBER_SIGNS, ...COLOR_SIGNS, ...FAMILY_SIGNS, ...RELATIONSHIP_SIGNS, ...SURVIVAL_SIGNS, ...ADDITIONAL_SIGNS];
+  const EASY_ALL_SIGNS = [...NUMBER_SIGNS, ...COLOR_SIGNS, ...FAMILY_SIGNS, ...RELATIONSHIP_SIGNS, ...SURVIVAL_SIGNS];
 
   function pickEasySign() {
     return EASY_ALL_SIGNS[Math.floor(Math.random() * EASY_ALL_SIGNS.length)];
@@ -1302,6 +1301,17 @@ window.addEventListener("load", () => {
     if (["correct","no","understand","wrong","yes","please","thankyou"].includes(l)) return "survival";
     if (["coffee","cold","hot","juice","meat","rice","milk","eggs"].includes(l)) return "additional";
     return "colors";
+  }
+
+  function getClosestSignHint(responseJson){
+    const closestRaw = responseJson?.closest_sign || responseJson?.closestSign;
+    if (!closestRaw) return '';
+    const closest = normLabel(closestRaw);
+    if (!closest) return '';
+    if (inferCategory(closest) === 'additional') {
+      return 'Closest sign hidden for this mode. Keep practicing and try again.';
+    }
+    return `Closest sign: ${closest}`;
   }
 
   function getAltitudeRule(signLabel){
@@ -1783,7 +1793,7 @@ window.addEventListener("load", () => {
           const assistHint = document.getElementById("assistHint");
           assistRow.style.display = 'block';
           pendingCorrectionOverlayText = buildAltitudeFeedbackHint(targetGesture, _displayLM);
-          assistHint.textContent = '';
+          assistHint.textContent = getClosestSignHint(j);
           clearFeedbackOverlayText();
           // Save incorrect result
           const incorrectLabel = targetGesture ? `Incorrect|${inferCategory(targetGesture)}` : "Incorrect";
