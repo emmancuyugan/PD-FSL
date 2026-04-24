@@ -484,7 +484,7 @@ MODEL_C_OVERRIDE_MARGIN = float(os.getenv("AUTO_MODEL_C_OVERRIDE_MARGIN", "0.04"
 NON_C_STRONG_CONF = float(os.getenv("AUTO_NON_C_STRONG_CONF", "0.985"))
 EXPECTED_MODEL_SCORE_BONUS = float(os.getenv("AUTO_EXPECTED_MODEL_SCORE_BONUS", "0.08"))
 
-ALWAYS_CORRECT_SELECT_MODE = True
+ALWAYS_CORRECT_SELECT_MODE = False
 
 
 def _resolve_expected_label(expected_raw, classes):
