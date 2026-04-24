@@ -1472,11 +1472,27 @@ window.addEventListener("load", () => {
       three: { level: 'below_chin', phrase: 'slightly below chin level' },
       four: { level: 'below_chin', phrase: 'slightly below chin level' },
       five: { level: 'below_chin', phrase: 'slightly below chin level' },
+      six: { level: 'chin', phrase: 'at chin level' },
+      seven: { level: 'chin', phrase: 'at chin level' },
+      eight: { level: 'chin', phrase: 'at chin level' },
+      nine: { level: 'chin', phrase: 'at chin level' },
+      ten: { level: 'below_chin', phrase: 'slightly below chin level' },
+      eleven: { level: 'below_chin', phrase: 'slightly below chin level' },
+      twelve: { level: 'below_chin', phrase: 'slightly below chin level' },
+      thirteen: { level: 'shoulder', phrase: 'at shoulder level' },
+      fourteen: { level: 'below_chin', phrase: 'slightly below chin level' },
+      fifteen: { level: 'below_chin', phrase: 'slightly below chin level' },
+      sixteen: { level: 'shoulder', phrase: 'at shoulder level' },
+      seventeen: { level: 'shoulder', phrase: 'at shoulder level' },
+      eighteen: { level: 'shoulder', phrase: 'at shoulder level' },
+      nineteen: { level: 'shoulder', phrase: 'at shoulder level' },
+      twenty: { level: 'chest', phrase: 'at upper-chest level' },
       black: { level: 'forehead', phrase: 'at forehead level' },
       blue: { level: 'below_chin', phrase: 'slightly below chin level' },
       green: { level: 'below_chin', phrase: 'slightly below chin level' },
       yellow: { level: 'below_chin', phrase: 'slightly below chin level' },
       orange: { level: 'below_chin', phrase: 'slightly below chin level' },
+      violet: { level: 'chest', phrase: 'at upper-chest level' },
       white: { level: 'chest', phrase: 'at upper-chest level' },
       red: { level: 'lips', phrase: 'at lip level' },
       pink: { level: 'lips', phrase: 'at lip level' },
@@ -1484,13 +1500,18 @@ window.addEventListener("load", () => {
       grandfather: { level: 'forehead', phrase: 'at forehead level' },
       mother: { level: 'chin', phrase: 'at chin level' },
       grandmother: { level: 'chin', phrase: 'at chin level' },
+      auntie: { level: 'cheek', phrase: 'at cheek level' },
+      uncle: { level: 'cheek', phrase: 'at cheek level' },
+      cousin: { level: 'eyebrow', phrase: 'at eyebrow level' },
       boy: { level: 'forehead', phrase: 'at forehead level at the start of the sign' },
       girl: { level: 'below_chin', phrase: 'slightly below chin level' },
       correct: { level: 'chest', phrase: 'at upper-chest level' },
       no: { level: 'below_chin', phrase: 'slightly below chin level' },
       understand: { level: 'cheek', phrase: 'at cheek level' },
       wrong: { level: 'chin', phrase: 'at chin level' },
-      yes: { level: 'below_chin', phrase: 'slightly below chin level' }
+      yes: { level: 'below_chin', phrase: 'slightly below chin level' },
+      please: { level: 'below_shoulder', phrase: 'slightly below shoulder level' },
+      thankyou: { level: 'lips', phrase: 'at lip level' }
     };
     return rules[sign] || null;
   }
@@ -1521,10 +1542,19 @@ window.addEventListener("load", () => {
     const faceSpan = Math.max(0.04, Math.abs(chinY - foreheadY));
 
     if (rule.level === 'forehead') return foreheadY;
+    if (rule.level === 'eyebrow') return browY;
     if (rule.level === 'lips') return lipY;
     if (rule.level === 'chin') return chinY;
     if (rule.level === 'below_chin') return chinY + faceSpan * 0.22;
     if (rule.level === 'cheek') return browY + (lipY - browY) * 0.55;
+    if (rule.level === 'shoulder') {
+      if (Number.isFinite(shoulderY)) return shoulderY;
+      return chinY + faceSpan * 0.75;
+    }
+    if (rule.level === 'below_shoulder') {
+      if (Number.isFinite(shoulderY)) return shoulderY + faceSpan * 0.28;
+      return chinY + faceSpan * 1.0;
+    }
     if (rule.level === 'chest') {
       if (Number.isFinite(shoulderY)) return shoulderY + faceSpan * 0.12;
       return chinY + faceSpan * 0.9;
@@ -1544,8 +1574,11 @@ window.addEventListener("load", () => {
   function getTargetZoneText(rule){
     if (!rule) return 'the target height zone';
     if (rule.level === 'below_chin') return 'just below chin level';
+    if (rule.level === 'below_shoulder') return 'just below shoulder level';
+    if (rule.level === 'shoulder') return 'shoulder level';
     if (rule.level === 'chest') return 'upper chest level';
     if (rule.level === 'lips') return 'lip level';
+    if (rule.level === 'eyebrow') return 'eyebrow level';
     if (rule.level === 'forehead') return 'forehead level';
     if (rule.level === 'cheek') return 'cheek level';
     if (rule.level === 'chin') return 'chin level';
