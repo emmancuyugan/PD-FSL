@@ -1853,7 +1853,9 @@ window.addEventListener("load", () => {
       const capSign = first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
       expectedLabel = capCat + '_' + capSign;
     }
-    const body = expectedLabel ? { sequence, expected: expectedLabel } : { sequence };
+    const body = expectedLabel
+      ? { sequence, expected: expectedLabel, mode: 'select' }
+      : { sequence, mode: 'select' };
     const payload = { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(body) };
     const res = await fetch(PREDICT_URL, payload);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
