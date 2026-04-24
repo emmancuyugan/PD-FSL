@@ -37,28 +37,13 @@ app = Flask(
     static_folder=resource_path("static"),
 )
 
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-
-
-def _resolve_project_path(path_value, default_filename=None):
-    """Resolve env/file path so systemd cwd differences do not break runtime files."""
-    raw = (path_value or "").strip()
-    if raw:
-        if os.path.isabs(raw):
-            return raw
-        return os.path.join(BASE_DIR, raw)
-    if default_filename:
-        return os.path.join(BASE_DIR, default_filename)
-    return raw
-
 CORS(app)
 load_dotenv()
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret")
 
-default_sqlite_db = os.path.join(BASE_DIR, "fsl.db")
 app.config["SQLALCHEMY_DATABASE_URI"] = (
-    os.getenv("DATABASE_URL")
-    or f"sqlite:///{default_sqlite_db}"
+    os.getenv("DATABASE_URL") 
+    or "sqlite:///fsl.db"
 )
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -109,7 +94,7 @@ def save_progress(label: str, confidence=None):
     db.session.commit()
 
 # For model loading and inference
-MODEL_A_PATH = _resolve_project_path(os.getenv("MODEL_A_PATH"), "run57.pt")
+MODEL_A_PATH = os.getenv("MODEL_A_PATH", r"run57.pt")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -816,9 +801,8 @@ def predict():
 
         # Save live sequence for debugging comparison
         live_seq = x.squeeze(0).cpu().float().numpy()  # (seq_len, feat_dim)
-        tmp_live_seq_path = os.path.join(BASE_DIR, "tmp_live_seq.npy")
-        np.save(tmp_live_seq_path, live_seq)
-        print(f"[DEBUG] Saved live sequence to {tmp_live_seq_path}  shape={live_seq.shape}")
+        np.save("tmp_live_seq.npy", live_seq)
+        print(f"[DEBUG] Saved live sequence to tmp_live_seq.npy  shape={live_seq.shape}")
 
         model_key = _pick_model_for_request(data)
         classes = MODEL_PROFILES[model_key]["classes"]
