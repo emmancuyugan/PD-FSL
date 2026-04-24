@@ -484,69 +484,6 @@ MODEL_C_OVERRIDE_MARGIN = float(os.getenv("AUTO_MODEL_C_OVERRIDE_MARGIN", "0.04"
 NON_C_STRONG_CONF = float(os.getenv("AUTO_NON_C_STRONG_CONF", "0.985"))
 EXPECTED_MODEL_SCORE_BONUS = float(os.getenv("AUTO_EXPECTED_MODEL_SCORE_BONUS", "0.08"))
 
-ALWAYS_CORRECT_SELECT_MODE = False
-
-
-def _resolve_expected_label(expected_raw, classes):
-    """Map expected label text to the closest class label from checkpoint classes."""
-    expected_raw = str(expected_raw or "").strip()
-    if not expected_raw:
-        return ""
-
-    exp_category = ""
-    exp_sign = expected_raw
-    if "_" in expected_raw:
-        exp_category, exp_sign = expected_raw.split("_", 1)
-
-    exp_category = "".join(ch for ch in exp_category.lower() if ch.isalnum())
-    exp_sign_key = _normalize_sign_key(exp_sign)
-
-    # Prefer exact category+sign matches when category is provided.
-    for cls in classes or []:
-        cls_text = str(cls)
-        cls_category = ""
-        cls_sign = cls_text
-        if "_" in cls_text:
-            cls_category, cls_sign = cls_text.split("_", 1)
-
-        cls_category_norm = "".join(ch for ch in cls_category.lower() if ch.isalnum())
-        cls_sign_key = _normalize_sign_key(cls_sign)
-
-        if cls_sign_key == exp_sign_key and (
-            not exp_category or cls_category_norm == exp_category
-        ):
-            return cls_text
-
-    # Fallback: sign-only match.
-    for cls in classes or []:
-        cls_text = str(cls)
-        cls_sign = cls_text.split("_", 1)[-1] if "_" in cls_text else cls_text
-        if _normalize_sign_key(cls_sign) == exp_sign_key:
-            return cls_text
-
-    # Last resort: keep caller-provided label.
-    return expected_raw
-
-
-def always_correct(data_json, classes):
-    """Return forced class label when Select-mode debug override is enabled."""
-    if not ALWAYS_CORRECT_SELECT_MODE:
-        return None
-
-    data_json = data_json or {}
-    mode = str(data_json.get("mode") or "").strip().lower()
-    # Fallback for stale/cached frontend bundles that may not yet send mode.
-    referer = str(request.headers.get("Referer") or "").lower()
-    is_select_request = mode == "select" or "/select" in referer
-    if not is_select_request:
-        return None
-
-    expected_label = str(data_json.get("expected") or "").strip()
-    if not expected_label:
-        return None
-
-    return _resolve_expected_label(expected_label, classes)
-
 
 def log_top3(probs, classes, tag="INFERENCE"): # Print top 3 predictions for debugging
     if not np.any(np.isfinite(probs)):
@@ -885,15 +822,10 @@ def predict():
         label = classes[pred_idx]
 
         conf = float(np.max(probs))
-        forced_label = always_correct(data, classes)
-        if forced_label:
-            print(f"[PREDICT-DEBUG] always_correct enabled -> forcing label: {forced_label}")
-            label = forced_label
-            conf = 1.0
 
         NOT_FSL_THRESHOLD = 0.90
 
-        if not forced_label and conf < NOT_FSL_THRESHOLD:
+        if conf < NOT_FSL_THRESHOLD:
             print(f"[PREDICT] Unrecognized Sign (max_conf={conf:.4f})")
             return jsonify({
                 "prediction": "Unrecognized Sign",
